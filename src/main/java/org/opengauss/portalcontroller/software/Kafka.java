@@ -3,10 +3,10 @@ package org.opengauss.portalcontroller.software;
 import org.opengauss.portalcontroller.InstallMigrationTools;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
-import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -18,12 +18,12 @@ public class Kafka implements Software {
     public ArrayList<String> initCriticalFileList() {
         String kafkaPath = PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH);
         ArrayList<String> kafkaList = new ArrayList<>();
-        kafkaList.add(kafkaPath + "bin/zookeeper-server-start.sh");
-        kafkaList.add(kafkaPath + "bin/zookeeper-server-stop.sh");
-        kafkaList.add(kafkaPath + "config/zookeeper.properties");
-        kafkaList.add(kafkaPath + "bin/kafka-server-start.sh");
-        kafkaList.add(kafkaPath + "bin/kafka-server-stop.sh");
-        kafkaList.add(kafkaPath + "config/server.properties");
+        kafkaList.add(kafkaPath + "bin" + File.separator + "zookeeper-server-start.sh");
+        kafkaList.add(kafkaPath + "bin" + File.separator + "zookeeper-server-stop.sh");
+        kafkaList.add(kafkaPath + "config" + File.separator + "zookeeper.properties");
+        kafkaList.add(kafkaPath + "bin" + File.separator + "kafka-server-start.sh");
+        kafkaList.add(kafkaPath + "bin" + File.separator + "kafka-server-stop.sh");
+        kafkaList.add(kafkaPath + "config" + File.separator + "server.properties");
         return kafkaList;
     }
 

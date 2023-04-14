@@ -6,6 +6,10 @@ public interface Chameleon {
     String PKG_PATH = "chameleon.pkg.path";
     String PKG_NAME = "chameleon.pkg.name";
     String PKG_URL = "chameleon.pkg.url";
+    String TMP_PATH = "chameleon.tmp.path";
+    String LOG_PATH = "chameleon.log.path";
+    String CONFIG_PATH = "chameleon.config.path";
+    String RUNNABLE_FILE_PATH = "chameleon.runnable.file.path";
     interface Parameters{
         interface Mysql{
             String HOST = "sources.mysql.db_conn.host";

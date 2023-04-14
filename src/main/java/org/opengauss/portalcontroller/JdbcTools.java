@@ -1,10 +1,12 @@
 package org.opengauss.portalcontroller;
 
 import org.opengauss.jdbc.PgConnection;
+import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,6 +22,51 @@ public class JdbcTools {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTools.class);
 
     /**
+     * Gets mysql connection.
+     *
+     * @return the mysql connection
+     */
+    public static Connection getMysqlConnection() {
+        String ip = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_HOST);
+        String port = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_PORT);
+        String databaseName = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
+        String url = "jdbc:mysql://" + ip + ":" + port + "/" + databaseName;
+        String user = PortalControl.toolsMigrationParametersTable.get(Mysql.USER);
+        String password = PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD);
+        String driver = "com.mysql.cj.jdbc.Driver";
+        Connection connection = null;
+        try {
+            Class.forName(driver);
+            connection = DriverManager.getConnection(url, user, password);
+        } catch (SQLException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+        }
+        return connection;
+    }
+
+    /**
+     * Gets current uuid.
+     *
+     * @param connection the connection
+     * @return the current uuid
+     */
+    public static String getCurrentUuid(Connection connection) {
+        String uuid = "";
+        try (Statement statement = connection.createStatement()) {
+            String selectVersionSql = "show global variables like 'server_uuid';";
+            if (statement.execute(selectVersionSql)) {
+                try (ResultSet rs = statement.getResultSet()) {
+                    rs.next();
+                    uuid = rs.getString("Value");
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error(e.getMessage());
+        }
+        return uuid;
+    }
+
+    /**
      * Gets pg connection.
      *
      * @return the pg connection
@@ -32,7 +79,8 @@ public class JdbcTools {
         String opengaussDatabaseName = hashtable.get(Opengauss.DATABASE_NAME);
         String opengaussUserName = hashtable.get(Opengauss.USER);
         String opengaussUserPassword = hashtable.get(Opengauss.PASSWORD);
-        String opengaussUrl = "jdbc:opengauss://" + opengaussDatabaseHost + ":" + opengaussDatabasePort + "/" + opengaussDatabaseName;
+        String opengaussUrl = "jdbc:opengauss://" + opengaussDatabaseHost + ":" + opengaussDatabasePort
+                + "/" + opengaussDatabaseName;
         try {
             conn = (PgConnection) DriverManager.getConnection(opengaussUrl, opengaussUserName, opengaussUserPassword);
         } catch (SQLException e) {
@@ -52,18 +100,19 @@ public class JdbcTools {
     public static boolean selectGlobalVariables(PgConnection connection, String key, String defaultValue) {
         boolean flag = false;
         if (connection != null) {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement("SHOW GLOBAL VARIABLES where Variable_name = '" + key + "';");
+            String sql = "SHOW GLOBAL VARIABLES where Variable_name = '" + key + "';";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 if (preparedStatement.execute()) {
-                    ResultSet rs = preparedStatement.getResultSet();
-                    rs.next();
-                    String value = rs.getString("Value");
-                    if (value.equals(defaultValue)) {
-                        flag = true;
-                    }else{
-                        LOGGER.error("If you want to use reverse migration,please alter system set "+key+" to "+defaultValue+" and restart openGauss to make it work.");
+                    try (ResultSet rs = preparedStatement.getResultSet()) {
+                        rs.next();
+                        String value = rs.getString("Value");
+                        if (value.equals(defaultValue)) {
+                            flag = true;
+                        } else {
+                            LOGGER.error("If you want to use reverse migration,please alter system set " + key + " to "
+                                    + defaultValue + " and restart openGauss to make it work.");
+                        }
                     }
-                    preparedStatement.close();
                 }
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage());
@@ -81,24 +130,23 @@ public class JdbcTools {
     public static boolean selectVersion(PgConnection connection) {
         boolean flag = false;
         if (connection != null) {
-            try {
-                Statement statement = connection.createStatement();
+            try (Statement statement = connection.createStatement()) {
                 String selectVersionSql = "select version()";
                 if (statement.execute(selectVersionSql)) {
-                    ResultSet rs = statement.getResultSet();
-                    rs.next();
-                    String value = rs.getString("version");
-                    String openGauss = "openGauss";
-                    int startIndex = value.indexOf(openGauss) + openGauss.length();
-                    int endIndex = value.indexOf("build");
-                    String version = value.substring(startIndex, endIndex).trim();
-                    int versionNum = Integer.parseInt(version.replaceAll("\\.", ""));
-                    if (versionNum > 300) {
-                        flag = true;
-                    }else{
-                        LOGGER.error("Please upgrade openGauss to version 3.1.0 or higher to use reverse migration.");
+                    try (ResultSet rs = statement.getResultSet()) {
+                        rs.next();
+                        String value = rs.getString("version");
+                        String openGauss = "openGauss";
+                        int startIndex = value.indexOf(openGauss) + openGauss.length();
+                        int endIndex = value.indexOf("build");
+                        String version = value.substring(startIndex, endIndex).trim();
+                        int versionNum = Integer.parseInt(version.replaceAll("\\.", ""));
+                        if (versionNum >= 300) {
+                            flag = true;
+                        } else {
+                            LOGGER.error("Please upgrade openGauss to 3.0.0 or higher to use reverse migration.");
+                        }
                     }
-                    statement.close();
                 }
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage());
@@ -116,26 +164,32 @@ public class JdbcTools {
     public static boolean changeAllTable(PgConnection connection) {
         boolean flag = true;
         if (connection != null) {
+            String schema = PortalControl.toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA);
             try {
-                String schema = PortalControl.toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA);
                 connection.setSchema(schema);
-                String selectSql = "SELECT distinct(tablename) FROM pg_tables WHERE SCHEMANAME = '" + schema + "';";
-                Statement selectTableStatement = connection.createStatement();
+            } catch (SQLException e) {
+                LOGGER.error(e.getMessage());
+            }
+            String selectSql = "SELECT distinct(tablename) FROM pg_tables WHERE SCHEMANAME = '" + schema + "';";
+            try (Statement selectTableStatement = connection.createStatement()) {
                 selectTableStatement.execute(selectSql);
                 ArrayList<String> arrayList = new ArrayList<>();
-                ResultSet rs = selectTableStatement.getResultSet();
-                while (rs.next()) {
-                    String tableName = rs.getString("tablename");
-                    arrayList.add(tableName);
+                try (ResultSet rs = selectTableStatement.getResultSet()) {
+                    while (rs.next()) {
+                        String tableName = rs.getString("tablename");
+                        arrayList.add(tableName);
+                    }
+                } catch (SQLException e) {
+                    LOGGER.error(e.getMessage());
                 }
-                String alterTableSql;
-                Statement alterTableStatement = connection.createStatement();
-                for (String tableName : arrayList) {
-                    alterTableSql = String.format("ALTER table %s replica identity full", tableName);
-                    alterTableStatement.execute(alterTableSql);
+                try (Statement alterTableStatement = connection.createStatement()) {
+                    for (String tableName : arrayList) {
+                        String alterTableSql = String.format("ALTER table %s replica identity full", tableName);
+                        alterTableStatement.execute(alterTableSql);
+                    }
+                } catch (SQLException e) {
+                    LOGGER.error(e.getMessage());
                 }
-                alterTableStatement.close();
-                selectTableStatement.close();
                 LOGGER.info("Alter all table replica identity full finished.");
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage());
@@ -151,11 +205,10 @@ public class JdbcTools {
      * @param slotName   the slot name
      * @return the boolean
      */
-    public static boolean createLogicalReplicationSlot(PgConnection connection, String slotName){
+    public static boolean createLogicalReplicationSlot(PgConnection connection, String slotName) {
         boolean flag = true;
         if (connection != null) {
-            try {
-                Statement statement = connection.createStatement();
+            try (Statement statement = connection.createStatement()) {
                 String selectSlotSql = "SELECT * FROM pg_get_replication_slots()";
                 String columnName = "slot_name";
                 boolean isReplicationSlotExists = isSpecifiedNameExist(statement, selectSlotSql, slotName, columnName);
@@ -177,7 +230,6 @@ public class JdbcTools {
                     statement.execute(createPublicationSql);
                     LOGGER.info("Create publication dbz_publication finished.");
                 }
-                statement.close();
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage());
             }
@@ -185,15 +237,25 @@ public class JdbcTools {
         return flag;
     }
 
+    /**
+     * Is specified name exist boolean.
+     *
+     * @param statement  the statement
+     * @param sql        the sql
+     * @param name       the name
+     * @param columnName the column name
+     * @return the boolean
+     */
     public static boolean isSpecifiedNameExist(Statement statement, String sql, String name, String columnName) {
         boolean flag = false;
         try {
             statement.execute(sql);
-            ResultSet resultSet = statement.getResultSet();
-            while (resultSet.next()) {
-                if (resultSet.getString(columnName).equals(name)) {
-                    flag = true;
-                    break;
+            try (ResultSet resultSet = statement.getResultSet()) {
+                while (resultSet.next()) {
+                    if (resultSet.getString(columnName).equals(name)) {
+                        flag = true;
+                        break;
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -212,8 +274,7 @@ public class JdbcTools {
     public static boolean dropLogicalReplicationSlot(PgConnection connection, String slotName) {
         boolean flag = true;
         if (connection != null) {
-            try {
-                Statement statement = connection.createStatement();
+            try (Statement statement = connection.createStatement()) {
                 String selectSlotSql = "SELECT * FROM pg_get_replication_slots()";
                 String columnName = "slot_name";
                 boolean isReplicationSlotExists = isSpecifiedNameExist(statement, selectSlotSql, slotName, columnName);
@@ -221,7 +282,7 @@ public class JdbcTools {
                     String createSlotSql = "SELECT * FROM pg_drop_replication_slot('" + slotName + "')";
                     statement.execute(createSlotSql);
                     LOGGER.info("Drop logical replication slot " + slotName + " finished.");
-                }else{
+                } else {
                     LOGGER.info("No logical replication slot " + slotName + " to drop.");
                 }
                 String selectPublicationSql = "SELECT pubname from pg_publication";
@@ -230,9 +291,7 @@ public class JdbcTools {
                 boolean isPublicationExist = isSpecifiedNameExist(statement, selectPublicationSql, publicationName, pubName);
                 if (isPublicationExist) {
                     String createPublicationSql = "DROP PUBLICATION dbz_publication";
-                    PreparedStatement preparedStatement2 = connection.prepareStatement(createPublicationSql);
-                    preparedStatement2.execute();
-                    preparedStatement2.close();
+                    statement.execute(createPublicationSql);
                     LOGGER.info("Drop publication dbz_publication finished.");
                 } else {
                     LOGGER.info("PUBLICATION dbz_publication does not exist.");

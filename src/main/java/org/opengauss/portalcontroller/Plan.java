@@ -16,31 +16,20 @@ package org.opengauss.portalcontroller;
 
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.check.*;
+import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static org.opengauss.portalcontroller.PortalControl.initHashTable;
-import static org.opengauss.portalcontroller.PortalControl.portalControlPath;
-import static org.opengauss.portalcontroller.PortalControl.portalWorkSpacePath;
-import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
-import static org.opengauss.portalcontroller.PortalControl.toolsConfigPath;
 
 
 /**
@@ -116,6 +105,11 @@ public final class Plan {
      * Boolean parameter express that the plan is stopping.
      */
     public static boolean stopPlan = false;
+
+    /**
+     * The constant isFullDatacheckRunning.
+     */
+    public static boolean isFullDatacheckRunning = true;
 
     /**
      * The constant stopIncrementalMigration.
@@ -288,34 +282,37 @@ public final class Plan {
             boolean cleanFullDataCheck = false;
             for (RunningTaskThread thread : runningTaskThreadsList) {
                 int pid = Tools.getCommandPid(thread.getProcessName());
-                if ((pid == -1) && (!PortalControl.commandLineParameterStringMap.get("action").equals("stop"))) {
-                    if (thread.getMethodName().contains("Check") && !PortalControl.fullDatacheckFinished) {
+                if (pid == -1) {
+                    if (thread.getMethodName().contains("Check") && Plan.isFullDatacheckRunning
+                            && Tools.isFullDatacheckSuccess()) {
                         cleanFullDataCheck = true;
+                        break;
                     } else if (Plan.pause) {
-                        LOGGER.warn("Plan paused.Stop checking threads.");
+                        LOGGER.warn("Plan paused.Stop checking threads. ");
                         break;
                     } else {
                         String[] str = thread.getProcessName().split(" ");
-                        LOGGER.error("Error message: Process " + str[0] + " exit abnormally or process " + str[0] + " has started.");
-                        Plan.stopPlan = true;
-                        PortalControl.status = Status.ERROR;
                         String logPath = thread.getLogPath();
-                        String errorStr = Tools.getErrorMsg(logPath);
+                        String errorStr = "Error message: Process " + str[0] + " exit abnormally or process " + str[0]
+                                + " has started. " + System.lineSeparator();
+                        errorStr += Tools.getErrorMsg(logPath) + System.lineSeparator();
+                        errorStr += "Please read " + logPath + " or error.log to get information. ";
+                        PortalControl.status = Status.ERROR;
                         PortalControl.errorMsg = errorStr;
-                        LOGGER.warn(errorStr);
-                        LOGGER.warn("Please read " + logPath + " or error.log to get information.");
+                        LOGGER.error(errorStr);
+                        Plan.stopPlan = true;
                         flag = false;
                     }
                 }
             }
             if (cleanFullDataCheck) {
-                PortalControl.fullDatacheckFinished = true;
                 int length = runningTaskThreadsList.size();
                 for (int i = length - 1; i >= 0; i--) {
                     if (runningTaskThreadsList.get(i).getMethodName().contains("Check")) {
                         runningTaskThreadsList.remove(i);
                     }
                 }
+                Plan.isFullDatacheckRunning = false;
             }
         }
         return flag;
@@ -328,36 +325,38 @@ public final class Plan {
      * @return the boolean
      */
     public static boolean createWorkspace(String workspaceId) {
-        String portIdFile = portalControlPath + "portal.portId.lock";
+        String portIdFile = PortalControl.portalControlPath + "portal.portId.lock";
         Tools.createFile(portIdFile, true);
         PortalControl.portId = Tools.setPortId(portIdFile) % 100;
         boolean flag = true;
-        String path = portalControlPath + "workspace/" + workspaceId + "/";
+        String path = PortalControl.portalControlPath + "workspace" + File.separator + workspaceId + File.separator;
         Tools.createFile(path, false);
         Tools.createFile(path + "tmp", false);
         Tools.createFile(path + "logs", false);
         workspacePath = path;
-        RuntimeExecTools.copyFile(portalControlPath + "config/", path, false);
-        Tools.createFile(portalWorkSpacePath + "status/", false);
-        Tools.createFile(portalWorkSpacePath + "status/portal.txt", true);
-        Tools.createFile(portalWorkSpacePath + "status/full_migration.txt", true);
-        Tools.createFile(portalWorkSpacePath + "status/incremental_migration.txt", true);
-        Tools.createFile(portalWorkSpacePath + "status/reverse_migration.txt", true);
-        Tools.createFile(portalWorkSpacePath + "logs/debezium/", false);
-        Tools.createFile(portalWorkSpacePath + "logs/datacheck/", false);
-        initHashTable();
-        String debeziumConfigPath = portalWorkSpacePath + "config/debezium/";
+        RuntimeExecTools.copyFile(PortalControl.portalControlPath + "config" + File.separator, path, false);
+        PortalControl.initHashTable();
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        Tools.createFile(hashtable.get(Status.FOLDER), false);
+        Tools.createFile(hashtable.get(Status.INCREMENTAL_FOLDER), false);
+        Tools.createFile(hashtable.get(Status.PORTAL_PATH), true);
+        Tools.createFile(hashtable.get(Status.FULL_PATH), true);
+        Tools.createFile(hashtable.get(Status.INCREMENTAL_PATH), true);
+        Tools.createFile(hashtable.get(Status.REVERSE_PATH), true);
+        Tools.createFile(hashtable.get(Debezium.LOG_PATH), false);
+        Tools.createFile(hashtable.get(Check.LOG_FOLDER), false);
+        String connectorStandaloneConfigPath = hashtable.get(Debezium.Connector.CONFIG_PATH);
         Hashtable<String, String> table2 = new Hashtable<>();
-        table2.put("offset.storage.file.filename", portalWorkSpacePath + "tmp/connect.offsets");
-        table2.put("plugin.path", "share/java, " + PortalControl.toolsConfigParametersTable.get(Debezium.Connector.PATH));
-        Tools.changePropertiesParameters(table2, debeziumConfigPath + "connect-avro-standalone.properties");
-        RuntimeExecTools.copyFile(debeziumConfigPath + "connect-avro-standalone.properties", debeziumConfigPath + "connect-avro-standalone-source.properties", false);
-        RuntimeExecTools.copyFile(debeziumConfigPath + "connect-avro-standalone.properties", debeziumConfigPath + "connect-avro-standalone-sink.properties", false);
-        RuntimeExecTools.copyFile(debeziumConfigPath + "connect-avro-standalone.properties", debeziumConfigPath + "connect-avro-standalone-reverse-source.properties", false);
-        RuntimeExecTools.copyFile(debeziumConfigPath + "connect-avro-standalone.properties", debeziumConfigPath + "connect-avro-standalone-reverse-sink.properties", false);
-        Tools.changeFile("/tmp/datacheck/logs", portalWorkSpacePath + "/logs/datacheck", portalWorkSpacePath + "config/datacheck/log4j2.xml");
-        Tools.changeFile("/tmp/datacheck/logs", portalWorkSpacePath + "/logs/datacheck", portalWorkSpacePath + "config/datacheck/log4j2source.xml");
-        Tools.changeFile("/tmp/datacheck/logs", portalWorkSpacePath + "/logs/datacheck", portalWorkSpacePath + "config/datacheck/log4j2sink.xml");
+        table2.put("offset.storage.file.filename", PortalControl.portalWorkSpacePath + "tmp" + File.separator + "connect.offsets");
+        table2.put("plugin.path", "share/java, " + hashtable.get(Debezium.Connector.PATH));
+        Tools.changePropertiesParameters(table2, hashtable.get(Debezium.Connector.CONFIG_PATH));
+        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.CONNECTOR_PATH), false);
+        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.CONNECTOR_PATH), false);
+        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH), false);
+        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH), false);
+        Tools.changeFile("/tmp/datacheck/logs", PortalControl.portalWorkSpacePath + File.separator + "logs" + File.separator + "datacheck", hashtable.get(Check.LOG_PATTERN_PATH));
+        Tools.changeFile("/tmp/datacheck/logs", PortalControl.portalWorkSpacePath + File.separator + "logs" + File.separator + "datacheck", hashtable.get(Check.Source.LOG_PATTERN_PATH));
+        Tools.changeFile("/tmp/datacheck/logs", PortalControl.portalWorkSpacePath + File.separator + "logs" + File.separator + "datacheck", hashtable.get(Check.Sink.LOG_PATTERN_PATH));
         Tools.changeCommandLineParameters();
         return flag;
     }
@@ -398,8 +397,11 @@ public final class Plan {
     public static void stopAllTasks() {
         Task task = new Task();
         task.stopDataCheck();
+        Tools.sleepThread(100, "stopping the plan");
         task.stopDataCheckSink();
+        Tools.sleepThread(100, "stopping the plan");
         task.stopDataCheckSource();
+        Tools.sleepThread(100, "stopping the plan");
         task.stopReverseKafkaConnectSink();
         Tools.sleepThread(100, "stopping the plan");
         task.stopReverseKafkaConnectSource();
@@ -408,11 +410,11 @@ public final class Plan {
         Tools.sleepThread(100, "stopping the plan");
         task.stopKafkaConnectSource();
         Tools.sleepThread(100, "stopping the plan");
-        task.stopKafkaSchema(toolsConfigParametersTable.get(Debezium.Confluent.PATH));
+        task.stopKafkaSchema(PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH));
         Tools.sleepThread(1000, "stopping the plan");
-        task.stopKafka(toolsConfigParametersTable.get(Debezium.Kafka.PATH));
+        task.stopKafka(PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH));
         Tools.sleepThread(1000, "stopping the plan");
-        task.stopZookeeper(toolsConfigParametersTable.get(Debezium.Kafka.PATH));
+        task.stopZookeeper(PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH));
         Tools.sleepThread(1000, "stopping the plan");
     }
 }

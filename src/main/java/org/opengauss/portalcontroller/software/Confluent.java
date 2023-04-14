@@ -3,10 +3,10 @@ package org.opengauss.portalcontroller.software;
 import org.opengauss.portalcontroller.InstallMigrationTools;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
-import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -17,10 +17,10 @@ public class Confluent implements Software {
     public ArrayList<String> initCriticalFileList() {
         ArrayList<String> confluentList = new ArrayList<>();
         String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
-        confluentList.add(confluentPath + "bin/schema-registry-start");
-        confluentList.add(confluentPath + "bin/schema-registry-stop");
-        confluentList.add(confluentPath + "etc/schema-registry/schema-registry.properties");
-        confluentList.add(confluentPath + "bin/connect-standalone");
+        confluentList.add(confluentPath + "bin" + File.separator + "schema-registry-start");
+        confluentList.add(confluentPath + "bin" + File.separator + "schema-registry-stop");
+        confluentList.add(confluentPath + "etc" + File.separator + "schema-registry" + File.separator + "schema-registry.properties");
+        confluentList.add(confluentPath + "bin" + File.separator + "connect-standalone");
         return confluentList;
     }
 

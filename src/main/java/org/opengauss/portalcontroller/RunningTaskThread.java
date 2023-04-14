@@ -25,7 +25,7 @@ public class RunningTaskThread {
 
     private String methodName;
     private String processName;
-    private int pid;
+    private long pid;
     private String logPath;
 
     /**
@@ -80,7 +80,7 @@ public class RunningTaskThread {
      *
      * @return the pid
      */
-    public int getPid() {
+    public long getPid() {
         return pid;
     }
 
@@ -89,7 +89,7 @@ public class RunningTaskThread {
      *
      * @param pid pid
      */
-    public void setPid(int pid) {
+    public void setPid(long pid) {
         this.pid = pid;
     }
 
@@ -149,10 +149,12 @@ public class RunningTaskThread {
 
     /**
      * Start task.Execute start task command.
+     *
+     * @return the long
      */
     public void startTask() {
-        PortalControl.EventHandler eventHandler = Task.runTaskHandlerHashMap.get(methodName);
-        eventHandler.handle(methodName);
+        PortalControl.MethodRunner methodRunner = Task.runTaskHandlerHashMap.get(methodName);
+        methodRunner.runMethod(methodName);
     }
 
     /**

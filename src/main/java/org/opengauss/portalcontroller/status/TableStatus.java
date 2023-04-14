@@ -8,6 +8,26 @@ public class TableStatus {
     private int status;
     private double percent;
 
+    private String errorMsg;
+
+    /**
+     * Gets error msg.
+     *
+     * @return the error msg
+     */
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    /**
+     * Sets error msg.
+     *
+     * @param errorMsg the error msg
+     */
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+
     /**
      * Gets name.
      *
@@ -85,5 +105,20 @@ public class TableStatus {
         this.name = name;
         this.status = status;
         this.percent = 1;
+    }
+
+    /**
+     * Instantiates a new Table status.
+     *
+     * @param name     the name
+     * @param status   the status
+     * @param percent  the percent
+     * @param errorMsg the error msg
+     */
+    public TableStatus(String name, int status, double percent, String errorMsg) {
+        this.name = name;
+        this.status = status;
+        this.percent = percent;
+        this.errorMsg = errorMsg;
     }
 }

@@ -15,7 +15,6 @@
 package org.opengauss.portalcontroller;
 
 import org.opengauss.portalcontroller.check.CheckTask;
-import org.opengauss.portalcontroller.check.CheckTaskFullDatacheck;
 import org.opengauss.portalcontroller.check.CheckTaskIncrementalDatacheck;
 import org.opengauss.portalcontroller.check.CheckTaskIncrementalMigration;
 import org.opengauss.portalcontroller.check.CheckTaskMysqlFullMigration;
@@ -33,7 +32,6 @@ import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.software.Software;
 import org.opengauss.portalcontroller.status.ChangeStatusTools;
-import org.opengauss.portalcontroller.status.TableStatus;
 import org.opengauss.portalcontroller.status.ThreadStatusController;
 import org.slf4j.LoggerFactory;
 
@@ -46,9 +44,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -91,6 +86,11 @@ public class PortalControl {
     public static String portalControlPath = "";
 
     /**
+     * The constant portalErrorPath.
+     */
+    public static String portalErrorPath = "";
+
+    /**
      * The constant portalWorkSpacePath.
      */
     public static String portalWorkSpacePath = "";
@@ -131,11 +131,6 @@ public class PortalControl {
     public static HashMap<String, String> commandLineParameterStringMap = new HashMap<>();
 
     /**
-     * Parameter to decide if you can run portal no input.
-     */
-    public static boolean noinput = true;
-
-    /**
      * Command counts.
      */
     public static int commandCounts = 0;
@@ -154,11 +149,6 @@ public class PortalControl {
      * The constant fullDatacheckFinished.
      */
     public static boolean fullDatacheckFinished = false;
-
-    /**
-     * The constant startPort.
-     */
-    public static int startPort = 10000;
 
     /**
      * The constant portId.
@@ -182,7 +172,7 @@ public class PortalControl {
     /**
      * The constant workspaceId.
      */
-    public static String workspaceId = "";
+    public static String workspaceId = "1";
 
     /**
      * The constant softwareList.
@@ -195,64 +185,47 @@ public class PortalControl {
      * @param args args
      */
     public static void main(String[] args) {
-        Tools.cleanInputOrder();
         initPlanList();
         initParametersRegexMap();
         initCommandLineParameters();
-        initActionHandlerHashMap();
         initCommandHandlerHashMap();
         String path = commandLineParameterStringMap.get(Command.Parameters.PATH);
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
-        PortalControl.workspaceId = workspaceId;
+        if (!workspaceId.equals("")) {
+            PortalControl.workspaceId = workspaceId;
+        }
         portalControlPath = path;
+        portalErrorPath = portalControlPath + "logs" + File.separator + "error.log";
         if (workspaceId.equals("")) {
             portalWorkSpacePath = path;
         } else {
-            portalWorkSpacePath = path + "workspace/" + workspaceId + "/";
+            portalWorkSpacePath = path + "workspace" + File.separator + workspaceId + File.separator;
         }
-        toolsConfigPath = portalWorkSpacePath + "config/toolspath.properties";
-        migrationConfigPath = portalWorkSpacePath + "config/migrationConfig.properties";
+        toolsConfigPath = portalWorkSpacePath + "config" + File.separator + "toolspath.properties";
+        migrationConfigPath = portalWorkSpacePath + "config" + File.separator + "migrationConfig.properties";
         Plan.createWorkspace(workspaceId);
         checkPath();
         Task.initTaskProcessMap();
         Task.initTaskLogMap();
         threadCheckProcess.setName("threadCheckProcess");
         threadCheckProcess.start();
-        noinput = true;
+        Tools.cleanInputOrder();
         threadGetOrder.start();
-        if (noinput) {
-            String order = commandLineParameterStringMap.get(Command.Parameters.ORDER);
-            if (order != null) {
-                String[] orders = order.split("_");
-                String newOrder = orders[0];
-                for (int i = 1; i < orders.length; i++) {
-                    newOrder += " " + orders[i];
-                }
-                if (commandHandlerHashMap.containsKey(newOrder)) {
-                    EventHandler eventHandler = commandHandlerHashMap.get(newOrder);
-                    eventHandler.handle(newOrder);
-                } else {
-                    LOGGER.error("Invalid command.Please input help to get valid command.");
-                }
+        String order = commandLineParameterStringMap.get(Command.Parameters.ORDER);
+        if (order != null) {
+            String[] orders = order.split("_");
+            String newOrder = orders[0];
+            for (int i = 1; i < orders.length; i++) {
+                newOrder += " " + orders[i];
+            }
+            if (commandHandlerHashMap.containsKey(newOrder)) {
+                EventHandler eventHandler = commandHandlerHashMap.get(newOrder);
+                eventHandler.handle(newOrder);
             } else {
-                String action = commandLineParameterStringMap.get(Command.Parameters.ACTION);
-                actionHandlerHashMap.get(action).handle(action);
+                LOGGER.error("Invalid command.Please input help to get valid command.");
             }
         } else {
-            Scanner sc = new Scanner(System.in);
-            String command = "";
-            while (true) {
-                LOGGER.info("Please input command.");
-                command = sc.nextLine().trim().replaceAll("\n", "");
-                if (command.equals("exit")) {
-                    break;
-                } else if (commandHandlerHashMap.containsKey(command)) {
-                    EventHandler eventHandler = commandHandlerHashMap.get(command);
-                    eventHandler.handle(command);
-                } else {
-                    LOGGER.error("Invalid command.Please input help to get valid command.");
-                }
-            }
+            LOGGER.error("Invalid command.Please input help to get valid command.");
         }
         threadCheckProcess.exit = true;
         threadGetOrder.exit = true;
@@ -347,9 +320,9 @@ public class PortalControl {
         if (status < Status.START_INCREMENTAL_MIGRATION) {
             ChangeStatusTools.outputChameleonStatus();
         } else if (status > Status.START_INCREMENTAL_MIGRATION && status < Status.START_REVERSE_MIGRATION) {
-            ChangeStatusTools.outputIncrementalStatus(PortalControl.portalWorkSpacePath + "status/incremental_migration.txt");
+            ChangeStatusTools.outputIncrementalStatus(PortalControl.toolsConfigParametersTable.get(Status.INCREMENTAL_PATH));
         } else if (status > Status.START_REVERSE_MIGRATION && status < Status.ERROR) {
-            ChangeStatusTools.outputIncrementalStatus(PortalControl.portalWorkSpacePath + "status/reverse_migration.txt");
+            ChangeStatusTools.outputIncrementalStatus(PortalControl.toolsConfigParametersTable.get(Status.REVERSE_PATH));
         }
     }
 
@@ -360,71 +333,9 @@ public class PortalControl {
         PortalControl.toolsConfigParametersTable.clear();
         PortalControl.toolsMigrationParametersTable.clear();
         PortalControl.initParametersRegexMap();
-        Tools.getParameterCommandLineFirst(PortalControl.toolsConfigParametersTable, PortalControl.portalWorkSpacePath + "config/toolspath.properties");
-        Tools.getParameterCommandLineFirst(PortalControl.toolsMigrationParametersTable, PortalControl.portalWorkSpacePath + "config/migrationConfig.properties");
-    }
-
-    /**
-     * Init action handler hashmap.Execute funciton based on the value of parameter action in commandline.
-     */
-    public static void initActionHandlerHashMap() {
-        actionHandlerHashMap.clear();
-        actionHandlerHashMap.put(Command.Action.HELP, (event) -> help());
-        actionHandlerHashMap.put(Command.Action.SHOW, (event) -> show());
-        actionHandlerHashMap.put(Command.Action.STOP, (event) -> stop());
-        actionHandlerHashMap.put(Command.Action.INSTALL, (event) -> install());
-        actionHandlerHashMap.put(Command.Action.UNINSTALL, (event) -> uninstall());
-        actionHandlerHashMap.put(Command.Action.START, (event) -> start());
-    }
-
-    /**
-     * Set migration parameters which include user name,password,host,port,database name,schema in mysql and openGauss database.
-     */
-    public static void setMigrationParameters() {
-        Hashtable<String, String> migrationParametersSet = new Hashtable<>();
-        Scanner sc = new Scanner(System.in);
-        LOGGER.info("Please input mysql user name:");
-        migrationParametersSet.put(Mysql.USER, Tools.checkInputString(sc, ""));
-        LOGGER.info("Please input mysql database user password:");
-        migrationParametersSet.put(Mysql.PASSWORD, Tools.checkInputString(sc, ""));
-        LOGGER.info("Please input mysql database host:");
-        migrationParametersSet.put(Mysql.DATABASE_HOST, Tools.checkInputString(sc, Regex.IP));
-        LOGGER.info("Please input mysql database port:");
-        migrationParametersSet.put(Mysql.DATABASE_PORT, Tools.checkInputString(sc, Regex.PORT));
-        LOGGER.info("Please input mysql database name:");
-        String mysqlDatabaseName = Tools.checkInputString(sc, "");
-        migrationParametersSet.put(Mysql.DATABASE_NAME, mysqlDatabaseName);
-        LOGGER.info("Please input opengauss database user name:");
-        migrationParametersSet.put(Opengauss.USER, Tools.checkInputString(sc, ""));
-        LOGGER.info("Please input opengauss database user password:");
-        migrationParametersSet.put(Opengauss.PASSWORD, Tools.checkInputString(sc, ""));
-        LOGGER.info("Please input opengauss database host:");
-        migrationParametersSet.put(Opengauss.DATABASE_HOST, Tools.checkInputString(sc, Regex.IP));
-        LOGGER.info("Please input opengauss database port:");
-        migrationParametersSet.put(Opengauss.DATABASE_PORT, Tools.checkInputString(sc, Regex.PORT));
-        LOGGER.info("Please input opengauss database name:");
-        migrationParametersSet.put(Opengauss.DATABASE_NAME, Tools.checkInputString(sc, ""));
-        LOGGER.info("Please input opengauss database schema:");
-        migrationParametersSet.put(Opengauss.DATABASE_SCHEMA, Tools.checkInputString(sc, ""));
-        PortalControl.toolsMigrationParametersTable = migrationParametersSet;
-        Tools.changePropertiesParameters(migrationParametersSet, migrationConfigPath);
-        Tools.changeMigrationParameters(migrationParametersSet);
-    }
-
-    /**
-     * If the value of action in commandline is show,execute this function.
-     */
-    public static void show() {
-        String showOrder = "show";
-        String parameter = commandLineParameterStringMap.get(Command.Parameters.PARAMETER);
-        showOrder += " " + parameter;
-        EventHandler showEventHandler = commandHandlerHashMap.get(showOrder);
-        if (showEventHandler != null) {
-            LOGGER.info(showOrder);
-            showEventHandler.handle(showOrder);
-        } else {
-            LOGGER.error("Invalid command.");
-        }
+        Tools.getParameterCommandLineFirst(PortalControl.toolsConfigParametersTable, PortalControl.toolsConfigPath);
+        PortalControl.initToolsConfigParametersTable();
+        Tools.getParameterCommandLineFirst(PortalControl.toolsMigrationParametersTable, PortalControl.migrationConfigPath);
     }
 
     /**
@@ -458,16 +369,6 @@ public class PortalControl {
                 LOGGER.info(key + ":*****");
             } else {
                 LOGGER.info(key + ":" + toolsMigrationParametersTable.get(key));
-            }
-        }
-        if (!PortalControl.noinput) {
-            LOGGER.info("Please sure the migration parameters are right,or you can input change to change migration parameters.");
-            Scanner sc = new Scanner(System.in);
-            String order = sc.nextLine().trim();
-            if (order.equals("change")) {
-                PortalControl.setMigrationParameters();
-            } else {
-                Tools.changeMigrationParameters(PortalControl.toolsMigrationParametersTable);
             }
         }
     }
@@ -680,12 +581,6 @@ public class PortalControl {
     public static void initCommandLineParameters() {
         commandLineParameterStringMap.clear();
         setCommandLineParameters(Command.Parameters.PATH, "");
-        setCommandLineParameters(Command.Parameters.ACTION, "");
-        setCommandLineParameters(Command.Parameters.TYPE, "");
-        setCommandLineParameters(Command.Parameters.MIGRATION_TYPE, "");
-        setCommandLineParameters(Command.Parameters.PARAMETER, "");
-        setCommandLineParameters(Command.Parameters.SKIP, "");
-        setCommandLineParameters(Command.Parameters.CHECK, "");
         setCommandLineParameters(Command.Parameters.ORDER, "");
         setCommandLineParameters(Command.Parameters.ID, "1");
     }
@@ -751,7 +646,7 @@ public class PortalControl {
         commandHandlerHashMap.put(Command.Start.Plan.PLAN2, (event) -> startDefaultPlan("plan2"));
         commandHandlerHashMap.put(Command.Start.Plan.PLAN3, (event) -> startDefaultPlan("plan3"));
         commandHandlerHashMap.put(Command.Start.Plan.CURRENT, (event) -> startCurrentPlan());
-        commandHandlerHashMap.put(Command.Action.HELP, (event) -> help());
+        commandHandlerHashMap.put(Command.HELP, (event) -> help());
         commandHandlerHashMap.put(Command.Show.PLAN, (event) -> showPlanList());
         commandHandlerHashMap.put(Command.Show.STATUS, (event) -> showStatus());
         commandHandlerHashMap.put(Command.Show.INFORMATION, (event) -> showMigrationParameters());
@@ -809,6 +704,73 @@ public class PortalControl {
     }
 
     /**
+     * Init tools config parameters table.
+     */
+    public static void initToolsConfigParametersTable() {
+        String kafkaPath = toolsConfigParametersTable.get(Debezium.Kafka.PATH);
+        String confluentPath = toolsConfigParametersTable.get(Debezium.Confluent.PATH);
+        String workPath = PortalControl.portalWorkSpacePath;
+        String workConfigDebeziumPath = PortalControl.portalWorkSpacePath + "config" + File.separator + "debezium" + File.separator;
+        String workConfigDataCheckPath = PortalControl.portalWorkSpacePath + "config" + File.separator + "datacheck" + File.separator;
+        String portalPath = PortalControl.portalControlPath;
+        toolsConfigParametersTable.put(Debezium.Zookeeper.CONFIG_PATH, kafkaPath + "config" + File.separator + "zookeeper.properties");
+        toolsConfigParametersTable.put(Debezium.Kafka.CONFIG_PATH, kafkaPath + "config" + File.separator + "server.properties");
+        toolsConfigParametersTable.put(Debezium.Registry.CONFIG_PATH, confluentPath + "etc" + File.separator + "schema-registry" + File.separator + "schema-registry.properties");
+        toolsConfigParametersTable.put(Debezium.Zookeeper.TMP_PATH, portalPath + "tmp" + File.separator + "zookeeper");
+        toolsConfigParametersTable.put(Debezium.Kafka.TMP_PATH, portalPath + "tmp" + File.separator + "kafka-logs");
+        toolsConfigParametersTable.put(Debezium.Confluent.CONFIG_PATH, confluentPath + "etc" + File.separator + "schema-registry" + File.separator + "schema-registry.properties");
+        toolsConfigParametersTable.put(Debezium.CONFIG_PATH, workPath + "config" + File.separator + "debezium" + File.separator);
+        toolsConfigParametersTable.put(Debezium.LOG_PATH, workPath + "logs" + File.separator + "debezium" + File.separator);
+        toolsConfigParametersTable.put(Debezium.Connector.CONFIG_PATH, workConfigDebeziumPath + "connect-avro-standalone.properties");
+        toolsConfigParametersTable.put(Debezium.Source.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-sink.properties");
+        toolsConfigParametersTable.put(Debezium.Source.REVERSE_CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-reverse-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-reverse-sink.properties");
+        toolsConfigParametersTable.put(Debezium.Source.INCREMENTAL_CONFIG_PATH, workConfigDebeziumPath + "mysql-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.INCREMENTAL_CONFIG_PATH, workConfigDebeziumPath + "mysql-sink.properties");
+        toolsConfigParametersTable.put(Debezium.Source.REVERSE_CONFIG_PATH, workConfigDebeziumPath + "opengauss-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_CONFIG_PATH, workConfigDebeziumPath + "opengauss-sink.properties");
+        toolsConfigParametersTable.put(Check.CONFIG_PATH, workConfigDataCheckPath + "application.yml");
+        toolsConfigParametersTable.put(Check.Source.CONFIG_PATH, workConfigDataCheckPath + "application-source.yml");
+        toolsConfigParametersTable.put(Check.Sink.CONFIG_PATH, workConfigDataCheckPath + "application-sink.yml");
+        toolsConfigParametersTable.put(Check.LOG_PATTERN_PATH, workConfigDataCheckPath + "log4j2.xml");
+        toolsConfigParametersTable.put(Check.Source.LOG_PATTERN_PATH, workConfigDataCheckPath + "log4j2source.xml");
+        toolsConfigParametersTable.put(Check.Sink.LOG_PATTERN_PATH, workConfigDataCheckPath + "log4j2sink.xml");
+        String statusFolder = workPath + "status" + File.separator;
+        toolsConfigParametersTable.put(Status.FOLDER, statusFolder);
+        toolsConfigParametersTable.put(Status.INCREMENTAL_FOLDER, statusFolder + "incremental" + File.separator);
+        toolsConfigParametersTable.put(Status.REVERSE_FOLDER, statusFolder + "reverse" + File.separator);
+        toolsConfigParametersTable.put(Status.PORTAL_PATH, statusFolder + "portal.txt");
+        toolsConfigParametersTable.put(Status.FULL_PATH, statusFolder + "full_migration.txt");
+        toolsConfigParametersTable.put(Status.INCREMENTAL_PATH, statusFolder + "incremental_migration.txt");
+        toolsConfigParametersTable.put(Status.REVERSE_PATH, statusFolder + "reverse_migration.txt");
+        toolsConfigParametersTable.put(Status.XLOG_PATH, statusFolder + "xlog.txt");
+        String checkLogFolder = workPath + "logs" + File.separator + "datacheck" + File.separator;
+        toolsConfigParametersTable.put(Check.LOG_FOLDER, checkLogFolder);
+        toolsConfigParametersTable.put(Check.LOG_PATH, checkLogFolder + "check.log");
+        toolsConfigParametersTable.put(Check.Source.LOG_PATH, checkLogFolder + "source.log");
+        toolsConfigParametersTable.put(Check.Sink.LOG_PATH, checkLogFolder + "sink.log");
+        toolsConfigParametersTable.put(Check.Result.FULL, workPath + "check_result" + File.separator);
+        toolsConfigParametersTable.put(Check.Result.INCREMENTAL, workPath + "check_result" + File.separator + "incremental" + File.separator);
+        toolsConfigParametersTable.put(Check.Result.REVERSE, workPath + "check_result" + File.separator + "reverse" + File.separator);
+        toolsConfigParametersTable.put(Debezium.Connector.LOG_PATTERN_PATH, confluentPath + "etc" + File.separator + "kafka" + File.separator + "connect-log4j.properties");
+        String venvPath = toolsConfigParametersTable.get(Chameleon.VENV_PATH);
+        toolsConfigParametersTable.put(Chameleon.RUNNABLE_FILE_PATH, venvPath + "venv" + File.separator + "bin" + File.separator + "chameleon");
+        toolsConfigParametersTable.put(Chameleon.CONFIG_PATH, workPath + "config" + File.separator + "chameleon" + File.separator + "default_" + workspaceId + ".yml");
+        toolsConfigParametersTable.put(Chameleon.LOG_PATH, workPath + "logs" + File.separator + "full_migration.log");
+        toolsConfigParametersTable.put(Parameter.INPUT_ORDER_PATH, workPath + "config" + File.separator + "input");
+        String workLogDebeziumPath = workPath + "log" + File.separator + "debezium" + File.separator;
+        toolsConfigParametersTable.put(Debezium.Zookeeper.LOG_PATH, workLogDebeziumPath + "server.log");
+        toolsConfigParametersTable.put(Debezium.Kafka.LOG_PATH, workLogDebeziumPath + "server.log");
+        toolsConfigParametersTable.put(Debezium.Registry.LOG_PATH, workLogDebeziumPath + "schema-registry.log");
+        toolsConfigParametersTable.put(Debezium.Source.LOG_PATH, workLogDebeziumPath + "connect_source.log");
+        toolsConfigParametersTable.put(Debezium.Sink.LOG_PATH, workLogDebeziumPath + "connect_sink.log");
+        toolsConfigParametersTable.put(Debezium.Source.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_source.log");
+        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_sink.log");
+        toolsConfigParametersTable.put(Parameter.ERROR_PATH, workPath + "logs" + File.separator + "error.log");
+    }
+
+    /**
      * Interface eventHandler.There is only one method.Use the method to execute the method in the lambda expression.
      */
     public interface EventHandler {
@@ -818,5 +780,18 @@ public class PortalControl {
          * @param str the str
          */
         void handle(String str);
+    }
+
+    /**
+     * The interface Method runner.
+     */
+    public interface MethodRunner {
+        /**
+         * Handle.
+         *
+         * @param str the str
+         * @return the long
+         */
+        void runMethod(String str);
     }
 }

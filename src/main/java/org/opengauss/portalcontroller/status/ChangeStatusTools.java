@@ -8,6 +8,7 @@ import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
+import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +61,8 @@ public class ChangeStatusTools {
                 index++;
                 iterator.next();
             }
-            boolean isFullCheck = PortalControl.status < Status.START_INCREMENTAL_MIGRATION && PortalControl.status > Status.FULL_MIGRATION_FINISHED;
-            if (new File(PortalControl.portalWorkSpacePath + "check_result/result").exists() && isFullCheck) {
+            boolean isFullCheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
+            if (new File(PortalControl.portalWorkSpacePath + "check_result" + File.separator + "result").exists() && isFullCheck) {
                 tableStatusList = getDatacheckTableStatus(tableStatusList);
             }
         }
@@ -75,8 +76,9 @@ public class ChangeStatusTools {
      * @return the datacheck table status
      */
     public static ArrayList<TableStatus> getDatacheckTableStatus(ArrayList<TableStatus> tableStatusArrayList) {
-        String successPath = PortalControl.portalWorkSpacePath + "check_result/result/success.log";
-        tableStatusArrayList = getDatacheckTableStatus(successPath, tableStatusArrayList);
+        String successPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result" + File.separator + "success.log";
+        String failPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result" + File.separator + "failed.log";
+        tableStatusArrayList = getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
         return tableStatusArrayList;
     }
 
@@ -160,7 +162,7 @@ public class ChangeStatusTools {
         }
         ThreadStatusController.fullMigrationStatus = tempFullMigrationStatus;
         fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.fullMigrationStatus);
-        Tools.writeFile(fullMigrationStatusString, new File(PortalControl.portalWorkSpacePath + "status/full_migration.txt"), false);
+        Tools.writeFile(fullMigrationStatusString, new File(PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH)), false);
     }
 
     /**
@@ -220,7 +222,7 @@ public class ChangeStatusTools {
      */
     public static void writePortalStatus() {
         try {
-            FileWriter fw = new FileWriter(new File(PortalControl.portalWorkSpacePath + "status/portal.txt"));
+            FileWriter fw = new FileWriter(PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH));
             PortalStatusWriter portalStatusWriter;
             if (PortalControl.status == Status.ERROR) {
                 portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(), PortalControl.errorMsg);
@@ -233,7 +235,7 @@ public class ChangeStatusTools {
             fw.flush();
             fw.close();
         } catch (IOException e) {
-            LOGGER.error("IOException occurred in writing file " + PortalControl.portalWorkSpacePath + "status/portal.txt" + ".");
+            LOGGER.error(e.getMessage());
         }
     }
 
@@ -242,7 +244,7 @@ public class ChangeStatusTools {
      */
     public static void outputChameleonTableStatus() {
         LOGGER.info("Table:");
-        String path = PortalControl.portalWorkSpacePath + "status/full_migration.txt";
+        String path = PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH);
         ArrayList<TableStatus> tableStatusArrayList = getChameleonTableStatus(path);
         for (TableStatus tableStatus : tableStatusArrayList) {
             LOGGER.info("Name: " + tableStatus.getName() + ", percent: " + tableStatus.getPercent() + ", status: " + Status.Object.HASHTABLE.get(tableStatus.getStatus()));
@@ -257,7 +259,7 @@ public class ChangeStatusTools {
     public static void outputChameleonObjectStatus(String name) {
         name = name.substring(0, 1).toUpperCase() + name.substring(1);
         LOGGER.info(name + ":");
-        String path = PortalControl.portalWorkSpacePath + "status/full_migration.txt";
+        String path = PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH);
         File file = new File(path);
         ArrayList<ObjectStatus> tableStatusArrayList = getChameleonObjectStatus(name, file);
         for (ObjectStatus objectStatus : tableStatusArrayList) {
@@ -312,7 +314,7 @@ public class ChangeStatusTools {
      */
     public static int getPortalStatus(ThreadStatusController threadStatusController) {
         int status = 0;
-        String str = Tools.readFile(new File(PortalControl.portalWorkSpacePath + "status/portal.txt"));
+        String str = Tools.readFile(new File(PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH)));
         JSONArray array = JSONArray.parseArray(str);
         Iterator iterator = array.iterator();
         int index = 0;
@@ -327,15 +329,16 @@ public class ChangeStatusTools {
     /**
      * Gets datacheck table status.
      *
-     * @param path                 the path
+     * @param successPath          the path
      * @param tableStatusArrayList the table status array list
+     * @param failPath             the fail path
      * @return the datacheck table status
      */
-    public static ArrayList<TableStatus> getDatacheckTableStatus(String path, ArrayList<TableStatus> tableStatusArrayList) {
-        String str = Tools.readFile(new File(path));
-        if (!str.equals("")) {
-            str = "[" + str.substring(0, str.length() - 1) + "]";
-            JSONArray array = JSONArray.parseArray(str);
+    public static ArrayList<TableStatus> getDatacheckTableStatus(String successPath, ArrayList<TableStatus> tableStatusArrayList, String failPath) {
+        String successStr = Tools.readFile(new File(successPath));
+        if (!successStr.equals("")) {
+            successStr = "[" + successStr.substring(0, successStr.length() - 1) + "]";
+            JSONArray array = JSONArray.parseArray(successStr);
             Iterator iterator = array.iterator();
             int index = 0;
             while (iterator.hasNext()) {
@@ -344,6 +347,29 @@ public class ChangeStatusTools {
                     if (tableStatus.getName().equals(tableName)) {
                         tableStatus.setPercent(1.0);
                         tableStatus.setStatus(Status.Object.FULL_MIGRATION_CHECK_FINISHED);
+                        break;
+                    }
+                }
+                index++;
+                iterator.next();
+            }
+        }
+        String failStr = Tools.readFile(new File(failPath));
+        if (!failStr.equals("")) {
+            failStr = "[" + failStr.substring(0, failStr.length() - 1) + "]";
+            JSONArray array = JSONArray.parseArray(failStr);
+            Iterator iterator = array.iterator();
+            int index = 0;
+            while (iterator.hasNext()) {
+                String tableName = array.getJSONObject(index).getString("tableName");
+                for (TableStatus tableStatus : tableStatusArrayList) {
+                    if (tableStatus.getName().equals(tableName)) {
+                        tableStatus.setPercent(0.0);
+                        tableStatus.setStatus(Status.Object.ERROR);
+                        String errorMsg = array.getJSONObject(index).getString("message");
+                        errorMsg += "If you want to repair data.please read the following files:";
+                        errorMsg += "";
+                        tableStatus.setErrorMsg(errorMsg);
                         break;
                     }
                 }

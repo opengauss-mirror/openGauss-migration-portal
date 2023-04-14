@@ -1,7 +1,5 @@
 package org.opengauss.portalcontroller.check;
 
-import java.util.ArrayList;
-
 /**
  * The interface Check task.
  */

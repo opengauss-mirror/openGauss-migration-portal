@@ -3,12 +3,10 @@ package org.opengauss.portalcontroller.software;
 import org.opengauss.portalcontroller.InstallMigrationTools;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
-import org.opengauss.portalcontroller.Tools;
-import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.Parameter;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -19,7 +17,7 @@ public class ConnectorOpengauss implements Software {
     public ArrayList<String> initCriticalFileList() {
         String connectorPath = PortalControl.toolsConfigParametersTable.get(Debezium.Connector.PATH);
         ArrayList<String> connectorOpengaussList = new ArrayList<>();
-        connectorOpengaussList.add(connectorPath + "debezium-connector-opengauss/debezium-connector-opengauss-1.8.1.Final.jar");
+        connectorOpengaussList.add(connectorPath + "debezium-connector-opengauss" + File.separator + "debezium-connector-opengauss-1.8.1.Final.jar");
         return connectorOpengaussList;
     }
 

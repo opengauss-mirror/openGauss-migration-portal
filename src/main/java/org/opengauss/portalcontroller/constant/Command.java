@@ -74,30 +74,10 @@ public interface Command {
         String TYPE = "type";
         String MIGRATION_TYPE = "migration.type";
         String PARAMETER = "parameter";
-        String SKIP = "skip";
         String CHECK = "check";
         String ORDER = "order";
-        interface Default{
-            String ID = "1";
-            String PATH = "";
-            String ACTION = "";
-            String TYPE = "";
-            String MIGRATION_TYPE = "";
-            String PARAMETER = "";
-            String SKIP = "";
-            String CHECK = "";
-            String ORDER = "";
-        }
     }
-    interface Action{
-        String HELP = "help";
-        String SHOW = "show";
-        String STOP = "stop";
-        String INSTALL = "install";
-        String UNINSTALL = "uninstall";
-        String START = "start";
-    }
-
+    String HELP = "help";
     interface Run{
         String INCREMENTAL_MIGRATION = "run incremental migration";
         String REVERSE_MIGRATION = "run reverse migration";

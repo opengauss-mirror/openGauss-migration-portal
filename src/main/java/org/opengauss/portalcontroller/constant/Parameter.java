@@ -15,4 +15,6 @@ public interface Parameter {
     String CHECK_FULL = "Full migration datacheck";
     String CHECK_INCREMENTAL = "Incremental migration datacheck";
     String CHECK_REVERSE = "Reverse migration datacheck";
+    String ERROR_PATH = "error.path";
+    String INPUT_ORDER_PATH = "input.order.path";
 }

@@ -3,9 +3,7 @@ package org.opengauss.portalcontroller.software;
 import org.opengauss.portalcontroller.InstallMigrationTools;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
-import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Check;
-import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
 
 import java.util.ArrayList;

@@ -1,18 +1,14 @@
 package org.opengauss.portalcontroller;
 
-import org.opengauss.portalcontroller.constant.Status;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 
@@ -28,41 +24,51 @@ public class RuntimeExecTools {
      * @param command       Command to execute.
      * @param time          Time with unit milliseconds.If timeout,the process will exit.
      * @param errorFilePath the error file path
-     * @return the boolean
+     * @return the long
      */
-    public static boolean executeOrder(String command, int time, String errorFilePath) {
-        boolean timeOut = false;
+    public static long executeOrder(String command, int time, String errorFilePath) {
+        long pid = -1;
         ProcessBuilder processBuilder = new ProcessBuilder();
         String[] commands = command.split(" ");
         processBuilder.command(commands);
-        processBuilder.redirectError(new File(errorFilePath));
         try {
             Process process = processBuilder.start();
-            timeOut = process.waitFor(time, TimeUnit.MILLISECONDS);
-            Tools.outputFileString(PortalControl.portalControlPath + "logs/error.log");
+            process.waitFor(time, TimeUnit.MILLISECONDS);
+            String errorStr = getInputStreamString(process.getErrorStream());
+            if (!errorStr.equals("")) {
+                LOGGER.warn(command);
+                LOGGER.error(errorStr);
+            }
+            Tools.writeFile(errorStr, new File(errorFilePath), true);
         } catch (IOException e) {
             LOGGER.error("IO exception occurred in execute command " + command);
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted exception occurred in execute command " + command);
         }
-        return timeOut;
+        return pid;
     }
 
     /**
      * Execute order.
      *
-     * @param command        the command
-     * @param time           the time
-     * @param workDirectory  the work directory
-     * @param outputFilePath the output file path
+     * @param command           the command
+     * @param time              the time
+     * @param workDirectory     the work directory
+     * @param errorFilePath     the error file path
+     * @param shouldChangeOutput the change output or not
      */
-    public static void executeOrder(String command, int time, String workDirectory, String outputFilePath) {
+    public static void executeOrder(String command, int time, String workDirectory, String errorFilePath,
+                                    boolean shouldChangeOutput) {
         ProcessBuilder processBuilder = new ProcessBuilder();
         String[] commands = command.split(" ");
         processBuilder.directory(new File(workDirectory));
         processBuilder.command(commands);
-        processBuilder.redirectOutput(new File(outputFilePath));
-        processBuilder.redirectError(new File(PortalControl.portalWorkSpacePath + "logs/error.log"));
+        if (shouldChangeOutput) {
+            processBuilder.redirectErrorStream(true);
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
+        } else {
+            processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
+        }
         try {
             Process process = processBuilder.start();
             String errorStr = "";
@@ -78,23 +84,11 @@ public class RuntimeExecTools {
                 }
             } else {
                 process.waitFor(time, TimeUnit.MILLISECONDS);
-                errorStr = getInputStreamString(process.getErrorStream());
-                if (!errorStr.equals("")) {
-                    LOGGER.error(errorStr);
-                }
-                BufferedWriter bufferedErrorWriter = new BufferedWriter(new FileWriter(PortalControl.portalWorkSpacePath + "logs/error.log", true));
-                if (!errorStr.equals("")) {
-                    bufferedErrorWriter.write(errorStr);
-                    bufferedErrorWriter.flush();
-                }
-                bufferedErrorWriter.close();
             }
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in execute command " + command);
-            Thread.interrupted();
+            LOGGER.error(e.getMessage());
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted exception occurred in execute command " + command);
-            Thread.interrupted();
         }
     }
 
@@ -136,46 +130,9 @@ public class RuntimeExecTools {
         } catch (IOException e) {
             LOGGER.error("IO exception occurred in execute commands.");
             Tools.stopPortal();
-            Thread.interrupted();
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted exception occurred in execute commands.");
             Tools.stopPortal();
-            Thread.interrupted();
-        }
-    }
-
-
-    /**
-     * Execute order.
-     *
-     * @param cmdParts       the cmd parts
-     * @param time           the time
-     * @param workDirectory  the work directory
-     * @param outputFilePath the output file path
-     */
-    public static void executeOrder(String[] cmdParts, int time, String workDirectory, String outputFilePath) {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(cmdParts);
-        processBuilder.directory(new File(workDirectory));
-        processBuilder.redirectErrorStream(true);
-        processBuilder.redirectOutput(new File(outputFilePath));
-        try {
-            Process process = processBuilder.start();
-            if (time == 0) {
-                int retCode = process.waitFor();
-                if (retCode == 0) {
-                    LOGGER.info("Execute order finished.");
-                } else {
-                    LOGGER.error("Execute order failed.");
-                }
-            } else {
-                process.waitFor(time, TimeUnit.MILLISECONDS);
-            }
-
-        } catch (IOException e) {
-            LOGGER.error("IO exception occurred in execute commands.");
-        } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in execute commands.");
         }
     }
 
@@ -201,7 +158,7 @@ public class RuntimeExecTools {
             LOGGER.error("Directory " + path + packageName + " already exists.Please rename the directory.");
         } else {
             String command = "wget -c -P " + path + " " + url + " --no-check-certificate";
-            executeOrder(command, 600000, PortalControl.portalControlPath + "logs/error.log");
+            executeOrder(command, 600000, PortalControl.portalErrorPath);
             LOGGER.info("Download file " + url + " to " + path + " finished.");
         }
         return flag;
@@ -221,9 +178,9 @@ public class RuntimeExecTools {
             while ((str = br.readLine()) != null) {
                 sb.append(str + System.lineSeparator());
             }
+            br.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in get inputStream.");
-            Thread.interrupted();
+            LOGGER.error(e.getMessage());
         }
         return sb.toString();
     }
@@ -243,7 +200,7 @@ public class RuntimeExecTools {
             boolean exist = new File(newFilePath).exists();
             if (!exist || recovery) {
                 String command = "cp -R " + filePath + " " + directory;
-                executeOrder(command, 60000, PortalControl.portalWorkSpacePath + "logs/error.log");
+                executeOrder(command, 60000, PortalControl.portalErrorPath);
             }
         } else {
             LOGGER.error("File " + filePath + " not exist.");
@@ -279,11 +236,11 @@ public class RuntimeExecTools {
         }
         if (packagePath.endsWith(".zip")) {
             command = "unzip -q -o " + packagePath + " -d " + directory;
-            executeOrder(command, 900000, PortalControl.portalControlPath + "logs/error.log");
+            executeOrder(command, 900000, PortalControl.portalErrorPath);
             LOGGER.info("Unzip file finished.");
         } else if (packagePath.endsWith(".tar.gz") || packagePath.endsWith(".tgz")) {
             command = "tar -zxf " + packagePath + " -C " + directory;
-            executeOrder(command, 900000, PortalControl.portalControlPath + "logs/error.log");
+            executeOrder(command, 900000, PortalControl.portalErrorPath);
             LOGGER.info("Unzip file " + packagePath + " to " + directory + " finished.");
         } else {
             LOGGER.error("Error message: Invalid package type.");
@@ -299,11 +256,22 @@ public class RuntimeExecTools {
      */
     public static void rename(String oldName, String newName) {
         String command = "mv " + oldName + " " + newName;
-        executeOrder(command, 600000, PortalControl.portalWorkSpacePath + "logs/error.log");
+        if (new File(oldName).exists()) {
+            executeOrder(command, 600000, PortalControl.portalErrorPath);
+        }
         LOGGER.info("Rename file " + oldName + " to " + newName + " finished.");
     }
 
-    public static void copyFileStartWithWord(File file, String workDirectory, String criticalWord,String replaceWord, boolean recovery) {
+    /**
+     * Copy file start with word.
+     *
+     * @param file          the file
+     * @param workDirectory the work directory
+     * @param criticalWord  the critical word
+     * @param replaceWord   the replace word
+     * @param recovery      the recovery
+     */
+    public static void copyFileStartWithWord(File file, String workDirectory, String criticalWord, String replaceWord, boolean recovery) {
         if (file.getName().startsWith(criticalWord)) {
             RuntimeExecTools.copyFile(file.getAbsolutePath(), workDirectory + replaceWord, recovery);
         }
