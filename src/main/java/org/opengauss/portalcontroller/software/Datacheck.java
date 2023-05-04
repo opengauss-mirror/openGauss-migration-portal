@@ -5,6 +5,9 @@ import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.exception.PortalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -13,11 +16,15 @@ import java.util.Hashtable;
  * The type Datacheck.
  */
 public class Datacheck implements Software {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Datacheck.class);
+
     public ArrayList<String> initCriticalFileList() {
         ArrayList<String> datacheckList = new ArrayList<>();
         String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
-        datacheckList.add(datacheckPath + "datachecker-extract-0.0.1.jar");
-        datacheckList.add(datacheckPath + "datachecker-check-0.0.1.jar");
+        String datacheckExtractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
+        String datacheckCheckName = PortalControl.toolsConfigParametersTable.get(Check.CHECK_NAME);
+        datacheckList.add(datacheckPath + datacheckExtractName);
+        datacheckList.add(datacheckPath + datacheckCheckName);
         return datacheckList;
     }
 
@@ -32,7 +39,11 @@ public class Datacheck implements Software {
     }
 
     public void downloadPackage() {
-        RuntimeExecTools.download(Check.PKG_URL, Check.PKG_PATH);
+        try {
+            RuntimeExecTools.download(Check.PKG_URL, Check.PKG_PATH);
+        } catch (PortalException e) {
+            e.shutDownPortal(LOGGER);
+        }
     }
 
     @Override

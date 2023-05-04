@@ -1,12 +1,15 @@
 package org.opengauss.portalcontroller.software;
 
 import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.exception.PortalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -14,13 +17,15 @@ import java.util.Hashtable;
  * The type Confluent.
  */
 public class Confluent implements Software {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Confluent.class);
+
     public ArrayList<String> initCriticalFileList() {
         ArrayList<String> confluentList = new ArrayList<>();
         String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
-        confluentList.add(confluentPath + "bin" + File.separator + "schema-registry-start");
-        confluentList.add(confluentPath + "bin" + File.separator + "schema-registry-stop");
-        confluentList.add(confluentPath + "etc" + File.separator + "schema-registry" + File.separator + "schema-registry.properties");
-        confluentList.add(confluentPath + "bin" + File.separator + "connect-standalone");
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "schema-registry-start"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "schema-registry-stop"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry.properties"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "connect-standalone"));
         return confluentList;
     }
 
@@ -35,7 +40,11 @@ public class Confluent implements Software {
     }
 
     public void downloadPackage() {
-        RuntimeExecTools.download(Debezium.Confluent.PKG_URL, Debezium.PKG_PATH);
+        try {
+            RuntimeExecTools.download(Debezium.Confluent.PKG_URL, Debezium.PKG_PATH);
+        } catch (PortalException e) {
+            e.shutDownPortal(LOGGER);
+        }
     }
 
     @Override

@@ -19,11 +19,12 @@ import org.opengauss.portalcontroller.check.*;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
+import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,11 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /**
- * Plan.
- *
- * @author ：liutong
- * @date ：Created in 2022/12/24
- * @since ：1
+ * The type Plan.
  */
 public final class Plan {
     private static volatile Plan plan;
@@ -49,15 +46,11 @@ public final class Plan {
     private static volatile List<RunningTaskThread> runningTaskThreadsList = new CopyOnWriteArrayList<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Plan.class);
     private static String currentTask = "";
+
     /**
      * The constant workspaceId.
      */
     public static String workspaceId = "";
-    /**
-     * The constant workspacePath.
-     */
-    public static String workspacePath = "";
-
 
     /**
      * Sets workspace id.
@@ -69,40 +62,40 @@ public final class Plan {
     }
 
     /**
-     * Get currentTask.
+     * Gets current task.
      *
-     * @return String currentTask.
+     * @return the current task
      */
     public static String getCurrentTask() {
         return currentTask;
     }
 
     /**
-     * Set currentTask.
+     * Sets current task.
      *
-     * @param currentTask currentTask.
+     * @param currentTask the current task
      */
     public static void setCurrentTask(String currentTask) {
         Plan.currentTask = currentTask;
     }
 
     /**
-     * Hashmap to save string and the lambda expression.
+     * The constant taskHandlerHashMap.
      */
     public static HashMap<String, PortalControl.EventHandler> taskHandlerHashMap = new HashMap<>();
 
     /**
-     * Get running task list.
+     * The constant runningTaskList.
      */
     public static List<String> runningTaskList = new ArrayList<>();
 
     /**
-     * Boolean parameter express that the plan is runnable.
+     * The constant isPlanRunnable.
      */
     public static boolean isPlanRunnable = true;
 
     /**
-     * Boolean parameter express that the plan is stopping.
+     * The constant stopPlan.
      */
     public static boolean stopPlan = false;
 
@@ -139,7 +132,7 @@ public final class Plan {
     public static String slotName = "";
 
     /**
-     * Get a instance of class plan.
+     * Gets instance.
      *
      * @param workspaceID the workspace id
      * @return the instance
@@ -157,18 +150,18 @@ public final class Plan {
     }
 
     /**
-     * Get running threads list.
+     * Gets running task threads list.
      *
-     * @return runningTaskThreadsList running task threads list
+     * @return the running task threads list
      */
     public static List<RunningTaskThread> getRunningTaskThreadsList() {
         return runningTaskThreadsList;
     }
 
     /**
-     * Set running threads list.
+     * Sets running task threads list.
      *
-     * @param runningThreadList runningThreadList
+     * @param runningThreadList the running thread list
      */
     public static void setRunningTaskThreadsList(List<RunningTaskThread> runningThreadList) {
         Plan.runningTaskThreadsList = runningThreadList;
@@ -181,9 +174,9 @@ public final class Plan {
 
 
     /**
-     * Execute plan.
+     * Exec plan.
      *
-     * @param taskList The task list of the plan.
+     * @param taskList the task list
      */
     public void execPlan(List<String> taskList) {
         Task.initRunTaskHandlerHashMap();
@@ -256,7 +249,7 @@ public final class Plan {
     }
 
     /**
-     * Stop Plan.
+     * Stop plan threads.
      */
     public static void stopPlanThreads() {
         LOGGER.info("Stop plan.");
@@ -272,9 +265,9 @@ public final class Plan {
     }
 
     /**
-     * Check running threads whose pid of process changed.
+     * Check running threads boolean.
      *
-     * @return flag A boolean parameter express that threads are running.
+     * @return the boolean
      */
     public static boolean checkRunningThreads() {
         boolean flag = true;
@@ -325,39 +318,47 @@ public final class Plan {
      * @return the boolean
      */
     public static boolean createWorkspace(String workspaceId) {
-        String portIdFile = PortalControl.portalControlPath + "portal.portId.lock";
-        Tools.createFile(portIdFile, true);
-        PortalControl.portId = Tools.setPortId(portIdFile) % 100;
         boolean flag = true;
-        String path = PortalControl.portalControlPath + "workspace" + File.separator + workspaceId + File.separator;
-        Tools.createFile(path, false);
-        Tools.createFile(path + "tmp", false);
-        Tools.createFile(path + "logs", false);
-        workspacePath = path;
-        RuntimeExecTools.copyFile(PortalControl.portalControlPath + "config" + File.separator, path, false);
-        PortalControl.initHashTable();
-        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        Tools.createFile(hashtable.get(Status.FOLDER), false);
-        Tools.createFile(hashtable.get(Status.INCREMENTAL_FOLDER), false);
-        Tools.createFile(hashtable.get(Status.PORTAL_PATH), true);
-        Tools.createFile(hashtable.get(Status.FULL_PATH), true);
-        Tools.createFile(hashtable.get(Status.INCREMENTAL_PATH), true);
-        Tools.createFile(hashtable.get(Status.REVERSE_PATH), true);
-        Tools.createFile(hashtable.get(Debezium.LOG_PATH), false);
-        Tools.createFile(hashtable.get(Check.LOG_FOLDER), false);
-        String connectorStandaloneConfigPath = hashtable.get(Debezium.Connector.CONFIG_PATH);
-        Hashtable<String, String> table2 = new Hashtable<>();
-        table2.put("offset.storage.file.filename", PortalControl.portalWorkSpacePath + "tmp" + File.separator + "connect.offsets");
-        table2.put("plugin.path", "share/java, " + hashtable.get(Debezium.Connector.PATH));
-        Tools.changePropertiesParameters(table2, hashtable.get(Debezium.Connector.CONFIG_PATH));
-        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.CONNECTOR_PATH), false);
-        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.CONNECTOR_PATH), false);
-        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH), false);
-        RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH), false);
-        Tools.changeFile("/tmp/datacheck/logs", PortalControl.portalWorkSpacePath + File.separator + "logs" + File.separator + "datacheck", hashtable.get(Check.LOG_PATTERN_PATH));
-        Tools.changeFile("/tmp/datacheck/logs", PortalControl.portalWorkSpacePath + File.separator + "logs" + File.separator + "datacheck", hashtable.get(Check.Source.LOG_PATTERN_PATH));
-        Tools.changeFile("/tmp/datacheck/logs", PortalControl.portalWorkSpacePath + File.separator + "logs" + File.separator + "datacheck", hashtable.get(Check.Sink.LOG_PATTERN_PATH));
-        Tools.changeCommandLineParameters();
+        try {
+            WorkspacePath workspacePath = WorkspacePath.getInstance(PortalControl.portalControlPath, workspaceId);
+            String portIdFile = PortalControl.portalControlPath + "portal.portId.lock";
+            Tools.createFile(portIdFile, true);
+            PortalControl.portId = Tools.setPortId(portIdFile) % 100;
+            String path = workspacePath.getWorkspacePath();
+            Tools.createFile(workspacePath.getWorkspacePath(), false);
+            Tools.createFile(PathUtils.combainPath(false, path, "tmp"), false);
+            Tools.createFile(workspacePath.getWorkspaceLogPath(), false);
+            RuntimeExecTools.copyFile(PathUtils.combainPath(false, PortalControl.portalControlPath + "config"), path, false);
+            PortalControl.initHashTable();
+            Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+            Tools.createFile(hashtable.get(Status.FOLDER), false);
+            Tools.createFile(hashtable.get(Status.INCREMENTAL_FOLDER), false);
+            Tools.createFile(hashtable.get(Status.PORTAL_PATH), true);
+            Tools.createFile(hashtable.get(Status.FULL_PATH), true);
+            Tools.createFile(hashtable.get(Status.INCREMENTAL_PATH), true);
+            Tools.createFile(hashtable.get(Status.REVERSE_PATH), true);
+            Tools.createFile(hashtable.get(Debezium.LOG_PATH), false);
+            Tools.createFile(hashtable.get(Check.LOG_FOLDER), false);
+            String connectorStandaloneConfigPath = hashtable.get(Debezium.Connector.CONFIG_PATH);
+            Hashtable<String, String> table2 = new Hashtable<>();
+            table2.put("offset.storage.file.filename", PathUtils.combainPath(true, PortalControl.portalWorkSpacePath + "tmp", "connect.offsets"));
+            table2.put("plugin.path", "share/java, " + hashtable.get(Debezium.Connector.PATH));
+            Tools.changePropertiesParameters(table2, hashtable.get(Debezium.Connector.CONFIG_PATH));
+            RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.CONNECTOR_PATH), false);
+            RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.CONNECTOR_PATH), false);
+            RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH), false);
+            RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH), false);
+            String dataCheckLogPath = PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "datacheck");
+            Tools.changeFile("/tmp/datacheck/logs", dataCheckLogPath, hashtable.get(Check.LOG_PATTERN_PATH));
+            Tools.changeFile("/tmp/datacheck/logs", dataCheckLogPath, hashtable.get(Check.Source.LOG_PATTERN_PATH));
+            Tools.changeFile("/tmp/datacheck/logs", dataCheckLogPath, hashtable.get(Check.Sink.LOG_PATTERN_PATH));
+            Tools.changeCommandLineParameters();
+        } catch (PortalException e) {
+            e.setRequestInformation("Create workspace failed");
+            e.printLog(LOGGER);
+            flag = false;
+            Plan.stopPlan = true;
+        }
         return flag;
     }
 
@@ -396,20 +397,34 @@ public final class Plan {
      */
     public static void stopAllTasks() {
         Task task = new Task();
-        task.stopDataCheck();
-        Tools.sleepThread(100, "stopping the plan");
-        task.stopDataCheckSink();
-        Tools.sleepThread(100, "stopping the plan");
-        task.stopDataCheckSource();
-        Tools.sleepThread(100, "stopping the plan");
-        task.stopReverseKafkaConnectSink();
-        Tools.sleepThread(100, "stopping the plan");
-        task.stopReverseKafkaConnectSource();
-        Tools.sleepThread(100, "stopping the plan");
-        task.stopKafkaConnectSink();
-        Tools.sleepThread(100, "stopping the plan");
-        task.stopKafkaConnectSource();
-        Tools.sleepThread(100, "stopping the plan");
+        ArrayList<String> runArrayList = new ArrayList<>();
+        runArrayList.add(Method.Run.CHECK);
+        runArrayList.add(Method.Run.CHECK_SOURCE);
+        runArrayList.add(Method.Run.CHECK_SINK);
+        runArrayList.add(Method.Run.REVERSE_CONNECT_SOURCE);
+        runArrayList.add(Method.Run.REVERSE_CONNECT_SINK);
+        runArrayList.add(Method.Run.CONNECT_SOURCE);
+        runArrayList.add(Method.Run.CONNECT_SINK);
+        boolean flag = true;
+        for (String runName : runArrayList) {
+            Task.stopTaskMethod(runName);
+        }
+        while (flag) {
+            flag = false;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                PortalException portalException = new PortalException("Interrupted exception", "stopping the plan", e.getMessage());
+                portalException.printLog(LOGGER);
+                return;
+            }
+            for (String runName : runArrayList) {
+                if (Tools.getRunningTaskPid(runName) != -1) {
+                    flag = true;
+                    break;
+                }
+            }
+        }
         task.stopKafkaSchema(PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH));
         Tools.sleepThread(1000, "stopping the plan");
         task.stopKafka(PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH));

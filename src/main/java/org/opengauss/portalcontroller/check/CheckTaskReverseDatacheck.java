@@ -33,9 +33,6 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         return flag;
     }
 
-    /**
-     * Install datacheck package.
-     */
     @Override
     public boolean installAllPackages() {
         CheckTask checkTask = new CheckTaskReverseDatacheck();
@@ -43,17 +40,11 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         return flag;
     }
 
-    /**
-     * Copy datacheck config files.
-     */
     @Override
     public void copyConfigFiles(String workspaceId) {
 
     }
 
-    /**
-     * Change datacheck parameters.
-     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;

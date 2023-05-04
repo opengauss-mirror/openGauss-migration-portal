@@ -11,6 +11,8 @@ public interface Check {
     String LOG_FOLDER = "datacheck.log.folder";
     String LOG_PATH = "datacheck.log.path";
     String LOG_PATTERN_PATH = "datacheck.log.pattern.path";
+    String EXTRACT_NAME = "datacheck.extract.jar.name";
+    String CHECK_NAME = "datacheck.check.jar.name";
 
     interface Parameters {
         String SCHEMA = "spring.extract.schema";

@@ -7,6 +7,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +32,6 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         return flag;
     }
 
-    /**
-     * Install incremental migration tools package.
-     */
     @Override
     public boolean installAllPackages() {
         CheckTask checkTask = new CheckTaskIncrementalMigration();
@@ -41,16 +39,10 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         return flag;
     }
 
-    /**
-     * Copy incremental migration tools files.
-     */
     public void copyConfigFiles(String workspaceId) {
 
     }
 
-    /**
-     * Change incremental migration tools parameters.
-     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
@@ -72,7 +64,13 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         Hashtable<String, String> hashtable2 = new Hashtable<>();
         hashtable2.put("name", "mysql-sink-" + workspaceId);
         hashtable2.put("topics", "mysql_server_" + workspaceId + "_topic");
-        Tools.createFile(incrementalFolder, false);
+        try {
+            Tools.createFile(incrementalFolder, false);
+        } catch (PortalException e) {
+            e.setRequestInformation("Create incremental migration folder status folder failed.Please ensure the config folder " + incrementalFolder + " is available");
+            e.shutDownPortal(LOGGER);
+            return;
+        }
         hashtable2.put("sink.process.file.path", incrementalFolder);
         hashtable2.put("xlog.location", hashtable.get(Status.XLOG_PATH));
         Tools.changePropertiesParameters(hashtable2, hashtable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
@@ -121,8 +119,8 @@ public class CheckTaskIncrementalMigration implements CheckTask {
 
     @Override
     public void checkEnd() {
-        LOGGER.info("Incremental migration is running...");
         while (!Plan.stopPlan && !Plan.stopIncrementalMigration && !PortalControl.taskList.contains("start mysql incremental migration datacheck")) {
+            LOGGER.info("Incremental migration is running...");
             Tools.sleepThread(1000, "running incremental migraiton");
         }
         if (Plan.stopIncrementalMigration) {

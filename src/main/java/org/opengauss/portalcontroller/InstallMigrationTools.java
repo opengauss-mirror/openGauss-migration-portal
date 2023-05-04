@@ -19,6 +19,7 @@ import org.opengauss.portalcontroller.check.CheckTaskIncrementalDatacheck;
 import org.opengauss.portalcontroller.check.CheckTaskIncrementalMigration;
 import org.opengauss.portalcontroller.check.CheckTaskMysqlFullMigration;
 import org.opengauss.portalcontroller.constant.*;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +28,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 
 /**
- * Install migration tools.
- *
- * @author ：liutong
- * @date ：Created in 2022/12/24
- * @since ：1
+ * The type Install migration tools.
  */
 public class InstallMigrationTools {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstallMigrationTools.class);
@@ -62,47 +59,52 @@ public class InstallMigrationTools {
      * @return the boolean
      */
     public static boolean installSingleMigrationTool(Software software, boolean download) {
-        boolean flag = true;
-        ArrayList<String> criticalFileList = software.initCriticalFileList();
-        Hashtable<String, String> initParameterHashtable = software.initParameterHashtable();
-        String installPath = initParameterHashtable.get(Parameter.INSTALL_PATH);
-        String path = initParameterHashtable.get(Parameter.PATH);
-        String pkgName = initParameterHashtable.get(Parameter.PKG_NAME);
-        String pkgUrl = initParameterHashtable.get(Parameter.PKG_URL);
-        String pkgPath = initParameterHashtable.get(Parameter.PKG_PATH);
-        if (download) {
-            flag = RuntimeExecTools.download(pkgUrl, pkgPath);
-            Tools.outputResult(flag, "Download " + pkgUrl);
+        try {
+            boolean flag = true;
+            ArrayList<String> criticalFileList = software.initCriticalFileList();
+            Hashtable<String, String> initParameterHashtable = software.initParameterHashtable();
+            String installPath = initParameterHashtable.get(Parameter.INSTALL_PATH);
+            String path = initParameterHashtable.get(Parameter.PATH);
+            String pkgName = initParameterHashtable.get(Parameter.PKG_NAME);
+            String pkgUrl = initParameterHashtable.get(Parameter.PKG_URL);
+            String pkgPath = initParameterHashtable.get(Parameter.PKG_PATH);
+            if (download) {
+                flag = RuntimeExecTools.download(pkgUrl, pkgPath);
+                Tools.outputResult(flag, "Download " + pkgUrl);
+            }
+            flag = Tools.installPackage(criticalFileList, pkgPath, pkgName, PortalControl.toolsConfigParametersTable.get(installPath), path);
+            Tools.outputResult(flag, "Install " + PortalControl.toolsConfigParametersTable.get(pkgName));
+            return flag;
+        } catch (PortalException e) {
+            e.shutDownPortal(LOGGER);
+            return false;
         }
-        flag = Tools.installPackage(criticalFileList, pkgPath, pkgName, PortalControl.toolsConfigParametersTable.get(installPath), path);
-        Tools.outputResult(flag, "Install " + PortalControl.toolsConfigParametersTable.get(pkgName));
-        return flag;
     }
 
     /**
      * Install single migration tool boolean.
      *
-     * @param checkTask        the check task
-     * @param installParameter the install parameter
+     * @param checkTask             the check task
+     * @param installationParameter the installation parameter
      * @return the boolean
      */
-    public static boolean installSingleMigrationTool(CheckTask checkTask, String installParameter) {
+    public static boolean installSingleMigrationTool(CheckTask checkTask, String installationParameter) {
         boolean flag = true;
-        String installWay = PortalControl.toolsMigrationParametersTable.get(installParameter);
+        String installWay = PortalControl.toolsMigrationParametersTable.get(installationParameter);
         if (installWay.equals("online")) {
             flag = checkTask.installAllPackages(true);
         } else if (installWay.equals("offline")) {
             flag = checkTask.installAllPackages(false);
         } else {
             flag = false;
-            LOGGER.error("Error message: Please check " + installParameter + " in migrationConfig.properties.This property must be online or offline.");
+            LOGGER.error("Error message: Please check " + installationParameter + " in migrationConfig.properties.This property must be online or offline.");
         }
         return flag;
     }
 
 
     /**
-     * Install migration tools.
+     * Install all migration tools.
      *
      * @param checkTasks the check tasks
      */
@@ -141,8 +143,13 @@ public class InstallMigrationTools {
      * @param errorPath the error path
      */
     public static void removeSingleMigrationToolFiles(ArrayList<String> filePaths, String errorPath) {
-        for (String path : filePaths) {
-            RuntimeExecTools.removeFile(path, errorPath);
+        try {
+            for (String path : filePaths) {
+                RuntimeExecTools.removeFile(path, errorPath);
+            }
+        } catch (PortalException e) {
+            e.setRequestInformation("Cannot remove files.Uninstall migration tool failed");
+            e.printLog(LOGGER);
         }
     }
 

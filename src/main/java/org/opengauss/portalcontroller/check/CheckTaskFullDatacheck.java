@@ -36,9 +36,6 @@ public class CheckTaskFullDatacheck implements CheckTask {
         this.workspaceId = workspaceId;
     }
 
-    /**
-     * Install datacheck package.
-     */
     @Override
     public boolean installAllPackages(boolean download) {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
@@ -55,9 +52,6 @@ public class CheckTaskFullDatacheck implements CheckTask {
         return flag;
     }
 
-    /**
-     * Copy datacheck config files.
-     */
     @Override
     public void copyConfigFiles(String workspaceId) {
     }
@@ -67,9 +61,6 @@ public class CheckTaskFullDatacheck implements CheckTask {
 
     }
 
-    /**
-     * Change datacheck parameters.
-     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;

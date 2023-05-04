@@ -5,7 +5,8 @@ public interface Debezium {
     String PKG_PATH = "debezium.pkg.path";
     String CONFIG_PATH = "debezium.config.path";
     String LOG_PATH = "debezium.log.path";
-    interface Zookeeper{
+
+    interface Zookeeper {
         String PATH = "zookeeper.path";
         String CONFIG_PATH = "zookeeper.config.path";
         String TMP_PATH = "zookeeper.tmp.path";
@@ -22,7 +23,7 @@ public interface Debezium {
         String LOG_PATH = "kafka.log.path";
     }
 
-    interface Registry{
+    interface Registry {
         String LOG_PATH = "registry.log.path";
         String CONFIG_PATH = "registry.config.path";
     }
@@ -34,6 +35,7 @@ public interface Debezium {
         String PKG_NAME = "confluent.pkg.name";
         String CONFIG_PATH = "kafka.confluent.path";
     }
+
     interface Connector {
         String MYSQL_NAME = "connectorMysql";
         String OPENGAUSS_NAME = "connectorOpengauss";
@@ -43,10 +45,13 @@ public interface Debezium {
         String CONFIG_PATH = "connector.standalone.path";
         String MYSQL_PKG_URL = "connector.mysql.pkg.url";
         String MYSQL_PKG_NAME = "connector.mysql.pkg.name";
+        String MYSQL_JAR_NAME = "connector.mysql.jar.name";
         String OPENGAUSS_PKG_URL = "connector.opengauss.pkg.url";
         String OPENGAUSS_PKG_NAME = "connector.opengauss.pkg.name";
+        String OPENGAUSS_JAR_NAME = "connector.opengauss.jar.name";
         String LOG_PATTERN_PATH = "connector.log.pattern.path";
     }
+
     interface Source {
         String HOST = "database.hostname";
         String PORT = "database.port";
@@ -61,6 +66,7 @@ public interface Debezium {
         String LOG_PATH = "source.log.path";
         String REVERSE_LOG_PATH = "source.reverse.log.path";
     }
+
     interface Sink {
         interface Mysql {
             String USER = "mysql.username";
@@ -75,6 +81,7 @@ public interface Debezium {
             String PASSWORD = "opengauss.password";
             String URL = "opengauss.url";
         }
+
         String SCHEMA_MAPPING = "schema.mappings";
         String CONNECTOR_PATH = "sink.incremental.connector.path";
         String REVERSE_CONNECTOR_PATH = "sink.reverse.connector.path";

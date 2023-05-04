@@ -9,6 +9,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Kafka;
@@ -16,7 +17,6 @@ import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -48,9 +48,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         this.workspaceId = workspaceId;
     }
 
-    /**
-     * Install datacheck package.
-     */
     @Override
     public boolean installAllPackages(boolean download) {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
@@ -68,9 +65,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         return flag;
     }
 
-    /**
-     * Copy datacheck config files.
-     */
     @Override
     public void copyConfigFiles(String workspaceId) {
 
@@ -85,9 +79,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         changeParameters(workspaceId);
     }
 
-    /**
-     * Change datacheck parameters.
-     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
@@ -97,7 +88,7 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
         kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
         Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
-        Tools.changeSinglePropertiesParameter("offset.storage.file.filename", PortalControl.portalControlPath + "tmp" + File.separator + "connect.offsets", hashtable.get(Debezium.Connector.CONFIG_PATH));
+        Tools.changeSinglePropertiesParameter("offset.storage.file.filename", PathUtils.combainPath(true, PortalControl.portalControlPath + "tmp", "connect.offsets"), hashtable.get(Debezium.Connector.CONFIG_PATH));
         Tools.changeMigrationDatacheckParameters(PortalControl.toolsMigrationParametersTable);
         Tools.changeSingleYmlParameter("data.check.data-path", hashtable.get(Check.Result.INCREMENTAL), hashtable.get(Check.CONFIG_PATH));
         Tools.changeSingleYmlParameter("spring.extract.debezium-enable", true, hashtable.get(Check.Source.CONFIG_PATH));
@@ -116,25 +107,9 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         checkEnd();
     }
 
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        flag = flag1 && flag2;
-        boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REGISTRY)) != -1;
-        flag = flag && flag3;
-        return flag;
-    }
-
     public void checkEnd() {
-        LOGGER.info("Incremental migration is running...");
         while (!Plan.stopPlan && !Plan.stopIncrementalMigration) {
+            LOGGER.info("Incremental migration is running...");
             if (!Tools.outputDatacheckStatus(Parameter.CHECK_INCREMENTAL)) {
                 break;
             }
@@ -154,7 +129,10 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
                     JdbcTools.createLogicalReplicationSlot(conn, slotName);
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.error(e.getMessage());
+                    PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
+                    portalException.setRequestInformation("Create slot failed.");
+                    PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                    portalException.printLog(LOGGER);
                 }
             }
             Task.stopTaskMethod(Method.Run.CHECK);

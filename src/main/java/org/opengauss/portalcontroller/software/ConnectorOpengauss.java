@@ -1,12 +1,15 @@
 package org.opengauss.portalcontroller.software;
 
 import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.exception.PortalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -14,10 +17,13 @@ import java.util.Hashtable;
  * The type Connector opengauss.
  */
 public class ConnectorOpengauss implements Software {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectorOpengauss.class);
+
     public ArrayList<String> initCriticalFileList() {
         String connectorPath = PortalControl.toolsConfigParametersTable.get(Debezium.Connector.PATH);
         ArrayList<String> connectorOpengaussList = new ArrayList<>();
-        connectorOpengaussList.add(connectorPath + "debezium-connector-opengauss" + File.separator + "debezium-connector-opengauss-1.8.1.Final.jar");
+        String jarName = PortalControl.toolsConfigParametersTable.get(Debezium.Connector.OPENGAUSS_JAR_NAME);
+        connectorOpengaussList.add(PathUtils.combainPath(true, connectorPath + "debezium-connector-opengauss", jarName));
         return connectorOpengaussList;
     }
 
@@ -32,7 +38,11 @@ public class ConnectorOpengauss implements Software {
     }
 
     public void downloadPackage() {
-        RuntimeExecTools.download(Debezium.Connector.OPENGAUSS_PKG_URL, Debezium.Connector.OPENGAUSS_PKG_NAME);
+        try {
+            RuntimeExecTools.download(Debezium.Connector.OPENGAUSS_PKG_URL, Debezium.Connector.OPENGAUSS_PKG_NAME);
+        } catch (PortalException e) {
+            e.shutDownPortal(LOGGER);
+        }
     }
 
     @Override

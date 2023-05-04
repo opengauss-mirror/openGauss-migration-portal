@@ -1,5 +1,7 @@
 package org.opengauss.portalcontroller.check;
 
+import org.opengauss.portalcontroller.exception.PortalException;
+
 /**
  * The interface Check task.
  */
@@ -24,15 +26,17 @@ public interface CheckTask {
      * Change parameters.
      *
      * @param workspaceId the workspace id
+     * @throws PortalException the portal exception
      */
-    void changeParameters(String workspaceId);
+    void changeParameters(String workspaceId) throws PortalException;
 
     /**
      * Copy config files.
      *
      * @param workspaceId the workspace id
+     * @throws PortalException the portal exception
      */
-    void copyConfigFiles(String workspaceId);
+    void copyConfigFiles(String workspaceId) throws PortalException;
 
     /**
      * Prepare work.

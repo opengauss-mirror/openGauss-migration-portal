@@ -4,12 +4,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +64,8 @@ public class ChangeStatusTools {
                 iterator.next();
             }
             boolean isFullCheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
-            if (new File(PortalControl.portalWorkSpacePath + "check_result" + File.separator + "result").exists() && isFullCheck) {
+            File checkResultFolder = new File(PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "check_result", "result"));
+            if (checkResultFolder.exists() && isFullCheck) {
                 tableStatusList = getDatacheckTableStatus(tableStatusList);
             }
         }
@@ -76,8 +79,8 @@ public class ChangeStatusTools {
      * @return the datacheck table status
      */
     public static ArrayList<TableStatus> getDatacheckTableStatus(ArrayList<TableStatus> tableStatusArrayList) {
-        String successPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result" + File.separator + "success.log";
-        String failPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result" + File.separator + "failed.log";
+        String successPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", "success.log");
+        String failPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", "failed.log");
         tableStatusArrayList = getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
         return tableStatusArrayList;
     }
@@ -235,7 +238,9 @@ public class ChangeStatusTools {
             fw.flush();
             fw.close();
         } catch (IOException e) {
-            LOGGER.error(e.getMessage());
+            PortalException portalException = new PortalException("IO exception","writing portal status",e.getMessage());
+            portalException.setRequestInformation("Write portal status failed");
+            portalException.shutDownPortal(LOGGER);
         }
     }
 
@@ -329,7 +334,7 @@ public class ChangeStatusTools {
     /**
      * Gets datacheck table status.
      *
-     * @param successPath          the path
+     * @param successPath          the success path
      * @param tableStatusArrayList the table status array list
      * @param failPath             the fail path
      * @return the datacheck table status

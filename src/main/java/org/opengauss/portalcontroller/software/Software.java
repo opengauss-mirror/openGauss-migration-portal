@@ -19,7 +19,7 @@ public interface Software {
      *
      * @return the hashtable
      */
-    Hashtable<String,String> initParameterHashtable();
+    Hashtable<String, String> initParameterHashtable();
 
     /**
      * Download package.

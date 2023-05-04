@@ -3,6 +3,7 @@ package org.opengauss.portalcontroller;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,22 +101,27 @@ public class JdbcTools {
     public static boolean selectGlobalVariables(PgConnection connection, String key, String defaultValue) {
         boolean flag = false;
         if (connection != null) {
-            String sql = "SHOW GLOBAL VARIABLES where Variable_name = '" + key + "';";
+            String sql = "show " + key + ";";
             try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 if (preparedStatement.execute()) {
                     try (ResultSet rs = preparedStatement.getResultSet()) {
                         rs.next();
-                        String value = rs.getString("Value");
+                        String value = rs.getString(key);
                         if (value.equals(defaultValue)) {
                             flag = true;
                         } else {
-                            LOGGER.error("If you want to use reverse migration,please alter system set " + key + " to "
-                                    + defaultValue + " and restart openGauss to make it work.");
+                            String reason = "If you want to use reverse migration,please alter system set " + key + " to "
+                                    + defaultValue + " and restart openGauss to make it work.";
+                            PortalControl.refuseReverseMigrationReason = reason;
+                            LOGGER.error(reason);
                         }
                     }
                 }
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
+                portalException.setRequestInformation("Select global variable " + key + " failed.");
+                PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                portalException.printLog(LOGGER);
             }
         }
         return flag;
@@ -144,12 +150,17 @@ public class JdbcTools {
                         if (versionNum >= 300) {
                             flag = true;
                         } else {
-                            LOGGER.error("Please upgrade openGauss to 3.0.0 or higher to use reverse migration.");
+                            String reason = "Please upgrade openGauss to 3.0.0 or higher to use reverse migration.";
+                            PortalControl.refuseReverseMigrationReason = reason;
+                            LOGGER.error(reason);
                         }
                     }
                 }
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                PortalException portalException = new PortalException("SQL exception", "select openGauss version", e.getMessage());
+                portalException.setRequestInformation("Select openGauss version failed.");
+                PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                portalException.printLog(LOGGER);
             }
         }
         return flag;

@@ -1,5 +1,6 @@
 package org.opengauss.portalcontroller.status;
 
+import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
@@ -7,6 +8,7 @@ import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,8 +88,8 @@ public class ThreadStatusController extends Thread {
                 }
             }
             if (PortalControl.status >= Status.START_REVERSE_MIGRATION && PortalControl.status != Status.ERROR) {
-                String sourceReverseStatusPath = toolsConfigHashtable.get(Status.REVERSE_FOLDER) + File.separator + "reverse-source-process.txt";
-                String sinkReverseStatusPath = toolsConfigHashtable.get(Status.REVERSE_FOLDER) + File.separator + "reverse-sink-process.txt";
+                String sourceReverseStatusPath = PathUtils.combainPath(true, toolsConfigHashtable.get(Status.REVERSE_FOLDER), "reverse-source-process.txt");
+                String sinkReverseStatusPath = PathUtils.combainPath(true, toolsConfigHashtable.get(Status.REVERSE_FOLDER), "reverse-sink-process.txt");
                 File directory = new File(toolsConfigHashtable.get(Status.REVERSE_FOLDER));
                 if (directory.exists() && directory.isDirectory()) {
                     for (File file : Objects.requireNonNull(directory.listFiles())) {
@@ -103,26 +105,31 @@ public class ThreadStatusController extends Thread {
                     time = ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath, reverseStatusPath, "count");
                 }
             }
-            String kafkaPath = PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH);
-            String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
-            Hashtable<String, String> hashtable = new Hashtable<>();
-            hashtable.put(kafkaPath + "logs" + File.separator + "server.log", toolsConfigHashtable.get(Debezium.LOG_PATH) + "server.log");
-            hashtable.put(confluentPath + "logs" + File.separator + "schema-registry.log", toolsConfigHashtable.get(Debezium.LOG_PATH) + "schema-registry.log");
-            for (String key : hashtable.keySet()) {
-                if (new File(key).exists()) {
-                    RuntimeExecTools.copyFile(key, hashtable.get(key), true);
+            try {
+                String kafkaPath = PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH);
+                String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
+                Hashtable<String, String> hashtable = new Hashtable<>();
+                hashtable.put(PathUtils.combainPath(true, kafkaPath + "logs", "server.log"), toolsConfigHashtable.get(Debezium.LOG_PATH) + "server.log");
+                hashtable.put(PathUtils.combainPath(true, confluentPath + "logs", "schema-registry.log"), toolsConfigHashtable.get(Debezium.LOG_PATH) + "schema-registry.log");
+                for (String key : hashtable.keySet()) {
+                    if (new File(key).exists()) {
+                        RuntimeExecTools.copyFile(key, hashtable.get(key), true);
+                    }
                 }
-            }
-            File logFile = new File(confluentPath + "logs");
-            if (logFile.exists() && logFile.isDirectory()) {
-                File[] logFileList = logFile.listFiles();
-                String workspaceDebeziumLogPath = toolsConfigHashtable.get(Debezium.LOG_PATH);
-                for (File file : logFileList) {
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_source.log", "connect_source.log", true);
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_sink.log", "connect_sink.log", true);
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_source.log", "reverse_connect_source.log", true);
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_sink.log", "reverse_connect_sink.log", true);
+                File logFile = new File(confluentPath + "logs");
+                if (logFile.exists() && logFile.isDirectory()) {
+                    File[] logFileList = logFile.listFiles();
+                    String workspaceDebeziumLogPath = toolsConfigHashtable.get(Debezium.LOG_PATH);
+                    for (File file : logFileList) {
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_source.log", "connect_source.log", true);
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_sink.log", "connect_sink.log", true);
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_source.log", "reverse_connect_source.log", true);
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_sink.log", "reverse_connect_sink.log", true);
+                    }
                 }
+            } catch (PortalException e) {
+                e.setRequestInformation("Cannot find logs.");
+                e.shutDownPortal(LOGGER);
             }
             if (1000 - time > 0) {
                 Tools.sleepThread(1000 - time, "writing the status");

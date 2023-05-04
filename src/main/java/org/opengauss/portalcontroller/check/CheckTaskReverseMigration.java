@@ -30,9 +30,6 @@ public class CheckTaskReverseMigration implements CheckTask {
         return flag;
     }
 
-    /**
-     * Install incremental migration tools package.
-     */
     @Override
     public boolean installAllPackages() {
         CheckTask checkTask = new CheckTaskReverseMigration();
@@ -40,16 +37,10 @@ public class CheckTaskReverseMigration implements CheckTask {
         return flag;
     }
 
-    /**
-     * Copy incremental migration tools files.
-     */
     public void copyConfigFiles(String workspaceId) {
 
     }
 
-    /**
-     * Change incremental migration tools parameters.
-     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
@@ -82,8 +73,14 @@ public class CheckTaskReverseMigration implements CheckTask {
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.START_REVERSE_MIGRATION;
         }
-        Tools.changeIncrementalMigrationParameters(PortalControl.toolsMigrationParametersTable);
         changeParameters(workspaceId);
+        if (!PortalControl.allowReverseMigration) {
+            LOGGER.error("Can not run reverse migration" + PortalControl.refuseReverseMigrationReason);
+            Plan.stopPlan = true;
+            PortalControl.status = Status.ERROR;
+            PortalControl.errorMsg = PortalControl.refuseReverseMigrationReason;
+            return;
+        }
         if (!checkNecessaryProcessExist()) {
             Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
             Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
@@ -101,13 +98,12 @@ public class CheckTaskReverseMigration implements CheckTask {
         int sourcePort = StartPort.REST_OPENGAUSS_SOURCE + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sourcePort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH));
-        String confluentPath = hashtable.get(Debezium.Confluent.PATH);
-        Tools.changeConnectXmlFile(workspaceId + "_reverse_source", confluentPath + "etc/kafka/connect-log4j.properties");
+        Tools.changeConnectXmlFile(workspaceId + "_reverse_source", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
         Task.startTaskMethod(Method.Run.REVERSE_CONNECT_SOURCE, 8000, "");
         int sinkPort = StartPort.REST_OPENGAUSS_SINK + PortalControl.portId * 10;
         int port2 = Tools.getAvailablePorts(sinkPort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port2), hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH));
-        Tools.changeConnectXmlFile(workspaceId + "_reverse_sink", confluentPath + "etc/kafka/connect-log4j.properties");
+        Tools.changeConnectXmlFile(workspaceId + "_reverse_sink", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
         Task.startTaskMethod(Method.Run.REVERSE_CONNECT_SINK, 8000, "");
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_REVERSE_MIGRATION;
