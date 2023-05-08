@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.portalcontroller.*;
@@ -19,84 +34,47 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskMysqlFullMigration.class);
 
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         if (download) {
-            try {
-                RuntimeExecTools.download(Chameleon.PKG_URL, Chameleon.PKG_PATH);
-            } catch (PortalException e) {
-                e.shutDownPortal(LOGGER);
-                return false;
-            }
+            RuntimeExecTools.download(Chameleon.PKG_URL, Chameleon.PKG_PATH);
         }
-        boolean flag = true;
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String chameleonVenvPath = hashtable.get(Chameleon.VENV_PATH);
         String chameleonPkgPath = Tools.getPackagePath(Chameleon.PKG_PATH, Chameleon.PKG_NAME);
         String chameleonRunnableFilePath = hashtable.get(Chameleon.RUNNABLE_FILE_PATH);
         String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath + "logs", "install_chameleon.log");
         String chameleonTestLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath + "logs", "test_chameleon.log");
-        try {
-            Tools.createFile(chameleonVenvPath, false);
-            RuntimeExecTools.executeOrder("python3 -m venv " + chameleonVenvPath + "venv", 3000, PortalControl.portalErrorPath);
-        } catch (PortalException e) {
-            e.setRequestInformation("Create virtual environment failed.Cannot install package to destination folder.");
-            e.shutDownPortal(LOGGER);
-            return false;
-        }
+        String createVenvCommand = "python3 -m venv " + chameleonVenvPath + "venv";
         String installExeucteFile = PathUtils.combainPath(true, chameleonVenvPath + "venv", "bin", "pip3");
         String installCommand = installExeucteFile + " install " + chameleonPkgPath;
         try {
+            Tools.createFile(chameleonVenvPath, false);
+            RuntimeExecTools.executeOrder(createVenvCommand, 3000, PortalControl.portalErrorPath);
             RuntimeExecTools.executeOrder(installCommand, 3000, PortalControl.portalControlPath, chameleonInstallLogPath, true);
         } catch (PortalException e) {
             e.setRequestInformation("Install package failed");
-            e.shutDownPortal(LOGGER);
-            return false;
+            throw e;
         }
-        File chameleonFile = new File(chameleonRunnableFilePath);
-        if (chameleonFile.exists()) {
-            LOGGER.info("Chameleon has been installed.If you want to update the chameleon.Please uninstall the chameleon first.");
-        } else {
-            LOGGER.info("Installing chameleon...");
-            while (true) {
-                Tools.sleepThread(1000, "waiting for process running");
-                if (Tools.getCommandPid(installCommand) == -1) {
-                    String chameleonVersion = chameleonRunnableFilePath + " --version";
-                    try {
-                        RuntimeExecTools.executeOrder(chameleonVersion, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true);
-                    } catch (PortalException e) {
-                        LOGGER.error("Check chameleon version failed.");
-                        Plan.stopPlan = true;
+        while (true) {
+            Tools.sleepThread(1000, "waiting for process running");
+            if (Tools.getCommandPid(installCommand) == -1) {
+                String chameleonVersion = chameleonRunnableFilePath + " --version";
+                RuntimeExecTools.executeOrder(chameleonVersion, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true);
+                if (Tools.readFile(new File(chameleonTestLogPath)).contains("chameleon")) {
+                    LOGGER.info("Install chameleon success.");
+                } else {
+                    PortalException portalException = new PortalException("Portal exception", "installing chameleon", "Install chameleon failed.");
+                    if (Tools.outputFileString(chameleonInstallLogPath).equals("")) {
+                        portalException.setRequestInformation("Please check pip download source.");
                     }
-                    if (Tools.readFile(new File(chameleonTestLogPath)).equals("")) {
-                        flag = false;
-                        LOGGER.error("Error message: Install chameleon failed.");
-                        if (Tools.outputFileString(chameleonInstallLogPath).equals("")) {
-                            LOGGER.warn("Please check pip download source.");
-                            LOGGER.warn("Or you can try to set pip download source to http://mirrors.aliyun.com/pypi/simple/");
-                        }
-                    } else {
-                        LOGGER.info("Install chameleon success.");
-                    }
-                    try {
-                        RuntimeExecTools.removeFile(chameleonTestLogPath, PortalControl.portalErrorPath);
-                    } catch (PortalException ignored) {
-                    }
-                    break;
+                    throw portalException;
                 }
+                RuntimeExecTools.removeFile(chameleonTestLogPath, PortalControl.portalErrorPath);
+                break;
             }
         }
-        return flag;
     }
 
-
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskMysqlFullMigration();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.FULL_MIGRATION);
-        return flag;
-    }
-
-    @Override
     public void copyConfigFiles(String workspaceId) throws PortalException {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String chameleonRunnableFilePath = hashtable.get(Chameleon.RUNNABLE_FILE_PATH);
@@ -116,10 +94,8 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             e.setRequestInformation("Copy config files failed");
             throw e;
         }
-
     }
 
-    @Override
     public void changeParameters(String workspaceId) throws PortalException {
         try {
             String chameleonConfigOldPath = PathUtils.combainPath(true, PortalControl.portalWorkSpacePath + "config", "chameleon", "config-example.yml");
@@ -133,7 +109,8 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         } catch (PortalException e) {
             e.setRequestInformation("Create folder failed");
             e.setRepairTips("ensure the config folder " + PortalControl.portalWorkSpacePath + " is available");
-            e.shutDownPortal(LOGGER);
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
             throw e;
         }
     }
@@ -148,7 +125,8 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             changeParameters(workspaceId);
             copyConfigFiles(workspaceId);
         } catch (PortalException e) {
-            e.shutDownPortal(LOGGER);
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
             return;
         }
         Task task = new Task();
@@ -164,8 +142,6 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             LOGGER.info("Mysql full migration is running.");
             PortalControl.status = Status.RUNNING_FULL_MIGRATION;
         }
-
-
     }
 
     @Override
@@ -223,7 +199,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             Tools.createFile(inputOrderPath, true);
         } catch (PortalException e) {
             e.setRequestInformation("Clean data failed");
-            e.printLog(LOGGER);
+            LOGGER.error(e.toString());
         }
         Tools.sleepThread(100, "clean data");
     }

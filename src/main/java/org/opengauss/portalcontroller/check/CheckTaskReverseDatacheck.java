@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.portalcontroller.*;
@@ -5,9 +20,9 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,31 +39,24 @@ public class CheckTaskReverseDatacheck implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskReverseDatacheck.class);
 
     @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new Datacheck());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.Check.DEFAULT);
     }
 
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskReverseDatacheck();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.CHECK);
-        return flag;
-    }
-
-    @Override
-    public void copyConfigFiles(String workspaceId) {
-
-    }
-
+    /**
+     * Change datacheck parameters.
+     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        String kafkaPath = hashtable.get(Debezium.Kafka.PATH);
         Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH), hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
         Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
         kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
@@ -67,7 +75,7 @@ public class CheckTaskReverseDatacheck implements CheckTask {
 
     @Override
     public void prepareWork(String workspaceId) {
-        runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
+        runningTaskList.add(Command.Start.Mysql.REVERSE_CHECK);
         Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
         Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
         Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
@@ -80,21 +88,6 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         Task.startTaskMethod(Method.Run.CHECK_SINK, 15000, "Started ExtractApplication in");
         Task.startTaskMethod(Method.Run.CHECK, 15000, "Started CheckApplication in");
         checkEnd();
-    }
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        flag = flag1 && flag2;
-        boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REGISTRY)) != -1;
-        flag = flag && flag3;
-        return flag;
     }
 
     public void checkEnd() {

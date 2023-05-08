@@ -12,6 +12,7 @@
  * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+
 package org.opengauss.portalcontroller;
 
 import org.opengauss.portalcontroller.check.CheckTaskFullDatacheck;
@@ -36,6 +37,11 @@ import java.util.Hashtable;
 import java.util.List;
 
 /**
+ * Task
+ *
+ * @author ：liutong
+ * @date ：Created in 2022/12/24
+ * @since ：1
  * The type Task.
  */
 public class Task {
@@ -212,7 +218,8 @@ public class Task {
                             if (Tools.readFileStartSign(logPath, startSign, timestamp)) {
                                 break;
                             }
-                        } catch (Exception e) {
+                        } catch (PortalException e) {
+                            LOGGER.error(e.toString());
                             break;
                         }
                     }
@@ -284,8 +291,8 @@ public class Task {
             RuntimeExecTools.executeOrder(chameleonOrder, 2000, chameleonVenvPath, logPath, true);
         } catch (PortalException e) {
             e.setRequestInformation("Start chameleon order " + order + " failed");
-            e.printLog(LOGGER);
-            Plan.stopPlan = true;
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
         }
 
     }
@@ -315,7 +322,8 @@ public class Task {
                 PortalException e = new PortalException("Process " + processString + " exit abnormally", "checking chameleon replica order", errMsg);
                 e.setRequestInformation("Run chameleon order " + order + " failed");
                 e.setRepairTips("read " + logPath + " or error.log to get detailed information");
-                e.shutDownPortal(LOGGER);
+                LOGGER.error(e.toString());
+                Tools.shutDownPortal(e.toString());
                 break;
             }
         }
@@ -417,7 +425,8 @@ public class Task {
         String connectConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.CONNECTOR_PATH);
         String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH);
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        String order = path + "bin/connect-standalone -daemon " + connectConfigPath + " " + sinkConfigPath;
+        String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
+        String order = executeFile + " -daemon " + connectConfigPath + " " + sinkConfigPath;
         RuntimeExecTools.executeStartOrder(order, 3000, "", errorPath, false, "Start mysql connector sink");
     }
 
@@ -491,7 +500,6 @@ public class Task {
         String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
         String order = "nohup java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + sinkConfigPath + " -jar " + path + extractName + " --sink > /dev/null &";
         RuntimeExecTools.executeStartOrder(order, 3000, datacheckPath, errorPath, false, "Start datacheck sink");
-
     }
 
     /**
@@ -617,9 +625,7 @@ public class Task {
             }
             String migrationOrder = taskList.get(taskList.indexOf(task) - 1);
             String datacheckType = task.replace(" datacheck", "");
-            if (!migrationOrder.equals(datacheckType)) {
-                return false;
-            }
+            return migrationOrder.equals(datacheckType);
         }
         return true;
     }

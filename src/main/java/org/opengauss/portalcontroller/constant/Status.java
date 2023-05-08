@@ -1,6 +1,5 @@
 package org.opengauss.portalcontroller.constant;
 
-import java.util.ArrayList;
 import java.util.Hashtable;
 
 public interface Status {

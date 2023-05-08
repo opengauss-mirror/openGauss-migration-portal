@@ -1,8 +1,19 @@
-package org.opengauss.portalcontroller.exception;
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
 
-import org.opengauss.portalcontroller.Plan;
-import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.constant.Status;
+package org.opengauss.portalcontroller.exception;
 
 /**
  * The type Portal exception.
@@ -13,7 +24,6 @@ public class PortalException extends Exception {
     private String processName;
     private String requestInformation;
     private String repairTips;
-
     /**
      * Gets standard exception type.
      *
@@ -112,9 +122,7 @@ public class PortalException extends Exception {
      * @param standardExceptionMessage the standard exception message
      */
     public PortalException(String standardExceptionType, String processName, String standardExceptionMessage) {
-        this.standardExceptionType = standardExceptionType;
-        this.standardExceptionMessage = standardExceptionMessage;
-        this.processName = processName;
+        this(standardExceptionType, processName, standardExceptionMessage, "", "");
     }
 
     /**
@@ -126,10 +134,7 @@ public class PortalException extends Exception {
      * @param requestInformation       the request information
      */
     public PortalException(String standardExceptionType, String processName, String standardExceptionMessage, String requestInformation) {
-        this.standardExceptionType = standardExceptionType;
-        this.standardExceptionMessage = standardExceptionMessage;
-        this.processName = processName;
-        this.requestInformation = requestInformation;
+        this(standardExceptionType, processName, standardExceptionMessage, requestInformation, "");
     }
 
     /**
@@ -154,7 +159,7 @@ public class PortalException extends Exception {
      *
      * @return the information
      */
-    public String getInformation() {
+    public String toString() {
         if (standardExceptionType.equals("")) {
             standardExceptionType = "Portal exception";
         }
@@ -167,29 +172,5 @@ public class PortalException extends Exception {
             information += ".";
         }
         return information;
-    }
-
-    /**
-     * Print log.
-     *
-     * @param LOGGER the logger
-     */
-    public void printLog(org.slf4j.Logger LOGGER) {
-        String[] parts = getInformation().split(System.lineSeparator());
-        for (String part : parts) {
-            LOGGER.error(part);
-        }
-    }
-
-    /**
-     * Shut down portal.
-     *
-     * @param LOGGER the logger
-     */
-    public void shutDownPortal(org.slf4j.Logger LOGGER) {
-        printLog(LOGGER);
-        Plan.stopPlan = true;
-        PortalControl.status = Status.ERROR;
-        PortalControl.errorMsg = getInformation();
     }
 }

@@ -1,11 +1,27 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.portalcontroller.*;
+import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,24 +37,16 @@ public class CheckTaskReverseMigration implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskReverseMigration.class);
 
     @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new ConnectorOpengauss());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
-    }
-
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskReverseMigration();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.REVERSE_MIGRATION);
-        return flag;
-    }
-
-    public void copyConfigFiles(String workspaceId) {
-
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.ReverseMigration.DEFAULT);
     }
 
     @Override
@@ -81,11 +89,9 @@ public class CheckTaskReverseMigration implements CheckTask {
             PortalControl.errorMsg = PortalControl.refuseReverseMigrationReason;
             return;
         }
-        if (!checkNecessaryProcessExist()) {
-            Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
-            Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-            Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
-        }
+        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
+        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
+        Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
     }
 
     @Override
@@ -117,27 +123,11 @@ public class CheckTaskReverseMigration implements CheckTask {
      * @return the boolean
      */
     public boolean checkAnotherConnectExists() {
-        boolean flag = false;
         boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SOURCE)) != -1;
         boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SINK)) != -1;
         boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SOURCE)) != -1;
         boolean flag4 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SINK)) != -1;
-        flag = flag1 || flag2 || flag3 || flag4;
-        return flag;
-    }
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REGISTRY)) != -1;
-        flag = flag1 && flag2 && flag3;
-        return flag;
+        return flag1 || flag2 || flag3 || flag4;
     }
 
     @Override

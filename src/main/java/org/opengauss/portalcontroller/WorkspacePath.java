@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller;
 
 import java.io.File;
@@ -10,10 +25,7 @@ public class WorkspacePath {
     private static final String WORKSPACE = "workspace";
     private static final String CONFIG = "config";
     private static final String LOGS = "logs";
-    private static final String TMP = "tmp";
-
     private static final String STATUS = "status";
-
     private String root;
     private String workspaceId;
 
@@ -23,7 +35,7 @@ public class WorkspacePath {
      * @param root        the root
      * @param workspaceid the workspaceid
      */
-    public WorkspacePath(String root, String workspaceid) {
+    private WorkspacePath(String root, String workspaceid) {
         this.root = root;
         this.workspaceId = workspaceid;
     }
@@ -81,5 +93,4 @@ public class WorkspacePath {
         }
         return workspacePath;
     }
-
 }

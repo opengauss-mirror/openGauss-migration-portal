@@ -2,7 +2,6 @@ package org.opengauss.portalcontroller.constant;
 
 public interface Default {
     interface Check{
-
         interface Sink{
             String QUERY_DOP = "8";
             String MIN_IDLE = "10";
@@ -11,7 +10,6 @@ public interface Default {
             String TIME_PERIOD = "1";
             String NUM_PERIOD = "1000";
         }
-
         interface Source{
             String QUERY_DOP = "8";
             String MIN_IDLE = "10";

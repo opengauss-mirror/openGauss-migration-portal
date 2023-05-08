@@ -12,6 +12,7 @@
  * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+
 package org.opengauss.portalcontroller;
 
 import org.opengauss.jdbc.PgConnection;
@@ -34,7 +35,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /**
- * The type Plan.
+ * Plan.
+ *
+ * @author ：liutong
+ * @date ：Created in 2022/12/24
+ * @since ：1
  */
 public final class Plan {
     private static volatile Plan plan;
@@ -281,15 +286,15 @@ public final class Plan {
                         cleanFullDataCheck = true;
                         break;
                     } else if (Plan.pause) {
-                        LOGGER.warn("Plan paused.Stop checking threads. ");
+                        LOGGER.warn("Plan paused.Stop checking threads.");
                         break;
                     } else {
                         String[] str = thread.getProcessName().split(" ");
                         String logPath = thread.getLogPath();
                         String errorStr = "Error message: Process " + str[0] + " exit abnormally or process " + str[0]
-                                + " has started. " + System.lineSeparator();
+                                + " has started." + System.lineSeparator();
                         errorStr += Tools.getErrorMsg(logPath) + System.lineSeparator();
-                        errorStr += "Please read " + logPath + " or error.log to get information. ";
+                        errorStr += "Please read " + logPath + " or error.log to get information.";
                         PortalControl.status = Status.ERROR;
                         PortalControl.errorMsg = errorStr;
                         LOGGER.error(errorStr);
@@ -315,10 +320,8 @@ public final class Plan {
      * Create workspace boolean.
      *
      * @param workspaceId the workspace id
-     * @return the boolean
      */
-    public static boolean createWorkspace(String workspaceId) {
-        boolean flag = true;
+    public static void createWorkspace(String workspaceId) {
         try {
             WorkspacePath workspacePath = WorkspacePath.getInstance(PortalControl.portalControlPath, workspaceId);
             String portIdFile = PortalControl.portalControlPath + "portal.portId.lock";
@@ -355,19 +358,8 @@ public final class Plan {
             Tools.changeCommandLineParameters();
         } catch (PortalException e) {
             e.setRequestInformation("Create workspace failed");
-            e.printLog(LOGGER);
-            flag = false;
+            LOGGER.error(e.toString());
             Plan.stopPlan = true;
-        }
-        return flag;
-    }
-
-    /**
-     * Install plan packages.
-     */
-    public static void installPlanPackages() {
-        for (CheckTask checkTask : Plan.checkTaskList) {
-            checkTask.installAllPackages();
         }
     }
 
@@ -380,12 +372,9 @@ public final class Plan {
             checkTaskMysqlFullMigration.cleanData(workspaceId);
         }
         if (PortalControl.taskList.contains(Command.Start.Mysql.REVERSE)) {
-            try {
-                PgConnection conn = JdbcTools.getPgConnection();
+            try (PgConnection conn = JdbcTools.getPgConnection()) {
                 JdbcTools.changeAllTable(conn);
-                String slotName = Plan.slotName;
-                JdbcTools.dropLogicalReplicationSlot(conn, slotName);
-                conn.close();
+                JdbcTools.dropLogicalReplicationSlot(conn);
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage());
             }
@@ -415,7 +404,7 @@ public final class Plan {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 PortalException portalException = new PortalException("Interrupted exception", "stopping the plan", e.getMessage());
-                portalException.printLog(LOGGER);
+                LOGGER.error(portalException.toString());
                 return;
             }
             for (String runName : runArrayList) {

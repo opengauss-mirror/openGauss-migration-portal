@@ -45,10 +45,10 @@ public interface Debezium {
         String CONFIG_PATH = "connector.standalone.path";
         String MYSQL_PKG_URL = "connector.mysql.pkg.url";
         String MYSQL_PKG_NAME = "connector.mysql.pkg.name";
-        String MYSQL_JAR_NAME = "connector.mysql.jar.name";
+        String MYSQL_JAR_NAME = "debezium-connector-mysql-1.8.1.Final.jar";
         String OPENGAUSS_PKG_URL = "connector.opengauss.pkg.url";
         String OPENGAUSS_PKG_NAME = "connector.opengauss.pkg.name";
-        String OPENGAUSS_JAR_NAME = "connector.opengauss.jar.name";
+        String OPENGAUSS_JAR_NAME = "debezium-connector-opengauss-1.8.1.Final.jar";
         String LOG_PATTERN_PATH = "connector.log.pattern.path";
     }
 

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.jdbc.PgConnection;
@@ -6,7 +21,6 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -48,37 +62,30 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         this.workspaceId = workspaceId;
     }
 
-    @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new Datacheck());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
-    }
-
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskIncrementalDatacheck();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.CHECK);
-        return flag;
-    }
-
-    @Override
-    public void copyConfigFiles(String workspaceId) {
-
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.Check.DEFAULT);
     }
 
     @Override
     public void prepareWork(String workspaceId) {
-        runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
+        runningTaskList.add(Command.Start.Mysql.INCREMENTAL_CHECK);
         Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
         Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
         Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
         changeParameters(workspaceId);
     }
 
+    /**
+     * Change datacheck parameters.
+     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
@@ -122,17 +129,14 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
                 Tools.sleepThread(50, "pausing the plan");
             }
             if (PortalControl.taskList.contains("start mysql reverse migration")) {
-                try {
-                    PgConnection conn = JdbcTools.getPgConnection();
+                try (PgConnection conn = JdbcTools.getPgConnection()) {
                     JdbcTools.changeAllTable(conn);
-                    String slotName = "slot_" + Plan.workspaceId;
-                    JdbcTools.createLogicalReplicationSlot(conn, slotName);
-                    conn.close();
+                    JdbcTools.createLogicalReplicationSlot(conn);
                 } catch (SQLException e) {
                     PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
                     portalException.setRequestInformation("Create slot failed.");
                     PortalControl.refuseReverseMigrationReason = portalException.getMessage();
-                    portalException.printLog(LOGGER);
+                    LOGGER.error(portalException.toString());
                 }
             }
             Task.stopTaskMethod(Method.Run.CHECK);

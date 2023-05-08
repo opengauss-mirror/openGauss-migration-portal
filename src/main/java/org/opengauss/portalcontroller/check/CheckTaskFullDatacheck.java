@@ -1,8 +1,25 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.portalcontroller.*;
 import org.opengauss.portalcontroller.constant.*;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.Confluent;
+import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Kafka;
 import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
@@ -37,28 +54,25 @@ public class CheckTaskFullDatacheck implements CheckTask {
     }
 
     @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
-    }
+        softwareArrayList.add(new Datacheck());
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.Check.DEFAULT);
 
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskFullDatacheck();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.CHECK);
-        return flag;
-    }
-
-    @Override
-    public void copyConfigFiles(String workspaceId) {
     }
 
     @Override
     public void prepareWork(String workspaceId) {
-
+        Plan.runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
+        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
+        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
+        changeParameters(workspaceId);
     }
 
     @Override
@@ -81,10 +95,6 @@ public class CheckTaskFullDatacheck implements CheckTask {
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.START_FULL_MIGRATION_CHECK;
         }
-        Plan.runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
-        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
-        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-        changeParameters(workspaceId);
         Task.startTaskMethod(Method.Run.CHECK_SOURCE, 15000, "Started ExtractApplication in");
         Task.startTaskMethod(Method.Run.CHECK_SINK, 15000, "Started ExtractApplication in");
         Task.startTaskMethod(Method.Run.CHECK, 15000, "Started CheckApplication in");
@@ -92,20 +102,6 @@ public class CheckTaskFullDatacheck implements CheckTask {
             PortalControl.status = Status.RUNNING_FULL_MIGRATION_CHECK;
         }
         checkEnd();
-    }
-
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        flag = flag1 && flag2;
-        return flag;
     }
 
     public void checkEnd() {

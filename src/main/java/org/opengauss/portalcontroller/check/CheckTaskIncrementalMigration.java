@@ -1,10 +1,25 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.*;
+import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -22,25 +37,16 @@ import java.util.Hashtable;
 public class CheckTaskIncrementalMigration implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskIncrementalMigration.class);
 
-    @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new ConnectorMysql());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
-    }
-
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskIncrementalMigration();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.INCREMENTAL_MIGRATION);
-        return flag;
-    }
-
-    public void copyConfigFiles(String workspaceId) {
-
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.IncrementalMigration.DEFAULT);
     }
 
     @Override
@@ -68,7 +74,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
             Tools.createFile(incrementalFolder, false);
         } catch (PortalException e) {
             e.setRequestInformation("Create incremental migration folder status folder failed.Please ensure the config folder " + incrementalFolder + " is available");
-            e.shutDownPortal(LOGGER);
+            LOGGER.error(e.toString());
             return;
         }
         hashtable2.put("sink.process.file.path", incrementalFolder);
@@ -80,16 +86,19 @@ public class CheckTaskIncrementalMigration implements CheckTask {
     public void prepareWork(String workspaceId) {
         Tools.changeIncrementalMigrationParameters(PortalControl.toolsMigrationParametersTable);
         changeParameters(workspaceId);
-        if (!checkNecessaryProcessExist()) {
-            Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
-            Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-            Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
-        }
+        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
+        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
+        Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
         if (checkAnotherConnectExists()) {
             LOGGER.error("Another connector is running.Cannot run incremental migration whose workspace id is " + workspaceId + " .");
             return;
         }
-        Tools.findOffset();
+        try {
+            Tools.findOffset();
+        } catch (PortalException e) {
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
+        }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         Tools.changeConnectXmlFile(workspaceId + "_source", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
         String standaloneSourcePath = hashtable.get(Debezium.Source.CONNECTOR_PATH);
@@ -124,25 +133,21 @@ public class CheckTaskIncrementalMigration implements CheckTask {
             Tools.sleepThread(1000, "running incremental migraiton");
         }
         if (Plan.stopIncrementalMigration) {
-            Task task = new Task();
             if (PortalControl.status != Status.ERROR) {
                 PortalControl.status = Status.INCREMENTAL_MIGRATION_FINISHED;
                 Plan.pause = true;
                 Tools.sleepThread(50, "pausing the plan");
             }
             if (PortalControl.taskList.contains("start mysql reverse migration")) {
-                try {
-                    PgConnection conn = JdbcTools.getPgConnection();
+                try (PgConnection conn = JdbcTools.getPgConnection()) {
                     JdbcTools.changeAllTable(conn);
-                    String slotName = "slot_" + Plan.workspaceId;
-                    JdbcTools.createLogicalReplicationSlot(conn, slotName);
-                    conn.close();
+                    JdbcTools.createLogicalReplicationSlot(conn);
                 } catch (SQLException e) {
                     LOGGER.error("SQL exception occurred in create logical replication slot.");
                 }
             }
-            task.stopTaskMethod(Method.Run.CONNECT_SINK);
-            task.stopTaskMethod(Method.Run.CONNECT_SOURCE);
+            Task.stopTaskMethod(Method.Run.CONNECT_SINK);
+            Task.stopTaskMethod(Method.Run.CONNECT_SOURCE);
             LOGGER.info("Incremental migration stopped.");
         }
     }
@@ -153,28 +158,11 @@ public class CheckTaskIncrementalMigration implements CheckTask {
      * @return the boolean
      */
     public boolean checkAnotherConnectExists() {
-        boolean flag = false;
         boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SOURCE)) != -1;
         boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SINK)) != -1;
         boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SOURCE)) != -1;
         boolean flag4 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SINK)) != -1;
-        flag = flag1 || flag2 || flag3 || flag4;
-        return flag;
-    }
-
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REGISTRY)) != -1;
-        flag = flag1 && flag2 && flag3;
-        return flag;
+        return flag1 || flag2 || flag3 || flag4;
     }
 
     public void uninstall() {

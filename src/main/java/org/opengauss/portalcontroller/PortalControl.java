@@ -12,18 +12,13 @@
  * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+
 package org.opengauss.portalcontroller;
 
-import org.opengauss.portalcontroller.check.CheckTask;
-import org.opengauss.portalcontroller.check.CheckTaskIncrementalDatacheck;
-import org.opengauss.portalcontroller.check.CheckTaskIncrementalMigration;
-import org.opengauss.portalcontroller.check.CheckTaskMysqlFullMigration;
-import org.opengauss.portalcontroller.check.CheckTaskReverseMigration;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
@@ -49,7 +44,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * The type Portal control.
+ * Portal control.
+ *
+ * @author ：liutong
+ * @date ：Created in 2022/12/24
+ * @since ：1
  */
 public class PortalControl {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(PortalControl.class);
@@ -57,20 +56,12 @@ public class PortalControl {
     /**
      * The constant taskList.
      */
-    public static List<String> taskList = new ArrayList<>() {
-
-    };
+    public static List<String> taskList = new ArrayList<>();
 
     /**
      * The constant planList.
      */
-    public static Hashtable<String, List<String>> planList = new Hashtable<>() {
-    };
-
-    /**
-     * The constant actionHandlerHashMap.
-     */
-    public static HashMap<String, EventHandler> actionHandlerHashMap = new HashMap<>();
+    public static Hashtable<String, List<String>> planList = new Hashtable<>();
 
     /**
      * The constant commandHandlerHashMap.
@@ -126,11 +117,6 @@ public class PortalControl {
      * The constant commandLineParameterStringMap.
      */
     public static HashMap<String, String> commandLineParameterStringMap = new HashMap<>();
-
-    /**
-     * The constant commandCounts.
-     */
-    public static int commandCounts = 0;
 
     /**
      * The constant latestCommand.
@@ -246,24 +232,21 @@ public class PortalControl {
      */
     public static void initTasklist(String path) {
         File file = new File(path);
-        String str = "";
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
             while (true) {
-                str = in.readLine();
-                if (str != null) {
-                    str = str.replaceFirst(System.lineSeparator(), "");
-                    str = str.replaceAll("_", " ");
+                String str;
+                if ((str = in.readLine()) != null) {
+                    str = str.replaceFirst(System.lineSeparator(), "").replaceAll("_", " ");
                     taskList.add(str);
                 } else {
                     break;
                 }
             }
-            in.close();
         } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception","read current plan",e.getMessage());
+            PortalException portalException = new PortalException("IO exception", "read current plan", e.getMessage());
             portalException.setRequestInformation("Read current plan failed");
-            portalException.shutDownPortal(LOGGER);
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -370,8 +353,7 @@ public class PortalControl {
      */
     public static void showMigrationParameters() {
         LOGGER.info("Migration parameters:");
-        Set<String> parametersSet = new TreeSet<String>((o1, o2) -> (o1.compareTo(o2)));
-        parametersSet.addAll(toolsMigrationParametersTable.keySet());
+        Set<String> parametersSet = new TreeSet<>(toolsMigrationParametersTable.keySet());
         for (String key : parametersSet) {
             if (key.contains("password")) {
                 LOGGER.info(key + ":*****");
@@ -546,10 +528,8 @@ public class PortalControl {
     public static void startPlan() {
         threadStatusController.setWorkspaceId(workspaceId);
         threadStatusController.start();
-        String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
         Tools.generatePlanHistory(taskList);
         if (!Task.checkPlan(taskList)) {
-            Plan.installPlanPackages();
             LOGGER.error("Invalid plan.");
             return;
         }
@@ -558,6 +538,7 @@ public class PortalControl {
             Tools.outputInformation(flag, "Reverse migration is runnable.", "Reverse migration can not run.");
             PortalControl.allowReverseMigration = flag;
         }
+        String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
         Plan.getInstance(workspaceId).execPlan(PortalControl.taskList);
     }
 
@@ -607,40 +588,27 @@ public class PortalControl {
      * Init command handler hash map.
      */
     public static void initCommandHandlerHashMap() {
-        ArrayList<CheckTask> checkTasks = new ArrayList<>();
-        ArrayList<String> installWays = new ArrayList<>();
-        CheckTask checkTaskMysqlFullMigration = new CheckTaskMysqlFullMigration();
-        checkTasks.add(checkTaskMysqlFullMigration);
-        installWays.add(MigrationParameters.Install.FULL_MIGRATION);
-        CheckTask checkTaskMysqlIncrementalMigration = new CheckTaskIncrementalMigration();
-        checkTasks.add(checkTaskMysqlIncrementalMigration);
-        installWays.add(MigrationParameters.Install.INCREMENTAL_MIGRATION);
-        CheckTask checkTaskMysqlReverseMigration = new CheckTaskReverseMigration();
-        checkTasks.add(checkTaskMysqlReverseMigration);
-        installWays.add(MigrationParameters.Install.REVERSE_MIGRATION);
-        CheckTask checkTaskDatacheck = new CheckTaskIncrementalDatacheck();
-        checkTasks.add(checkTaskDatacheck);
-        installWays.add(MigrationParameters.Install.CHECK);
-        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.ONLINE, (event) -> checkTaskMysqlFullMigration.installAllPackages(true));
-        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.OFFLINE, (event) -> checkTaskMysqlFullMigration.installAllPackages(false));
-        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.DEFAULT, (event) -> checkTaskMysqlFullMigration.installAllPackages());
-        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.ONLINE, (event) -> checkTaskMysqlIncrementalMigration.installAllPackages(true));
-        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.OFFLINE, (event) -> checkTaskMysqlIncrementalMigration.installAllPackages(false));
-        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.DEFAULT, (event) -> checkTaskMysqlIncrementalMigration.installAllPackages());
-        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.ONLINE, (event) -> checkTaskMysqlReverseMigration.installAllPackages(true));
-        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.OFFLINE, (event) -> checkTaskMysqlReverseMigration.installAllPackages(false));
-        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.DEFAULT, (event) -> checkTaskMysqlReverseMigration.installAllPackages());
-        commandHandlerHashMap.put(Command.Install.Mysql.Check.ONLINE, (event) -> checkTaskDatacheck.installAllPackages(true));
-        commandHandlerHashMap.put(Command.Install.Mysql.Check.OFFLINE, (event) -> checkTaskDatacheck.installAllPackages(false));
-        commandHandlerHashMap.put(Command.Install.Mysql.Check.DEFAULT, (event) -> checkTaskDatacheck.installAllPackages());
-        commandHandlerHashMap.put(Command.Install.Mysql.All.DEFAULT, (event) -> InstallMigrationTools.installAllMigrationTools(checkTasks));
-        commandHandlerHashMap.put(Command.Install.Mysql.All.ONLINE, (event) -> InstallMigrationTools.installAllMigrationTools(true, checkTasks));
-        commandHandlerHashMap.put(Command.Install.Mysql.All.OFFLINE, (event) -> InstallMigrationTools.installAllMigrationTools(false, checkTasks));
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.FULL, (event) -> checkTaskMysqlFullMigration.uninstall());
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.INCREMENTAL, (event) -> checkTaskMysqlIncrementalMigration.uninstall());
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.CHECK, (event) -> checkTaskDatacheck.uninstall());
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.REVERSE, (event) -> checkTaskMysqlReverseMigration.uninstall());
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.ALL, (event) -> InstallMigrationTools.uninstallMigrationTools());
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.FullMigration.ONLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.FullMigration.OFFLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.FullMigration.DEFAULT));
+        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.IncrementalMigration.ONLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.IncrementalMigration.OFFLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.IncrementalMigration.DEFAULT));
+        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.ReverseMigration.ONLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.ReverseMigration.OFFLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.ReverseMigration.DEFAULT));
+        commandHandlerHashMap.put(Command.Install.Mysql.Check.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.Check.ONLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.Check.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.Check.OFFLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.Check.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.Check.DEFAULT));
+        commandHandlerHashMap.put(Command.Install.Mysql.All.DEFAULT, (event) -> installMigrationTools.runAllInstallOrder(Command.Install.Mysql.All.DEFAULT));
+        commandHandlerHashMap.put(Command.Install.Mysql.All.ONLINE, (event) -> installMigrationTools.runAllInstallOrder(Command.Install.Mysql.All.OFFLINE));
+        commandHandlerHashMap.put(Command.Install.Mysql.All.OFFLINE, (event) -> installMigrationTools.runAllInstallOrder(Command.Install.Mysql.All.ONLINE));
+        commandHandlerHashMap.put(Command.Uninstall.Mysql.FULL, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.FULL));
+        commandHandlerHashMap.put(Command.Uninstall.Mysql.INCREMENTAL, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.INCREMENTAL));
+        commandHandlerHashMap.put(Command.Uninstall.Mysql.CHECK, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.CHECK));
+        commandHandlerHashMap.put(Command.Uninstall.Mysql.REVERSE, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.REVERSE));
+        commandHandlerHashMap.put(Command.Uninstall.Mysql.ALL, (event) -> installMigrationTools.uninstallAllMigrationTools());
         commandHandlerHashMap.put(Command.Start.Mysql.FULL, (event) -> startSingleTaskPlan(Command.Start.Mysql.FULL));
         commandHandlerHashMap.put(Command.Start.Mysql.INCREMENTAL, (event) -> startSingleTaskPlan(Command.Start.Mysql.INCREMENTAL));
         commandHandlerHashMap.put(Command.Start.Mysql.REVERSE, (event) -> startSingleTaskPlan(Command.Start.Mysql.REVERSE));
