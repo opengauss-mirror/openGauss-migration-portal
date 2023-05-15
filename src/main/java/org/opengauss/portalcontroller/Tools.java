@@ -1825,4 +1825,14 @@ public class Tools {
         PortalControl.status = Status.ERROR;
         PortalControl.errorMsg = str;
     }
+
+    public static boolean containString(String order, String key) {
+        String[] orderPart = order.split(" ");
+        for (String part : orderPart) {
+            if (part.equals(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

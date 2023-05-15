@@ -50,6 +50,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         try {
             Tools.createFile(chameleonVenvPath, false);
             RuntimeExecTools.executeOrder(createVenvCommand, 3000, PortalControl.portalErrorPath);
+            LOGGER.info("Installing chameleon ...");
             RuntimeExecTools.executeOrder(installCommand, 3000, PortalControl.portalControlPath, chameleonInstallLogPath, true);
         } catch (PortalException e) {
             e.setRequestInformation("Install package failed");
