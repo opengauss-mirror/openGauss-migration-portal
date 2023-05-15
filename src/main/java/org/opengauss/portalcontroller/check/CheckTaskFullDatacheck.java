@@ -1,8 +1,25 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.portalcontroller.*;
 import org.opengauss.portalcontroller.constant.*;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.Confluent;
+import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Kafka;
 import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
@@ -36,50 +53,40 @@ public class CheckTaskFullDatacheck implements CheckTask {
         this.workspaceId = workspaceId;
     }
 
-    /**
-     * Install datacheck package.
-     */
     @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
-    }
+        softwareArrayList.add(new Datacheck());
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.Check.DEFAULT);
 
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskFullDatacheck();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.CHECK);
-        return flag;
-    }
-
-    /**
-     * Copy datacheck config files.
-     */
-    @Override
-    public void copyConfigFiles(String workspaceId) {
     }
 
     @Override
     public void prepareWork(String workspaceId) {
-
+        Plan.runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
+        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
+        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
+        changeParameters(workspaceId);
     }
 
-    /**
-     * Change datacheck parameters.
-     */
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        String kafkaPath = hashtable.get(Debezium.Kafka.PATH);
-        Tools.changeSinglePropertiesParameter("dataDir", PortalControl.portalControlPath + "tmp/zookeeper", kafkaPath + "config/zookeeper.properties");
-        Tools.changeSinglePropertiesParameter("log.dirs", PortalControl.portalControlPath + "tmp/kafka-logs", kafkaPath + "config/server.properties");
-        Tools.changeSinglePropertiesParameter("zookeeper.connection.timeout.ms", "30000", kafkaPath + "config/server.properties");
-        Tools.changeSinglePropertiesParameter("zookeeper.session.timeout.ms", "30000", kafkaPath + "config/server.properties");
-        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", false, PortalControl.portalWorkSpacePath + "config/datacheck/application-source.yml");
-        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", false, PortalControl.portalWorkSpacePath + "config/datacheck/application-sink.yml");
+        Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH), hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
+        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
+        kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
+        kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
+        kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
+        Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
+        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", false, hashtable.get(Check.Source.CONFIG_PATH));
+        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", false, hashtable.get(Check.Sink.CONFIG_PATH));
+        Tools.changeSingleYmlParameter("data.check.data-path", hashtable.get(Check.Result.FULL), hashtable.get(Check.CONFIG_PATH));
         Tools.changeMigrationDatacheckParameters(PortalControl.toolsMigrationParametersTable);
     }
 
@@ -88,31 +95,13 @@ public class CheckTaskFullDatacheck implements CheckTask {
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.START_FULL_MIGRATION_CHECK;
         }
-        Plan.runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
-        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000);
-        Task.startTaskMethod(Method.Run.KAFKA, 8000);
-        changeParameters(workspaceId);
-        Task.startTaskMethod(Method.Run.CHECK_SOURCE, 5000);
-        Task.startTaskMethod(Method.Run.CHECK_SINK, 5000);
-        Task.startTaskMethod(Method.Run.CHECK, 5000);
+        Task.startTaskMethod(Method.Run.CHECK_SOURCE, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Run.CHECK_SINK, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Run.CHECK, 15000, "Started CheckApplication in");
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_FULL_MIGRATION_CHECK;
         }
         checkEnd();
-    }
-
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        flag = flag1 && flag2;
-        return flag;
     }
 
     public void checkEnd() {
@@ -124,20 +113,21 @@ public class CheckTaskFullDatacheck implements CheckTask {
                 }
                 break;
             }
-            if(!Tools.outputDatacheckStatus(Parameter.CHECK_FULL)){
+            if (!Tools.outputDatacheckStatus(Parameter.CHECK_FULL)) {
                 break;
             }
-            Tools.sleepThread(1500, "running full migration datacheck");
+            Tools.sleepThread(1000, "running full migration datacheck");
         }
     }
 
     public void uninstall() {
-        String errorPath = PortalControl.portalControlPath + "logs/error.log";
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        String errorPath = PortalControl.portalErrorPath;
         ArrayList<String> filePaths = new ArrayList<>();
-        filePaths.add(PortalControl.toolsConfigParametersTable.get(Debezium.PATH));
-        filePaths.add(PortalControl.portalControlPath + "tmp/kafka-logs");
-        filePaths.add(PortalControl.portalControlPath + "tmp/zookeeper");
-        filePaths.add(PortalControl.toolsConfigParametersTable.get(Check.PATH));
+        filePaths.add(hashtable.get(Debezium.Kafka.PATH));
+        filePaths.add(hashtable.get(Debezium.Kafka.TMP_PATH));
+        filePaths.add(hashtable.get(Debezium.Zookeeper.TMP_PATH));
+        filePaths.add(hashtable.get(Check.PATH));
         InstallMigrationTools.removeSingleMigrationToolFiles(filePaths, errorPath);
     }
 }

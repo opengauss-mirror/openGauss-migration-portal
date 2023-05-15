@@ -1,9 +1,21 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.status;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
+import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.RuntimeExecTools;
@@ -11,13 +23,11 @@ import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Objects;
@@ -68,6 +78,7 @@ public class ThreadStatusController extends Thread {
         while (!exit) {
             int time = 0;
             ChangeStatusTools.writePortalStatus();
+            Hashtable<String, String> toolsConfigHashtable = PortalControl.toolsConfigParametersTable;
             String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
             String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
             if (new File(path).exists()) {
@@ -76,7 +87,7 @@ public class ThreadStatusController extends Thread {
             if (PortalControl.status < Status.START_REVERSE_MIGRATION && PortalControl.status > Status.FULL_MIGRATION_CHECK_FINISHED) {
                 String sourceIncrementalStatusPath = "";
                 String sinkIncrementalStatusPath = "";
-                File directory = new File(PortalControl.portalWorkSpacePath + "status/incremental/");
+                File directory = new File(toolsConfigHashtable.get(Status.INCREMENTAL_FOLDER));
                 if (directory.exists() && directory.isDirectory()) {
                     for (File file : Objects.requireNonNull(directory.listFiles())) {
                         if (file.getName().contains("forward-source-process")) {
@@ -86,15 +97,15 @@ public class ThreadStatusController extends Thread {
                         }
                     }
                 }
-                String incrementalStatusPath = PortalControl.portalWorkSpacePath + "status/incremental_migration.txt";
+                String incrementalStatusPath = toolsConfigHashtable.get(Status.INCREMENTAL_PATH);
                 if (new File(sourceIncrementalStatusPath).exists() && new File(sinkIncrementalStatusPath).exists()) {
                     time = ChangeStatusTools.changeIncrementalStatus(sourceIncrementalStatusPath, sinkIncrementalStatusPath, incrementalStatusPath, "createCount");
                 }
             }
             if (PortalControl.status >= Status.START_REVERSE_MIGRATION && PortalControl.status != Status.ERROR) {
-                String sourceReverseStatusPath = PortalControl.portalWorkSpacePath + "status/reverse/reverse-source-process.txt";
-                String sinkReverseStatusPath = PortalControl.portalWorkSpacePath + "status/reverse/reverse-sink-process.txt";
-                File directory = new File(PortalControl.portalWorkSpacePath + "status/reverse/");
+                String sourceReverseStatusPath = PathUtils.combainPath(true, toolsConfigHashtable.get(Status.REVERSE_FOLDER), "reverse-source-process.txt");
+                String sinkReverseStatusPath = PathUtils.combainPath(true, toolsConfigHashtable.get(Status.REVERSE_FOLDER), "reverse-sink-process.txt");
+                File directory = new File(toolsConfigHashtable.get(Status.REVERSE_FOLDER));
                 if (directory.exists() && directory.isDirectory()) {
                     for (File file : Objects.requireNonNull(directory.listFiles())) {
                         if (file.getName().contains("reverse-source-process")) {
@@ -104,31 +115,37 @@ public class ThreadStatusController extends Thread {
                         }
                     }
                 }
-                String reverseStatusPath = PortalControl.portalWorkSpacePath + "status/reverse_migration.txt";
+                String reverseStatusPath = toolsConfigHashtable.get(Status.REVERSE_PATH);
                 if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
                     time = ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath, reverseStatusPath, "count");
                 }
             }
-            String kafkaPath = PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH);
-            String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
-            Hashtable<String, String> hashtable = new Hashtable<>();
-            hashtable.put(kafkaPath + "logs/server.log", PortalControl.portalWorkSpacePath + "logs/debezium/server.log");
-            hashtable.put(confluentPath + "logs/schema-registry.log", PortalControl.portalWorkSpacePath + "logs/debezium/schema-registry.log");
-            for (String key : hashtable.keySet()) {
-                if (new File(key).exists()) {
-                    RuntimeExecTools.copyFile(key, hashtable.get(key), true);
+            try {
+                String kafkaPath = PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH);
+                String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
+                Hashtable<String, String> hashtable = new Hashtable<>();
+                hashtable.put(PathUtils.combainPath(true, kafkaPath + "logs", "server.log"), toolsConfigHashtable.get(Debezium.LOG_PATH) + "server.log");
+                hashtable.put(PathUtils.combainPath(true, confluentPath + "logs", "schema-registry.log"), toolsConfigHashtable.get(Debezium.LOG_PATH) + "schema-registry.log");
+                for (String key : hashtable.keySet()) {
+                    if (new File(key).exists()) {
+                        RuntimeExecTools.copyFile(key, hashtable.get(key), true);
+                    }
                 }
-            }
-            File logFile = new File(confluentPath + "logs");
-            if (logFile.exists() && logFile.isDirectory()) {
-                File[] logFileList = logFile.listFiles();
-                String workspaceDebeziumLogPath = PortalControl.portalWorkSpacePath + "logs/debezium/";
-                for (File file : logFileList) {
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_source.log", "connect_source.log", true);
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_sink.log", "connect_sink.log", true);
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_source.log", "reverse_connect_source.log", true);
-                    RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_sink.log", "reverse_connect_sink.log", true);
+                File logFile = new File(confluentPath + "logs");
+                if (logFile.exists() && logFile.isDirectory()) {
+                    File[] logFileList = logFile.listFiles();
+                    String workspaceDebeziumLogPath = toolsConfigHashtable.get(Debezium.LOG_PATH);
+                    for (File file : logFileList) {
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_source.log", "connect_source.log", true);
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_sink.log", "connect_sink.log", true);
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_source.log", "reverse_connect_source.log", true);
+                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_sink.log", "reverse_connect_sink.log", true);
+                    }
                 }
+            } catch (PortalException e) {
+                e.setRequestInformation("Cannot find logs.");
+                LOGGER.error(e.toString());
+                Tools.shutDownPortal(e.toString());
             }
             if (1000 - time > 0) {
                 Tools.sleepThread(1000 - time, "writing the status");

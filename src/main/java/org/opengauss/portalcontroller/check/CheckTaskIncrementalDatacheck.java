@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.check;
 
 import org.opengauss.jdbc.PgConnection;
@@ -6,9 +21,9 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Kafka;
@@ -18,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Hashtable;
 
 import static org.opengauss.portalcontroller.Plan.runningTaskList;
@@ -48,40 +62,24 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         this.workspaceId = workspaceId;
     }
 
-    /**
-     * Install datacheck package.
-     */
-    @Override
-    public boolean installAllPackages(boolean download) {
+    public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
         softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new Datacheck());
-        boolean flag = InstallMigrationTools.installMigrationTools(softwareArrayList, download);
-        return flag;
-    }
-
-    @Override
-    public boolean installAllPackages() {
-        CheckTask checkTask = new CheckTaskIncrementalDatacheck();
-        boolean flag = InstallMigrationTools.installSingleMigrationTool(checkTask, MigrationParameters.Install.CHECK);
-        return flag;
-    }
-
-    /**
-     * Copy datacheck config files.
-     */
-    @Override
-    public void copyConfigFiles(String workspaceId) {
-
+        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
+        for (Software software : softwareArrayList) {
+            installMigrationTools.installSingleMigrationSoftware(software, download);
+        }
+        Tools.outputResult(true, Command.Install.Mysql.Check.DEFAULT);
     }
 
     @Override
     public void prepareWork(String workspaceId) {
-        runningTaskList.add(Command.Start.Mysql.FULL_CHECK);
-        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000);
-        Task.startTaskMethod(Method.Run.KAFKA, 8000);
-        Task.startTaskMethod(Method.Run.REGISTRY, 8000);
+        runningTaskList.add(Command.Start.Mysql.INCREMENTAL_CHECK);
+        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
+        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
+        Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
         changeParameters(workspaceId);
     }
 
@@ -91,43 +89,29 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        String kafkaPath = hashtable.get(Debezium.Kafka.PATH);
-        Tools.changeSinglePropertiesParameter("dataDir", PortalControl.portalControlPath + "tmp/zookeeper", kafkaPath + "config/zookeeper.properties");
-        Tools.changeSinglePropertiesParameter("log.dirs", PortalControl.portalControlPath + "tmp/kafka-logs", kafkaPath + "config/server.properties");
-        Tools.changeSinglePropertiesParameter("zookeeper.connection.timeout.ms", "30000", kafkaPath + "config/server.properties");
-        Tools.changeSinglePropertiesParameter("zookeeper.session.timeout.ms", "30000", kafkaPath + "config/server.properties");
-        Tools.changeSinglePropertiesParameter("offset.storage.file.filename", PortalControl.portalControlPath + "tmp/connect.offsets", PortalControl.portalWorkSpacePath + "config/debezium/connect-avro-standalone.properties");
+        Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH), hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
+        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
+        kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
+        kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
+        kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
+        Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
+        Tools.changeSinglePropertiesParameter("offset.storage.file.filename", PathUtils.combainPath(true, PortalControl.portalControlPath + "tmp", "connect.offsets"), hashtable.get(Debezium.Connector.CONFIG_PATH));
         Tools.changeMigrationDatacheckParameters(PortalControl.toolsMigrationParametersTable);
-        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", true, PortalControl.portalWorkSpacePath + "config/datacheck/application-source.yml");
-        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", true, PortalControl.portalWorkSpacePath + "config/datacheck/application-sink.yml");
-        String sourceTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", PortalControl.portalWorkSpacePath + "config/debezium/mysql-source.properties");
-        Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sourceTopic, PortalControl.portalWorkSpacePath + "config/datacheck/application-source.yml");
-        String sinkTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", PortalControl.portalWorkSpacePath + "config/debezium/mysql-sink.properties");
-        Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sinkTopic, PortalControl.portalWorkSpacePath + "config/datacheck/application-sink.yml");
+        Tools.changeSingleYmlParameter("data.check.data-path", hashtable.get(Check.Result.INCREMENTAL), hashtable.get(Check.CONFIG_PATH));
+        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", true, hashtable.get(Check.Source.CONFIG_PATH));
+        Tools.changeSingleYmlParameter("spring.extract.debezium-enable", true, hashtable.get(Check.Sink.CONFIG_PATH));
+        String sourceTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", hashtable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
+        Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sourceTopic, hashtable.get(Check.Source.CONFIG_PATH));
+        String sinkTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", hashtable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
+        Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sinkTopic, hashtable.get(Check.Sink.CONFIG_PATH));
     }
 
     @Override
     public void start(String workspaceId) {
-        Task.startTaskMethod(Method.Run.CHECK_SOURCE, 5000);
-        Task.startTaskMethod(Method.Run.CHECK_SINK, 5000);
-        Task.startTaskMethod(Method.Run.CHECK, 5000);
+        Task.startTaskMethod(Method.Run.CHECK_SOURCE, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Run.CHECK_SINK, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Run.CHECK, 15000, "Started CheckApplication in");
         checkEnd();
-    }
-
-
-    /**
-     * Check necessary process exist boolean.
-     *
-     * @return the boolean
-     */
-    public boolean checkNecessaryProcessExist() {
-        boolean flag = false;
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.ZOOKEEPER)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA)) != -1;
-        flag = flag1 && flag2;
-        boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REGISTRY)) != -1;
-        flag = flag && flag3;
-        return flag;
     }
 
     public void checkEnd() {
@@ -145,14 +129,14 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
                 Tools.sleepThread(50, "pausing the plan");
             }
             if (PortalControl.taskList.contains("start mysql reverse migration")) {
-                try {
-                    PgConnection conn = JdbcTools.getPgConnection();
+                try (PgConnection conn = JdbcTools.getPgConnection()) {
                     JdbcTools.changeAllTable(conn);
-                    String slotName = "slot_" + Plan.workspaceId;
-                    JdbcTools.createLogicalReplicationSlot(conn, slotName);
-                    conn.close();
+                    JdbcTools.createLogicalReplicationSlot(conn);
                 } catch (SQLException e) {
-                    LOGGER.error(e.getMessage());
+                    PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
+                    portalException.setRequestInformation("Create slot failed.");
+                    PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                    LOGGER.error(portalException.toString());
                 }
             }
             Task.stopTaskMethod(Method.Run.CHECK);
@@ -164,12 +148,16 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
     }
 
     public void uninstall() {
-        String errorPath = PortalControl.portalControlPath + "logs/error.log";
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        String errorPath = PortalControl.portalErrorPath;
         ArrayList<String> filePaths = new ArrayList<>();
-        filePaths.add(PortalControl.toolsConfigParametersTable.get(Debezium.PATH));
-        filePaths.add(PortalControl.portalControlPath + "tmp/kafka-logs");
-        filePaths.add(PortalControl.portalControlPath + "tmp/zookeeper");
-        filePaths.add(PortalControl.toolsConfigParametersTable.get(Check.PATH));
+        filePaths.add(hashtable.get(Debezium.Kafka.PATH));
+        filePaths.add(hashtable.get(Debezium.Confluent.PATH));
+        filePaths.add(hashtable.get(Debezium.Connector.MYSQL_PATH));
+        filePaths.add(hashtable.get(Debezium.Connector.OPENGAUSS_PATH));
+        filePaths.add(hashtable.get(Check.PATH));
+        filePaths.add(hashtable.get(Debezium.Kafka.TMP_PATH));
+        filePaths.add(hashtable.get(Debezium.Zookeeper.TMP_PATH));
         InstallMigrationTools.removeSingleMigrationToolFiles(filePaths, errorPath);
     }
 }

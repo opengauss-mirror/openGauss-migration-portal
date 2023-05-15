@@ -1,12 +1,23 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.software;
 
-import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.RuntimeExecTools;
-import org.opengauss.portalcontroller.Tools;
-import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.Parameter;
 
 import java.util.ArrayList;
@@ -19,7 +30,8 @@ public class ConnectorOpengauss implements Software {
     public ArrayList<String> initCriticalFileList() {
         String connectorPath = PortalControl.toolsConfigParametersTable.get(Debezium.Connector.PATH);
         ArrayList<String> connectorOpengaussList = new ArrayList<>();
-        connectorOpengaussList.add(connectorPath + "debezium-connector-opengauss/debezium-connector-opengauss-1.8.1.Final.jar");
+        String jarName = Debezium.Connector.OPENGAUSS_JAR_NAME;
+        connectorOpengaussList.add(PathUtils.combainPath(true, connectorPath + "debezium-connector-opengauss", jarName));
         return connectorOpengaussList;
     }
 
@@ -31,14 +43,5 @@ public class ConnectorOpengauss implements Software {
         hashtable.put(Parameter.PKG_URL, Debezium.Connector.OPENGAUSS_PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Debezium.Connector.OPENGAUSS_PKG_NAME);
         return hashtable;
-    }
-
-    public void downloadPackage() {
-        RuntimeExecTools.download(Debezium.Connector.OPENGAUSS_PKG_URL, Debezium.Connector.OPENGAUSS_PKG_NAME);
-    }
-
-    @Override
-    public void install(boolean download) {
-        InstallMigrationTools.installSingleMigrationTool(new ConnectorOpengauss(), download);
     }
 }

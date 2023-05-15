@@ -1,6 +1,5 @@
 package org.opengauss.portalcontroller.constant;
 
-import java.util.ArrayList;
 import java.util.Hashtable;
 
 public interface Status {
@@ -85,4 +84,13 @@ public interface Status {
         int RUNNING = 1;
         int ERROR = 2;
     }
+
+    String FOLDER = "status.folder";
+    String PORTAL_PATH =  "status.portal.path";
+    String FULL_PATH = "status.full.path";
+    String INCREMENTAL_FOLDER = "status.incremental.folder";
+    String INCREMENTAL_PATH = "status.incremental.path";
+    String REVERSE_FOLDER = "status.reverse.folder";
+    String REVERSE_PATH = "status.reverse.path";
+    String XLOG_PATH = "status.xlog.path";
 }

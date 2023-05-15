@@ -12,10 +12,8 @@
  * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-package org.opengauss.portalcontroller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.opengauss.portalcontroller;
 
 /**
  * Thread check the process.
@@ -25,7 +23,6 @@ import org.slf4j.LoggerFactory;
  * @since ：1
  */
 public class ThreadCheckProcess extends Thread implements Runnable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadCheckProcess.class);
     /**
      * The Exit.
      */

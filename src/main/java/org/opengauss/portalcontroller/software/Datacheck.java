@@ -1,11 +1,22 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller.software;
 
-import org.opengauss.portalcontroller.InstallMigrationTools;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.RuntimeExecTools;
-import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Check;
-import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
 
 import java.util.ArrayList;
@@ -18,8 +29,10 @@ public class Datacheck implements Software {
     public ArrayList<String> initCriticalFileList() {
         ArrayList<String> datacheckList = new ArrayList<>();
         String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
-        datacheckList.add(datacheckPath + "datachecker-extract-0.0.1.jar");
-        datacheckList.add(datacheckPath + "datachecker-check-0.0.1.jar");
+        String datacheckExtractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
+        String datacheckCheckName = PortalControl.toolsConfigParametersTable.get(Check.CHECK_NAME);
+        datacheckList.add(datacheckPath + datacheckExtractName);
+        datacheckList.add(datacheckPath + datacheckCheckName);
         return datacheckList;
     }
 
@@ -31,14 +44,5 @@ public class Datacheck implements Software {
         hashtable.put(Parameter.PKG_URL, Check.PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Check.PKG_NAME);
         return hashtable;
-    }
-
-    public void downloadPackage() {
-        RuntimeExecTools.download(Check.PKG_URL, Check.PKG_PATH);
-    }
-
-    @Override
-    public void install(boolean download) {
-        InstallMigrationTools.installSingleMigrationTool(new Datacheck(), download);
     }
 }

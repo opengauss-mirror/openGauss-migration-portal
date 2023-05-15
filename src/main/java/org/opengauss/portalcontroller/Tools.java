@@ -12,6 +12,7 @@
  * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+
 package org.opengauss.portalcontroller;
 
 import org.opengauss.jdbc.PgConnection;
@@ -26,6 +27,8 @@ import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.StartPort;
+import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -50,9 +53,10 @@ import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
-import java.sql.DriverManager;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -61,11 +65,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.Scanner;
-
-import static org.opengauss.portalcontroller.PortalControl.portalWorkSpacePath;
 
 /**
  * Tools
@@ -78,11 +78,11 @@ public class Tools {
     private static final Logger LOGGER = LoggerFactory.getLogger(Tools.class);
 
     /**
-     * Change single parameter in yml file.If key is not in yml file,add key and value.
+     * Change single yml parameter.
      *
-     * @param key   The key of parameter.
-     * @param value The value of parameter you want to change.
-     * @param path  The path of configuration file.
+     * @param key   the key
+     * @param value the value
+     * @param path  the path
      */
     public static void changeSingleYmlParameter(String key, Object value, String path) {
         try {
@@ -106,15 +106,17 @@ public class Tools {
             map.put(lastKey, value);
             yaml.dump(bigMap, new FileWriter(file));
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing single yml parameter " + key + ".");
+            PortalException portalException = new PortalException("IO exception", "changing single yml parameter " + key, e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
     /**
-     * Change parameters in yml file.If keys in paramaeter map are not in yml file,add keys and values.
+     * Change yml parameters.
      *
-     * @param changeParametersMap The hashmap of parameters you want to change.
-     * @param path                The path of configuration file.
+     * @param changeParametersMap the change parameters map
+     * @param path                the path
      */
     public static void changeYmlParameters(HashMap<String, Object> changeParametersMap, String path) {
         try {
@@ -140,16 +142,18 @@ public class Tools {
             }
             yaml.dump(bigMap, new FileWriter(file));
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing yml parameters.");
+            PortalException portalException = new PortalException("IO exception", "changing yml parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
     /**
-     * Change single parameter in properties file.If key is not in properties file,add key and value.
+     * Change single properties parameter.
      *
-     * @param key   The key of parameter.
-     * @param value The value of parameter you want to change.
-     * @param path  The path of configuration file.
+     * @param key   the key
+     * @param value the value
+     * @param path  the path
      */
     public static void changeSinglePropertiesParameter(String key, String value, String path) {
         File file = new File(path);
@@ -187,15 +191,17 @@ public class Tools {
             }
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing single properties parameter.");
+            PortalException portalException = new PortalException("IO exception", "changing single properties parameter", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
     /**
-     * Change parameters in properties file.If keys in paramaeter map are not in properties file,add keys and values.
+     * Change properties parameters.
      *
-     * @param originalTable The hashtable of parameters you want to change.
-     * @param path          The path of configuration file.
+     * @param originalTable the original table
+     * @param path          the path
      */
     public static void changePropertiesParameters(Hashtable<String, String> originalTable, String path) {
         File file = new File(path);
@@ -240,14 +246,16 @@ public class Tools {
             }
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing parameters in properties files.");
+            PortalException portalException = new PortalException("IO exception", "changing properties parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
     /**
-     * Get pid of process which contains the command.
+     * Gets command pid.
      *
-     * @param command Command.
+     * @param command the command
      * @return the command pid
      */
     public static int getCommandPid(String command) {
@@ -268,11 +276,63 @@ public class Tools {
             pro.waitFor();
             pro.destroy();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in executing the command.Execute command failed.");
+            PortalException portalException = new PortalException("IO exception", "getting command pid", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in waiting for process running.");
+            PortalException portalException = new PortalException("Interrupted exception", "getting command pid", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return pid;
+    }
+
+    /**
+     * Gets running task pid.
+     *
+     * @param sign the sign
+     * @return the running task pid
+     */
+    public static int getRunningTaskPid(String sign) {
+        int pid = -1;
+        for (RunningTaskThread runningTaskThread : Plan.getRunningTaskThreadsList()) {
+            if (runningTaskThread.getMethodName().equals(sign)) {
+                pid = Tools.getCommandPid(runningTaskThread.getProcessName());
+            }
+        }
+        return pid;
+    }
+
+    /**
+     * Is process exists boolean.
+     *
+     * @param pid the pid
+     * @return the boolean
+     */
+    public static boolean isProcessExists(long pid) {
+        boolean exist = false;
+        try {
+            Process pro = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps ux | grep \"" + pid + "\" | grep -v grep"});
+            BufferedInputStream in = new BufferedInputStream(pro.getInputStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            String process;
+            while ((process = br.readLine()) != null && !process.equals("")) {
+                exist = true;
+            }
+            br.close();
+            in.close();
+            pro.waitFor();
+            pro.destroy();
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "checking process exists", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        } catch (InterruptedException e) {
+            PortalException portalException = new PortalException("Interrupted exception", "checking process exists", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        }
+        return exist;
     }
 
     /**
@@ -290,7 +350,14 @@ public class Tools {
                 if (s.contains(command)) {
                     String[] strs = s.split("\\s+");
                     int pid = Integer.parseInt(strs[1]);
-                    RuntimeExecTools.executeOrder("kill -9 " + pid, 20, PortalControl.portalWorkSpacePath + "logs/error.log");
+                    try {
+                        RuntimeExecTools.executeOrder("kill -9 " + pid, 20, PortalControl.portalErrorPath);
+                    } catch (PortalException e) {
+                        e.setRequestInformation("Close chameleon failed");
+                        LOGGER.error(e.toString());
+                        Tools.shutDownPortal(e.toString());
+                    }
+
                 }
             }
             br.close();
@@ -298,9 +365,15 @@ public class Tools {
             pro.waitFor();
             pro.destroy();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in executing the command.Execute command failed.");
+            PortalException portalException = new PortalException("IO exception", "closing chameleon process", e.getMessage());
+            portalException.setRequestInformation("Close full migration tools failed");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in waiting for process running.");
+            PortalException portalException = new PortalException("Interrupted exception", "closing chameleon process", e.getMessage());
+            portalException.setRequestInformation("Close full migration tools failed");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -317,7 +390,7 @@ public class Tools {
             Process pro = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps ux"});
             BufferedInputStream in = new BufferedInputStream(pro.getInputStream());
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            String processName = "";
+            String processName;
             while ((processName = br.readLine()) != null) {
                 boolean flag = true;
                 for (String criticalWord : criticalWordList) {
@@ -339,18 +412,24 @@ public class Tools {
             pro.waitFor();
             pro.destroy();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in executing the command.Execute command failed.");
+            PortalException portalException = new PortalException("IO exception", "checking whether another portal is running", e.getMessage());
+            portalException.setRequestInformation("Checking whether another portal is running failed.Some tools cannot be closed");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in waiting for process running.");
+            PortalException portalException = new PortalException("Interrupted exception", "checking whether another portal is running", e.getMessage());
+            portalException.setRequestInformation("Checking whether another portal is running failed.Some tools cannot be closed");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return signal;
     }
 
     /**
-     * Get value in properties file with the key.If key is not in properties file,return "".
+     * Gets single properties parameter.
      *
-     * @param key  The key of the parameter you want to get.
-     * @param path The path of the configuration file.
+     * @param key  the key
+     * @param path the path
      * @return the single properties parameter
      */
     public static String getSinglePropertiesParameter(String key, String path) {
@@ -360,19 +439,21 @@ public class Tools {
             pps.load(new FileInputStream(path));
             value = pps.getProperty(key);
         } catch (FileNotFoundException e) {
-            LOGGER.error("File not found exception occurred in getting single properties parameter.");
-            Thread.interrupted();
+            PortalException portalException = new PortalException("File not found exception", "getting single properties parameter " + key, e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in reading parameters in properties files.");
-            Thread.interrupted();
+            PortalException portalException = new PortalException("IO exception", "getting single properties parameter " + key, e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return value;
     }
 
     /**
-     * Get parameters in properties file.
+     * Gets properties parameters.
      *
-     * @param path The path of the configuration file.
+     * @param path the path
      * @return the properties parameters
      */
     public static Hashtable<String, String> getPropertiesParameters(String path) {
@@ -386,18 +467,22 @@ public class Tools {
                 }
             }
         } catch (FileNotFoundException e) {
-            LOGGER.error("File not found exception occurred in getting single properties parameter.");
+            PortalException portalException = new PortalException("File not found exception", "getting properties parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in reading parameters in properties files.");
+            PortalException portalException = new PortalException("IO exception", "getting properties parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return table;
     }
 
     /**
-     * Get value in yml file with the key.If key is not in yml file,return "".
+     * Gets single yml parameter.
      *
-     * @param key  The key of the parameter you want to get.
-     * @param path The path of the configuration file.
+     * @param key  the key
+     * @param path the path
      * @return the single yml parameter
      */
     public static String getSingleYmlParameter(String key, String path) {
@@ -424,23 +509,79 @@ public class Tools {
                 value = (String) map.get(lastKey);
             }
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing yml parameter " + key + " to " + value + " in file " + path + ".");
+            PortalException portalException = new PortalException("IO exception", "getting single yml parameter " + key, e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return value;
     }
 
     /**
-     * Get last line in file with the path.
+     * Gets yml parameters.
      *
-     * @param path The path of the file.
+     * @param path the path
+     * @return the yml parameters
+     */
+    public static HashMap<String, Object> getYmlParameters(String path) {
+        HashMap<String, Object> hashMap = new HashMap<>();
+        try {
+            File file = new File(path);
+            FileInputStream fis = new FileInputStream(file);
+            DumperOptions dumperOptions = new DumperOptions();
+            dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            Yaml yaml = new Yaml(dumperOptions);
+            LinkedHashMap<String, Object> bigMap = yaml.load(fis);
+            fis.close();
+            HashMap<String, Object> resultHash1Map = getHashMapParameters(bigMap, "");
+            for (String resultKey : resultHash1Map.keySet()) {
+                if (!resultKey.equals("") && resultHash1Map.get(resultKey) != null) {
+                    String newKey = resultKey.substring(1);
+                    hashMap.put(newKey, resultHash1Map.get(resultKey));
+                }
+            }
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "getting yml parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        }
+        return hashMap;
+    }
+
+    /**
+     * Gets hash map parameters.
+     *
+     * @param hashMap    the temp hash map
+     * @param currentKey the current key
+     * @return the hash map parameters
+     */
+    public static HashMap<String, Object> getHashMapParameters(HashMap<String, Object> hashMap, String currentKey) {
+        HashMap<String, Object> resultMap = new HashMap<>();
+        for (String key : hashMap.keySet()) {
+            String newKey = currentKey.concat(".").concat(key);
+            HashMap<String, Object> tempHashMap;
+            if (hashMap.get(key) instanceof HashMap) {
+                tempHashMap = (HashMap) hashMap.get(key);
+                HashMap<String, Object> tempResultHashMap = getHashMapParameters(tempHashMap, newKey);
+                for (String resultKey : tempResultHashMap.keySet()) {
+                    resultMap.put(resultKey, tempResultHashMap.get(resultKey));
+                }
+            } else {
+                resultMap.put(newKey, hashMap.get(key));
+            }
+        }
+        return resultMap;
+    }
+
+    /**
+     * Last line string.
+     *
+     * @param path the path
      * @return the string
      */
     public static String lastLine(String path) {
-        String last = "";
         File file = new File(path);
         StringBuilder builder = new StringBuilder();
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
             long fileLastPointer = randomAccessFile.length() - 1;
             for (long filePointer = fileLastPointer; filePointer != -1; filePointer--) {
                 randomAccessFile.seek(filePointer);
@@ -460,35 +601,26 @@ public class Tools {
                 builder.append((char) readByte);
             }
         } catch (FileNotFoundException e) {
-            LOGGER.error("File not found in finding last line in files.");
+            PortalException portalException = new PortalException("File not found exception", "reading last line in file " + path, e.getMessage());
+            portalException.setRequestInformation("Get success sign failed.");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in finding last line in files.");
+            PortalException portalException = new PortalException("IO exception", "reading last line in file " + path, e.getMessage());
+            portalException.setRequestInformation("Get success sign failed.");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
-        last = builder.reverse().toString();
-        return last;
-    }
-
-    /**
-     * Change migration parameters include  user name,password,host,port,database name,schema in mysql and openGauss database in migration tools' config files.
-     *
-     * @param migrationparametersTable The hashtable of migration parameters.
-     */
-    public static void changeMigrationParameters(Hashtable<String, String> migrationparametersTable) {
-        String workspaceId = PortalControl.commandLineParameterStringMap.get(Command.Parameters.ID);
-        changeFullMigrationParameters(migrationparametersTable, workspaceId);
-        changeMigrationDatacheckParameters(migrationparametersTable);
-        changeIncrementalMigrationParameters(migrationparametersTable);
-        changeReverseMigrationParameters(migrationparametersTable);
+        return builder.reverse().toString();
     }
 
     /**
      * Change full migration parameters.
      *
-     * @param migrationparametersTable migrationparametersTable
-     * @param workspaceId              the workspace id
+     * @param migrationparametersTable the migrationparameters table
      */
-    public static void changeFullMigrationParameters(Hashtable<String, String> migrationparametersTable, String workspaceId) {
-        String chameleonConfigPath = PortalControl.portalWorkSpacePath + "config/chameleon/default_" + workspaceId + ".yml";
+    public static void changeFullMigrationParameters(Hashtable<String, String> migrationparametersTable) {
+        String chameleonConfigPath = PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH);
         HashMap<String, Object> chameleonMap = new HashMap<>();
         String mysqlDatabaseHost = migrationparametersTable.get(Mysql.DATABASE_HOST);
         String mysqlDatabasePort = migrationparametersTable.get(Mysql.DATABASE_PORT);
@@ -516,14 +648,15 @@ public class Tools {
     }
 
     /**
-     * Change datacheck parameters.
+     * Change migration datacheck parameters.
      *
-     * @param migrationparametersTable migrationparametersTable
+     * @param migrationparametersTable the migrationparameters table
      */
     public static void changeMigrationDatacheckParameters(Hashtable<String, String> migrationparametersTable) {
-        String datacheckSourcePath = PortalControl.portalWorkSpacePath + "config/datacheck/application-source.yml";
-        String datacheckSinkPath = PortalControl.portalWorkSpacePath + "config/datacheck/application-sink.yml";
-        String datacheckServicePath = PortalControl.portalWorkSpacePath + "config/datacheck/application.yml";
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        String datacheckSourcePath = hashtable.get(Check.Source.CONFIG_PATH);
+        String datacheckSinkPath = hashtable.get(Check.Sink.CONFIG_PATH);
+        String datacheckServicePath = hashtable.get(Check.CONFIG_PATH);
         int checkPort = StartPort.CHECK + PortalControl.portId * 10;
         ArrayList<Integer> portList = Tools.getAvailablePorts(checkPort, 3, 1000);
         int sourcePort = portList.get(0);
@@ -548,7 +681,7 @@ public class Tools {
         datacheckSourceMap.put(Check.Parameters.PASSWORD, mysqlUserPassword);
         datacheckSourceMap.put("spring.check.server-uri", "http://127.0.0.1:" + servicePort);
         datacheckSourceMap.put("server.port", sourcePort);
-        datacheckSourceMap.put("logging.config", PortalControl.portalWorkSpacePath + "config/datacheck/log4j2source.xml");
+        datacheckSourceMap.put("logging.config", hashtable.get(Check.Source.LOG_PATTERN_PATH));
         Tools.changeYmlParameters(datacheckSourceMap, datacheckSourcePath);
         HashMap<String, Object> datacheckSinkMap = new HashMap<>();
         datacheckSinkMap.put(Check.Parameters.SCHEMA, opengaussDatabaseSchema);
@@ -558,21 +691,21 @@ public class Tools {
         datacheckSinkMap.put(Check.Parameters.PASSWORD, opengaussUserPassword);
         datacheckSinkMap.put("spring.check.server-uri", "http://127.0.0.1:" + servicePort);
         datacheckSinkMap.put("server.port", sinkPort);
-        datacheckSinkMap.put("logging.config", PortalControl.portalWorkSpacePath + "config/datacheck/log4j2sink.xml");
+        datacheckSinkMap.put("logging.config", hashtable.get(Check.Sink.LOG_PATTERN_PATH));
         Tools.changeYmlParameters(datacheckSinkMap, datacheckSinkPath);
         HashMap<String, Object> datacheckServiceMap = new HashMap<>();
         datacheckServiceMap.put("data.check.source-uri", "http://127.0.0.1:" + sourcePort);
         datacheckServiceMap.put("data.check.sink-uri", "http://127.0.0.1:" + sinkPort);
         datacheckServiceMap.put("server.port", servicePort);
-        datacheckServiceMap.put("data.check.data-path", PortalControl.portalWorkSpacePath + "check_result");
-        datacheckServiceMap.put("logging.config", PortalControl.portalWorkSpacePath + "config/datacheck/log4j2.xml");
+        datacheckServiceMap.put("data.check.data-path", hashtable.get(Check.Result.FULL));
+        datacheckServiceMap.put("logging.config", hashtable.get(Check.LOG_PATTERN_PATH));
         Tools.changeYmlParameters(datacheckServiceMap, datacheckServicePath);
     }
 
     /**
      * Change incremental migration parameters.
      *
-     * @param migrationparametersTable migrationparametersTable
+     * @param migrationparametersTable the migrationparameters table
      */
     public static void changeIncrementalMigrationParameters(Hashtable<String, String> migrationparametersTable) {
         String mysqlDatabaseName = migrationparametersTable.get(Mysql.DATABASE_NAME);
@@ -587,7 +720,7 @@ public class Tools {
         String opengaussDatabaseName = migrationparametersTable.get(Opengauss.DATABASE_NAME);
         String openGaussSchemaName = migrationparametersTable.get(Opengauss.DATABASE_SCHEMA);
         Hashtable<String, String> debeziumMysqlTable = new Hashtable<>();
-        String confluentMysqlSourcePath = PortalControl.portalWorkSpacePath + "config/debezium/mysql-source.properties";
+        String sourcePath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH);
         debeziumMysqlTable.put(Debezium.Source.HOST, mysqlDatabaseHost);
         debeziumMysqlTable.put(Debezium.Source.PORT, mysqlDatabasePort);
         debeziumMysqlTable.put(Debezium.Source.USER, mysqlUserName);
@@ -602,8 +735,8 @@ public class Tools {
         if (PortalControl.toolsMigrationParametersTable.containsKey(Offset.GTID)) {
             debeziumMysqlTable.put(Offset.GTID, PortalControl.toolsMigrationParametersTable.get(Offset.GTID));
         }
-        Tools.changePropertiesParameters(debeziumMysqlTable, confluentMysqlSourcePath);
-        String confluentMysqlSinkPath = PortalControl.portalWorkSpacePath + "config/debezium/mysql-sink.properties";
+        Tools.changePropertiesParameters(debeziumMysqlTable, sourcePath);
+        String confluentMysqlSinkPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH);
         Hashtable<String, String> debeziumMysqlSinkTable = new Hashtable<>();
         debeziumMysqlSinkTable.put(Debezium.Sink.SCHEMA_MAPPING, mysqlDatabaseName + ":" + openGaussSchemaName);
         debeziumMysqlSinkTable.put(Debezium.Sink.Opengauss.USER, opengaussUserName);
@@ -616,99 +749,125 @@ public class Tools {
     /**
      * Change reverse migration parameters.
      *
-     * @param migrationparametersTable migrationparametersTable
+     * @param migrationparametersTable the migrationparameters table
      */
     public static void changeReverseMigrationParameters(Hashtable<String, String> migrationparametersTable) {
-        String mysqlDatabaseName = migrationparametersTable.get(Mysql.DATABASE_NAME);
-        String mysqlDatabaseHost = migrationparametersTable.get(Mysql.DATABASE_HOST);
-        String mysqlDatabasePort = migrationparametersTable.get(Mysql.DATABASE_PORT);
-        String opengaussDatabaseHost = migrationparametersTable.get(Opengauss.DATABASE_HOST);
-        String opengaussDatabasePort = migrationparametersTable.get(Opengauss.DATABASE_PORT);
-        String mysqlUserName = migrationparametersTable.get(Mysql.USER);
-        String mysqlUserPassword = migrationparametersTable.get(Mysql.PASSWORD);
-        String opengaussUserName = migrationparametersTable.get(Opengauss.USER);
-        String opengaussUserPassword = migrationparametersTable.get(Opengauss.PASSWORD);
-        String opengaussDatabaseName = migrationparametersTable.get(Opengauss.DATABASE_NAME);
-        String openGaussSchema = migrationparametersTable.get(Opengauss.DATABASE_SCHEMA);
         Hashtable<String, String> debeziumOpenGaussTable = new Hashtable<>();
-        String confluentOpenGaussSourcePath = PortalControl.portalWorkSpacePath + "config/debezium/opengauss-source.properties";
-        debeziumOpenGaussTable.put(Debezium.Source.HOST, opengaussDatabaseHost);
-        debeziumOpenGaussTable.put(Debezium.Source.PORT, opengaussDatabasePort);
-        debeziumOpenGaussTable.put(Debezium.Source.USER, opengaussUserName);
-        debeziumOpenGaussTable.put(Debezium.Source.PASSWORD, opengaussUserPassword);
-        debeziumOpenGaussTable.put(Debezium.Source.NAME, opengaussDatabaseName);
-        Tools.changePropertiesParameters(debeziumOpenGaussTable, confluentOpenGaussSourcePath);
+        String sourcePath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.REVERSE_CONFIG_PATH);
+        debeziumOpenGaussTable.put(Debezium.Source.HOST, migrationparametersTable.get(Opengauss.DATABASE_HOST));
+        debeziumOpenGaussTable.put(Debezium.Source.PORT, migrationparametersTable.get(Opengauss.DATABASE_PORT));
+        debeziumOpenGaussTable.put(Debezium.Source.USER, migrationparametersTable.get(Opengauss.USER));
+        debeziumOpenGaussTable.put(Debezium.Source.PASSWORD, migrationparametersTable.get(Opengauss.PASSWORD));
+        debeziumOpenGaussTable.put(Debezium.Source.NAME, migrationparametersTable.get(Opengauss.DATABASE_NAME));
+        Tools.changePropertiesParameters(debeziumOpenGaussTable, sourcePath);
         Hashtable<String, String> debeziumOpenGaussSinkTable = new Hashtable<>();
-        String confluentOpenGaussSinkPath = PortalControl.portalWorkSpacePath + "config/debezium/opengauss-sink.properties";
-        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.USER, mysqlUserName);
-        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.PASSWORD, mysqlUserPassword);
-        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.NAME, mysqlDatabaseName);
-        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.PORT, mysqlDatabasePort);
-        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.URL, mysqlDatabaseHost);
+        String sinkPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONFIG_PATH);
+        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.USER, migrationparametersTable.get(Mysql.USER));
+        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.PASSWORD, migrationparametersTable.get(Mysql.PASSWORD));
+        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.NAME, migrationparametersTable.get(Mysql.DATABASE_NAME));
+        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.PORT, migrationparametersTable.get(Mysql.DATABASE_PORT));
+        debeziumOpenGaussSinkTable.put(Debezium.Sink.Mysql.URL, migrationparametersTable.get(Mysql.DATABASE_HOST));
+        String mysqlDatabaseName = migrationparametersTable.get(Mysql.DATABASE_NAME);
+        String openGaussSchema = migrationparametersTable.get(Opengauss.DATABASE_SCHEMA);
         debeziumOpenGaussSinkTable.put(Debezium.Sink.SCHEMA_MAPPING, openGaussSchema + ":" + mysqlDatabaseName);
-        Tools.changePropertiesParameters(debeziumOpenGaussSinkTable, confluentOpenGaussSinkPath);
+        Tools.changePropertiesParameters(debeziumOpenGaussSinkTable, sinkPath);
     }
 
     /**
-     * Find t_binlog_name,i_binlog_position,t_gtid_set in opengauss and set parameters in increment tool's config files.
+     * Find offset.
+     *
+     * @throws PortalException the portal exception
      */
-    public static void findOffset() {
-        String offsetPath = PortalControl.portalWorkSpacePath + "config/debezium/mysql-source.properties";
-        try {
-            PgConnection conn = JdbcTools.getPgConnection();
-            String sql = "select t_binlog_name,i_binlog_position,t_gtid_set from sch_chameleon.t_replica_batch;";
-            ResultSet rs = conn.execSQLQuery(sql);
+    public static void findOffset() throws PortalException {
+        String offsetPath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH);
+        String sql = "select t_binlog_name,i_binlog_position,t_gtid_set from sch_chameleon.t_replica_batch;";
+        try (
+                Connection mysqlConnection = JdbcTools.getMysqlConnection();
+                ResultSet rs = JdbcTools.getPgConnection().execSQLQuery(sql)
+        ) {
+            String uuid = JdbcTools.getCurrentUuid(mysqlConnection);
             if (rs.next()) {
                 String tBinlogName = rs.getString("t_binlog_name");
                 String iBinlogPosition = rs.getString("i_binlog_position");
                 String tGtidSet = rs.getString("t_gtid_set");
-                int offset = Integer.parseInt(tGtidSet.substring(tGtidSet.lastIndexOf("-") + 1));
-                offset--;
-                String offsetGtidSet = tGtidSet.substring(0, tGtidSet.lastIndexOf("-") + 1) + offset;
+                String offsetGtidSet = changeGtidSet(tGtidSet, uuid);
                 Hashtable<String, String> offsetHashtable = new Hashtable<>();
                 offsetHashtable.put(Offset.FILE, tBinlogName);
                 offsetHashtable.put(Offset.POSITION, iBinlogPosition);
                 offsetHashtable.put(Offset.GTID, offsetGtidSet);
                 Tools.changePropertiesParameters(offsetHashtable, offsetPath);
             }
-            rs.close();
-            conn.close();
         } catch (SQLException e) {
-            LOGGER.error("SQL exception occurred in searching parameters in mysql database.");
+            throw new PortalException("SQL exception", "find offset", e.getMessage());
         }
+    }
+
+    /**
+     * Change gtid set string.
+     *
+     * @param oldGtidSet the old gtid set
+     * @param mysqlUuid  the mysql uuid
+     * @return the string
+     */
+    public static String changeGtidSet(String oldGtidSet, String mysqlUuid) {
+        StringBuilder newGtidSet = new StringBuilder();
+        String[] gtidSetParts = oldGtidSet.replaceAll(System.lineSeparator(), "").split(",");
+        for (String tGtidSet : gtidSetParts) {
+            int uuidIndex = tGtidSet.lastIndexOf(":");
+            String uuid = tGtidSet.substring(0, uuidIndex);
+            if (uuid.equals(mysqlUuid) && (tGtidSet.contains("-"))) {
+                int offsetIndex = tGtidSet.lastIndexOf("-") + 1;
+                int offset = Integer.parseInt(tGtidSet.substring(offsetIndex));
+                offset--;
+                tGtidSet = tGtidSet.substring(0, offsetIndex) + offset;
+            }
+            newGtidSet.append(tGtidSet).append(",");
+        }
+        newGtidSet = new StringBuilder(newGtidSet.substring(0, newGtidSet.length() - 1));
+        return newGtidSet.toString();
     }
 
     /**
      * Generate plan history.
      *
-     * @param taskList The tasklist of rhe plan.
+     * @param taskList the task list
      */
     public static void generatePlanHistory(List<String> taskList) {
-        File file = new File(PortalControl.portalControlPath + "logs/planHistory.log");
+        String planHistoryFilePath = PathUtils.combainPath(true, PortalControl.portalControlPath + "logs", "planHistory.log");
+        File file = new File(planHistoryFilePath);
         try {
             if (!file.exists()) {
                 file.createNewFile();
             }
             Date date = new Date();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
-            LOGGER.info(dateFormat.format(date));
-            LOGGER.info("Current plan: ");
-            for (String str : taskList) {
+            ArrayList<String> planInforamtionPatrs = new ArrayList<>();
+            planInforamtionPatrs.add(dateFormat.format(date));
+            planInforamtionPatrs.add("Current plan: ");
+            planInforamtionPatrs.addAll(taskList);
+            for (String str : planInforamtionPatrs) {
                 LOGGER.info(str);
             }
+            StringBuilder planInformation = new StringBuilder();
+            for (String str : planInforamtionPatrs) {
+                planInformation.append(str).append(System.lineSeparator());
+            }
+            Tools.writeFile(planInformation.toString(), file, true);
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in generating plan history.");
+            PortalException portalException = new PortalException("IO exception", "generating plan history", e.getMessage());
+            portalException.setRequestInformation("Generating plan history failed");
+            LOGGER.error(portalException.toString());
         }
     }
 
     /**
-     * Read input order to execute.
+     * Read input order.
      */
     public static void readInputOrder() {
-        File file = new File(PortalControl.portalWorkSpacePath + "config/input");
+        File file = new File(PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH));
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            String str = "";
+            String str;
             while ((str = br.readLine()) != null) {
                 if (!PortalControl.latestCommand.equals(str.trim())) {
                     LOGGER.info(str);
@@ -718,9 +877,15 @@ public class Tools {
                 }
             }
         } catch (FileNotFoundException e) {
-            LOGGER.error("File flag not found.");
+            PortalException portalException = new PortalException("File not found exception", "read input order", e.getMessage());
+            portalException.setRequestInformation("Read input order failed");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in reading portal.lock.");
+            PortalException portalException = new PortalException("IO exception", "read input order", e.getMessage());
+            portalException.setRequestInformation("Read input order failed");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -730,173 +895,114 @@ public class Tools {
      * @param command the command
      * @return the int
      */
-    public static int writeInputOrder(String command) {
-        int temp = 0;
-        boolean flag = false;
-        File file = new File(PortalControl.portalWorkSpacePath + "config/input");
+    public static void writeInputOrder(String command) {
+        String inputOrderPath = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
+        File file = new File(inputOrderPath);
         try {
-            RuntimeExecTools.executeOrder("mkfifo " + PortalControl.portalWorkSpacePath + "config/input", 2000, PortalControl.portalWorkSpacePath + "logs/error.log");
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
-            bufferedWriter.write(command);
-            bufferedWriter.flush();
-            bufferedWriter.close();
-        } catch (FileNotFoundException e) {
-            LOGGER.error("File flag not found.");
-        } catch (IOException e) {
-            LOGGER.error("IO exception occurred in reading portal.lock.");
+            if (!file.exists()) {
+                Tools.createFile(inputOrderPath, true);
+            }
+            Tools.writeFile(command, file, false);
+        } catch (PortalException e) {
+            e.setRequestInformation("Write input order failed");
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
         }
-        return temp;
     }
 
     /**
      * Clean input order.
      */
     public static void cleanInputOrder() {
-        File file = new File(PortalControl.portalControlPath + "config/input");
+        File file = new File(PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH));
         if (file.exists()) {
-            file.delete();
             try {
-                file.createNewFile();
+                FileWriter fileWriter = new FileWriter(file);
+                fileWriter.write("");
+                fileWriter.flush();
+                fileWriter.close();
             } catch (IOException e) {
-                LOGGER.error("IO exception occurred in creating flag file.");
+                PortalException portalException = new PortalException("IO exception", "clean input order", e.getMessage());
+                portalException.setRequestInformation("Clean input order failed");
+                LOGGER.error(portalException.toString());
+                Tools.shutDownPortal(portalException.toString());
             }
         }
     }
 
     /**
-     * Check input order.
+     * Create file boolean.
      *
-     * @param scanner Scanner to input.
-     * @param regex   Regex to match.
-     * @return String Valid input String.
+     * @param path   the path
+     * @param isFile the is file
+     * @return the boolean
+     * @throws PortalException the portal exception
      */
-    public static String checkInputString(Scanner scanner, String regex) {
-        while (true) {
-            String value = scanner.nextLine().trim();
-            if (value.matches(regex) || regex.equals("")) {
-                return value;
-            } else {
-                LOGGER.error("Invalid input string.Please checkout the input string.");
-            }
-        }
-    }
-
-    /**
-     * Create file.
-     *
-     * @param path   Path.
-     * @param isFile IsFile.If the value is true,it means the file is a file.If the value is false,it means the file is a directory.
-     * @return String Valid input String.
-     */
-    public static boolean createFile(String path, boolean isFile) {
-        boolean flag = true;
+    public static void createFile(String path, boolean isFile) throws PortalException {
         File file = new File(path);
         if (!file.exists()) {
-            if (isFile) {
-                try {
+            try {
+                if (isFile) {
+                    int lastIndex = path.lastIndexOf(File.separator);
+                    String folderPath = path.substring(0, lastIndex);
+                    File folder = new File(folderPath);
+                    folder.mkdirs();
                     file.createNewFile();
-                } catch (IOException e) {
-                    flag = false;
-                    LOGGER.error("IO exception occurred in creating new file.");
+                } else {
+                    file.mkdirs();
                 }
-            } else {
-                file.mkdirs();
+            } catch (IOException e) {
+                throw new PortalException("IO exception", "creating file " + path, e.getMessage());
             }
         } else {
-            flag = false;
             LOGGER.info("File " + path + " already exists.");
         }
-        return flag;
     }
 
     /**
-     * Get package path.
+     * Gets package path.
      *
-     * @param pkgPath PkgPath parameter.
-     * @param pkgName PkgName parameter.
-     * @return String Get package path.
+     * @param pkgPath the pkg path
+     * @param pkgName the pkg name
+     * @return the package path
      */
     public static String getPackagePath(String pkgPath, String pkgName) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        String path = "";
-        String name = "";
-        if (PortalControl.noinput) {
-            path = hashtable.get(pkgPath);
-            name = hashtable.get(pkgName);
-        } else {
-            Scanner scanner = new Scanner(System.in);
-            LOGGER.info("You can input change to change the path,or input other command to use default parameters.");
-            String skipFlag = scanner.nextLine().trim();
-            if (!skipFlag.equals("change")) {
-                path = hashtable.get(pkgPath);
-                name = hashtable.get(pkgName);
-            } else {
-                LOGGER.info("Please input the value of parameter " + pkgPath + " in toolspath.properties");
-                path = Tools.checkInputString(scanner, Regex.FOLDER_PATH);
-                Tools.changeSinglePropertiesParameter(pkgPath, path, PortalControl.toolsConfigPath);
-                LOGGER.info("Please input the name of parameter " + pkgName + " in toolspath.properties");
-                name = Tools.checkInputString(scanner, Regex.PKG_NAME);
-                Tools.changeSinglePropertiesParameter(pkgName, name, PortalControl.toolsConfigPath);
-            }
-        }
+        String path = hashtable.get(pkgPath);
+        String name = hashtable.get(pkgName);
         path += name;
         return path;
     }
 
     /**
-     * Install package.
+     * Install package boolean.
      *
      * @param filePathList     the file path list
-     * @param pkgPathParameter PkgPath parameter.
-     * @param pkgNameParameter PkgName parameter.
-     * @param installPath      Path parameter.
-     * @param pathParameter    the path parameter
-     * @return the boolean
+     * @param pkgPathParameter the pkg path parameter
+     * @param pkgNameParameter the pkg name parameter
+     * @param installPath      the install path
+     * @throws PortalException the portal exception
      */
-    public static boolean installPackage(ArrayList<String> filePathList, String pkgPathParameter, String pkgNameParameter, String installPath, String pathParameter) {
-        boolean flag = Tools.checkCriticalFileExists(filePathList);
-        if (!flag) {
-            LOGGER.info("Ready to install new package.");
-            String packagePath = Tools.getPackagePath(pkgPathParameter, pkgNameParameter);
-            Tools.createFile(installPath, false);
-            RuntimeExecTools.unzipFile(packagePath, installPath);
-        } else {
-            String path = PortalControl.toolsConfigParametersTable.get(pathParameter);
-            LOGGER.info("File " + path + " already exists.If you want to install new package.Please remove " + path + ".");
-        }
-        flag = Tools.checkCriticalFileExists(filePathList);
-        if (flag) {
-            LOGGER.info("Installation of " + pkgNameParameter + " is finished.");
-        }
-        return flag;
-    }
-
-    /**
-     * Check critical file exists boolean.
-     *
-     * @param filePathList the file path list
-     * @return the boolean
-     */
-    public static boolean checkCriticalFileExists(ArrayList<String> filePathList) {
-        boolean flag = true;
+    public static void installPackage(ArrayList<String> filePathList, String pkgPathParameter, String pkgNameParameter, String installPath) throws PortalException {
+        String packagePath = Tools.getPackagePath(pkgPathParameter, pkgNameParameter);
+        Tools.createFile(installPath, false);
+        RuntimeExecTools.unzipFile(packagePath, installPath);
         for (String path : filePathList) {
             File file = new File(path);
             if (!file.exists()) {
-                flag = false;
-                LOGGER.info("No such file " + path);
-                break;
+                throw new PortalException("Portal exception", "installing package " + packagePath, "Install package " + packagePath + " failed");
             }
         }
-        return flag;
+        Tools.outputResult(true, "Install package " + packagePath);
     }
 
     /**
-     * Search available ports.
+     * Gets available ports.
      *
      * @param tempPort the temp port
-     * @param size     The size of available port list.
-     * @param total    The total ports to search.
-     * @return List of integer. The list of available port list.
+     * @param size     the size
+     * @param total    the total
+     * @return the available ports
      */
     public static ArrayList<Integer> getAvailablePorts(int tempPort, int size, int total) {
         ArrayList<Integer> list = new ArrayList<>();
@@ -916,11 +1022,11 @@ public class Tools {
     }
 
     /**
-     * Check if the port is available.
+     * Is port available boolean.
      *
-     * @param host The test host.
-     * @param port The test port.
-     * @return List of integer. The list of available port list.
+     * @param host the host
+     * @param port the port
+     * @return the boolean
      */
     public static boolean isPortAvailable(String host, int port) {
         boolean flag = true;
@@ -930,7 +1036,10 @@ public class Tools {
             flag = false;
             socket.close();
         } catch (UnknownHostException e) {
-            LOGGER.error("Unknown host address,Please check host.");
+            PortalException portalException = new PortalException("Unknown host exception", "checking port is available", e.getMessage());
+            portalException.setRequestInformation("Unknown host address.Cannot get available ports");
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             LOGGER.info("The port " + host + ":" + port + " is available.");
         }
@@ -1007,23 +1116,25 @@ public class Tools {
      * Change command line parameters.
      */
     public static void changeCommandLineParameters() {
-        String checkSinkPath = PortalControl.portalWorkSpacePath + "config/datacheck/application-sink.yml";
-        String checkSourcePath = PortalControl.portalWorkSpacePath + "config/datacheck/application-source.yml";
+        String checkSinkPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH);
+        String checkSourcePath = PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH);
+        HashMap<String, Object> checkSinkOldTable = Tools.getYmlParameters(checkSinkPath);
         HashMap<String, Object> checkSinkTable = new HashMap<>();
-        checkSinkTable.put("spring.extract.query-dop", Integer.parseInt(getOrDefault(Check.Sink.QUERY_DOP, Default.Check.Sink.QUERY_DOP)));
-        checkSinkTable.put("spring.datasource.druid.dataSourceOne.initialSize", Integer.parseInt(getOrDefault(Check.Sink.INITIAL_SIZE, Default.Check.Sink.INITIAL_SIZE)));
-        checkSinkTable.put("spring.datasource.druid.dataSourceOne.minIdle", Integer.parseInt(getOrDefault(Check.Sink.MIN_IDLE, Default.Check.Sink.MIN_IDLE)));
-        checkSinkTable.put("spring.datasource.druid.dataSourceOne.maxActive", Integer.parseInt(getOrDefault(Check.Sink.MAX_ACTIVE, Default.Check.Sink.MAX_ACTIVE)));
-        checkSinkTable.put("spring.extract.debezium-time-period", Integer.parseInt(getOrDefault(Check.Sink.TIME_PERIOD, Default.Check.Sink.TIME_PERIOD)));
-        checkSinkTable.put("spring.extract.debezium-num-period", Integer.parseInt(getOrDefault(Check.Sink.NUM_PERIOD, Default.Check.Sink.NUM_PERIOD)));
+        checkSinkTable.put(Check.Parameters.QUERY_DOP, Integer.parseInt(getOrDefault(Check.Sink.QUERY_DOP, checkSinkOldTable.get(Check.Parameters.QUERY_DOP).toString())));
+        checkSinkTable.put(Check.Parameters.INITIAL_SIZE, Integer.parseInt(getOrDefault(Check.Sink.INITIAL_SIZE, checkSinkOldTable.get(Check.Parameters.INITIAL_SIZE).toString())));
+        checkSinkTable.put(Check.Parameters.MIN_IDLE, Integer.parseInt(getOrDefault(Check.Sink.MIN_IDLE, checkSinkOldTable.get(Check.Parameters.MIN_IDLE).toString())));
+        checkSinkTable.put(Check.Parameters.MAX_ACTIVE, Integer.parseInt(getOrDefault(Check.Sink.MAX_ACTIVE, checkSinkOldTable.get(Check.Parameters.MAX_ACTIVE).toString())));
+        checkSinkTable.put(Check.Parameters.TIME_PERIOD, Integer.parseInt(getOrDefault(Check.Sink.TIME_PERIOD, checkSinkOldTable.get(Check.Parameters.TIME_PERIOD).toString())));
+        checkSinkTable.put(Check.Parameters.NUM_PERIOD, Integer.parseInt(getOrDefault(Check.Sink.NUM_PERIOD, checkSinkOldTable.get(Check.Parameters.NUM_PERIOD).toString())));
         Tools.changeYmlParameters(checkSinkTable, checkSinkPath);
+        HashMap<String, Object> checkSourceOldTable = Tools.getYmlParameters(checkSourcePath);
         HashMap<String, Object> checkSourceTable = new HashMap<>();
-        checkSourceTable.put("spring.extract.query-dop", Integer.parseInt(getOrDefault(Check.Source.QUERY_DOP, Default.Check.Source.QUERY_DOP)));
-        checkSourceTable.put("spring.datasource.druid.dataSourceOne.initialSize", Integer.parseInt(getOrDefault(Check.Source.INITIAL_SIZE, Default.Check.Source.INITIAL_SIZE)));
-        checkSourceTable.put("spring.datasource.druid.dataSourceOne.minIdle", Integer.parseInt(getOrDefault(Check.Source.MIN_IDLE, Default.Check.Source.MIN_IDLE)));
-        checkSourceTable.put("spring.datasource.druid.dataSourceOne.maxActive", Integer.parseInt(getOrDefault(Check.Source.MAX_ACTIVE, Default.Check.Source.MAX_ACTIVE)));
-        checkSourceTable.put("spring.extract.debezium-time-period", Integer.parseInt(getOrDefault(Check.Source.TIME_PERIOD, Default.Check.Source.TIME_PERIOD)));
-        checkSourceTable.put("spring.extract.debezium-num-period", Integer.parseInt(getOrDefault(Check.Source.NUM_PERIOD, Default.Check.Source.NUM_PERIOD)));
+        checkSourceTable.put(Check.Parameters.QUERY_DOP, Integer.parseInt(getOrDefault(Check.Source.QUERY_DOP, checkSourceOldTable.get(Check.Parameters.QUERY_DOP).toString())));
+        checkSourceTable.put(Check.Parameters.INITIAL_SIZE, Integer.parseInt(getOrDefault(Check.Source.INITIAL_SIZE, checkSourceOldTable.get(Check.Parameters.INITIAL_SIZE).toString())));
+        checkSourceTable.put(Check.Parameters.MIN_IDLE, Integer.parseInt(getOrDefault(Check.Source.MIN_IDLE, checkSourceOldTable.get(Check.Parameters.MIN_IDLE).toString())));
+        checkSourceTable.put(Check.Parameters.MAX_ACTIVE, Integer.parseInt(getOrDefault(Check.Source.MAX_ACTIVE, checkSourceOldTable.get(Check.Parameters.MAX_ACTIVE).toString())));
+        checkSourceTable.put(Check.Parameters.TIME_PERIOD, Integer.parseInt(getOrDefault(Check.Source.TIME_PERIOD, checkSourceOldTable.get(Check.Parameters.TIME_PERIOD).toString())));
+        checkSourceTable.put(Check.Parameters.NUM_PERIOD, Integer.parseInt(getOrDefault(Check.Source.NUM_PERIOD, checkSourceOldTable.get(Check.Parameters.NUM_PERIOD).toString())));
         Tools.changeYmlParameters(checkSourceTable, checkSourcePath);
         Tools.writeCheckRules();
         Tools.writeChameleonOverrideType();
@@ -1057,7 +1168,7 @@ public class Tools {
     public static void changeFile(String oldString, String newString, String path) {
         try {
             StringBuilder result = new StringBuilder();
-            String temp = "";
+            String temp;
             BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
             while ((temp = bufferedReader.readLine()) != null) {
                 if (temp.contains(oldString)) {
@@ -1071,7 +1182,9 @@ public class Tools {
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing file " + path + ".");
+            PortalException portalException = new PortalException("IO exception", "changing file parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -1084,7 +1197,7 @@ public class Tools {
     public static void changeConnectXmlFile(String workspaceIdString, String path) {
         try {
             StringBuilder result = new StringBuilder();
-            String temp = "";
+            String temp;
             BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
             while ((temp = bufferedReader.readLine()) != null) {
                 if (temp.contains("/connect") && temp.contains(".log")) {
@@ -1100,7 +1213,9 @@ public class Tools {
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in changing file " + path + ".");
+            PortalException portalException = new PortalException("IO exception", "changing xml file parameters", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -1141,12 +1256,18 @@ public class Tools {
         }
         try {
             Tools.createFile(PortalControl.portalWorkSpacePath + "parameter-datacheck.txt", true);
+        } catch (PortalException e) {
+            LOGGER.error(e.toString());
+        }
+        try {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(PortalControl.portalWorkSpacePath + "parameter-datacheck.txt"));
             bufferedWriter.write(rules.toString());
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in writing parameter");
+            PortalException portalException = new PortalException("IO exception", "writing parameter", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -1169,12 +1290,17 @@ public class Tools {
         }
         try {
             Tools.createFile(PortalControl.portalWorkSpacePath + "parameter-chameleon.txt", true);
+        } catch (PortalException e) {
+            LOGGER.error(e.toString());
+        }
+        try {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(PortalControl.portalWorkSpacePath + "parameter-chameleon.txt"));
             bufferedWriter.write(rules.toString());
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in writing parameter");
+            PortalException portalException = new PortalException("IO exception", "writing parameter", e.getMessage());
+            LOGGER.error(portalException.toString());
         }
 
     }
@@ -1190,14 +1316,16 @@ public class Tools {
         try {
             if (file.exists()) {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr = "";
+                String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
                     str.append(tempStr);
                 }
                 fileReader.close();
             }
         } catch (IOException e) {
-            LOGGER.info("IO exception occurred in read file " + file.getAbsolutePath());
+            PortalException portalException = new PortalException("IO exception", "reading file " + file.getAbsolutePath(), e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return str.toString();
     }
@@ -1216,17 +1344,10 @@ public class Tools {
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
-            LOGGER.info("IO exception occurred in read file " + file.getAbsolutePath());
+            PortalException portalException = new PortalException("IO exception", "writing file " + file.getAbsolutePath(), e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
-    }
-
-    /**
-     * Stop portal.
-     */
-    public static void stopPortal() {
-        PortalControl.threadCheckProcess.exit = true;
-        PortalControl.threadGetOrder.exit = true;
-        PortalControl.threadStatusController.exit = true;
     }
 
     /**
@@ -1237,39 +1358,15 @@ public class Tools {
      * @return the string
      */
     public static String jointChameleonOrders(Hashtable<String, String> chameleonParameterTable, String order) {
-        String result = "";
-        String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-        StringBuilder chameleonOrder = new StringBuilder(chameleonVenvPath + "venv/bin/chameleon " + order + " ");
+        String result;
+        String chameleonFile = PortalControl.toolsConfigParametersTable.get(Chameleon.RUNNABLE_FILE_PATH);
+        StringBuilder chameleonOrder = new StringBuilder(chameleonFile + " " + order + " ");
         for (String key : chameleonParameterTable.keySet()) {
             chameleonOrder.append(key).append(" ").append(chameleonParameterTable.get(key)).append(" ");
         }
         chameleonOrder.substring(0, chameleonOrder.length() - 1);
         result = chameleonOrder.toString();
         return result;
-    }
-
-    /**
-     * Read file not matches regex string.
-     *
-     * @param file  the file
-     * @param regex the regex
-     * @return the string
-     */
-    public static String readFileNotMatchesRegex(File file, String regex) {
-        StringBuilder str = new StringBuilder();
-        try {
-            BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-            String tempStr = "";
-            while ((tempStr = fileReader.readLine()) != null) {
-                if (!tempStr.matches(regex)) {
-                    str.append(tempStr).append(System.lineSeparator());
-                }
-            }
-            fileReader.close();
-        } catch (IOException e) {
-            LOGGER.info("IO exception occurred in read file " + file.getAbsolutePath());
-        }
-        return str.toString();
     }
 
     /**
@@ -1282,14 +1379,16 @@ public class Tools {
         StringBuilder str = new StringBuilder();
         try {
             BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(path))));
-            String tempStr = "";
+            String tempStr;
             while ((tempStr = fileReader.readLine()) != null) {
                 str.append(tempStr).append(System.lineSeparator());
                 LOGGER.warn(tempStr);
             }
             fileReader.close();
         } catch (IOException e) {
-            LOGGER.info("IO exception occurred in read file " + path);
+            PortalException portalException = new PortalException("IO exception", "output strings in file " + path, e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
         }
         return str.toString();
     }
@@ -1307,16 +1406,21 @@ public class Tools {
             try {
                 pps.load(new FileInputStream(path));
             } catch (IOException e) {
-                LOGGER.error("IO exception occurred in loading the file " + path + ".");
+                PortalException portalException = new PortalException("IO exception", "loading the parameters in file " + path, e.getMessage());
+                LOGGER.error(portalException.toString());
+                Tools.shutDownPortal(portalException.toString());
+                return;
             }
             for (Object key : pps.keySet()) {
                 String keyString = String.valueOf(key);
                 String valueString = System.getProperty(keyString);
-                if (valueString != null) {
-                    hashtable.put(keyString, valueString);
-                } else {
-                    hashtable.put(keyString, String.valueOf(pps.getProperty(keyString)));
+                if (valueString == null) {
+                    valueString = pps.getProperty(keyString);
                 }
+                if (keyString.contains("path") && !valueString.endsWith(File.separator)) {
+                    valueString += File.separator;
+                }
+                hashtable.put(keyString, valueString);
             }
             pps.clear();
             Tools.changePropertiesParameters(hashtable, path);
@@ -1359,11 +1463,24 @@ public class Tools {
      * @param configFile the config file
      */
     public static void runCurl(String log, String configFile) {
-        Tools.createFile(log, true);
+        try {
+            Tools.createFile(log, true);
+        } catch (PortalException e) {
+            e.setRequestInformation("Create file failed.Please ensure the file " + log + " is available to check whether the curl order finishes successfully.");
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
+            return;
+        }
         String config = Tools.getSinglePropertiesParameter("key.converter.schema.registry.url", configFile);
         config += "/config";
         String[] cmdParts = new String[]{"curl", "-X", "PUT", "-H", "Content-Type: application/vnd.schemaregistry.v1+json", "--data", "{\"compatibility\": \"NONE\"}", config};
-        RuntimeExecTools.executeOrderCurrentRuntime(cmdParts, 1000, log, "Run curl failed.");
+        try {
+            RuntimeExecTools.executeOrderCurrentRuntime(cmdParts, 1000, log, "Run curl failed.");
+        } catch (PortalException e) {
+            e.setRequestInformation("Run curl failed.");
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
+        }
     }
 
     /**
@@ -1374,12 +1491,22 @@ public class Tools {
      */
     public static void stopExclusiveSoftware(String methodName, String softwareName) {
         int pid = Tools.getCommandPid(Task.getTaskProcessMap().get(methodName));
-        if (pid != -1) {
-            RuntimeExecTools.executeOrder("kill -15 " + pid, 2000, PortalControl.portalWorkSpacePath + "logs/error.log");
-        }
         for (RunningTaskThread runningTaskThread : Plan.getRunningTaskThreadsList()) {
             if (runningTaskThread.getMethodName().equals(methodName)) {
-                LOGGER.info("Stop " + softwareName + ".");
+                if (pid != -1 && Tools.isProcessExists(pid)) {
+                    try {
+                        RuntimeExecTools.executeOrder("kill -15 " + pid, 2000, PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH));
+                        LOGGER.info("Stop " + softwareName + ".");
+                    } catch (PortalException e) {
+                        e.setRequestInformation("Stop " + softwareName + " failed");
+                        LOGGER.error(e.toString());
+                        Tools.shutDownPortal(e.toString());
+                        return;
+                    }
+                } else {
+                    String information = softwareName.substring(0, 1).toUpperCase() + softwareName.substring(1) + " has stopped.";
+                    LOGGER.info(information);
+                }
                 break;
             }
         }
@@ -1396,17 +1523,25 @@ public class Tools {
     public static void stopPublicSoftware(String taskThreadName, String executeFile, String order, String name) {
         boolean fileExist = new File(executeFile).exists();
         boolean useSoftWare = Tools.usePublicSoftware(taskThreadName);
+        boolean isProcessExists = Tools.getCommandPid(Task.getTaskProcessMap().get(taskThreadName)) != -1;
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         ArrayList<String> criticalWordList = new ArrayList<>();
         criticalWordList.add("-Dpath=" + PortalControl.portalControlPath);
         criticalWordList.add(Parameter.PORTAL_NAME);
         if (!Tools.checkAnotherProcessExist(criticalWordList)) {
-            if (fileExist && useSoftWare) {
-                RuntimeExecTools.executeOrder(order, 3000, PortalControl.portalWorkSpacePath + "logs/error.log");
-                LOGGER.info("Stop " + name + ".");
-            } else if (fileExist) {
-                RuntimeExecTools.executeOrder(order, 3000, PortalControl.portalWorkSpacePath + "logs/error.log");
-            } else if (useSoftWare) {
-                LOGGER.info("File " + executeFile + " not exists.");
+            try {
+                if (fileExist && useSoftWare && isProcessExists) {
+                    RuntimeExecTools.executeOrder(order, 3000, errorPath);
+                    LOGGER.info("Stop " + name + ".");
+                } else if (fileExist && isProcessExists) {
+                    RuntimeExecTools.executeOrder(order, 3000, errorPath);
+                } else if (useSoftWare) {
+                    LOGGER.info("File " + executeFile + " not exists.");
+                }
+            } catch (PortalException e) {
+                e.setRequestInformation("Stop " + name + " failed.");
+                LOGGER.error(e.toString());
+                Tools.shutDownPortal(e.toString());
             }
         } else if (useSoftWare) {
             LOGGER.info("Another portal is running.Wait for the lastest portal to stop " + name + ".");
@@ -1474,11 +1609,11 @@ public class Tools {
      * @return the boolean
      */
     public static boolean outputDatacheckStatus(String datacheckType) {
-        String checkSourceLogPath = PortalControl.portalWorkSpacePath + "logs/datacheck/source.log";
+        String checkSourceLogPath = PortalControl.toolsConfigParametersTable.get(Check.Source.LOG_PATH);
         boolean flag1 = Tools.outputStatus(checkSourceLogPath);
-        String checkSinkLogPath = PortalControl.portalWorkSpacePath + "logs/datacheck/sink.log";
+        String checkSinkLogPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.LOG_PATH);
         boolean flag2 = Tools.outputStatus(checkSinkLogPath);
-        String checkLogPath = PortalControl.portalWorkSpacePath + "logs/datacheck/check.log";
+        String checkLogPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
         boolean flag3 = Tools.outputStatus(checkLogPath);
         boolean flag = flag1 && flag2 && flag3;
         Tools.outputInformation(flag, datacheckType + " is running.", datacheckType + " has error.");
@@ -1495,10 +1630,12 @@ public class Tools {
         boolean flag = true;
         if (new File(logPath).exists()) {
             String errorStr = getErrorMsg(logPath);
-            if (!Objects.equals(errorStr, "")) {
-                flag = false;
+            if (!errorStr.equals("")) {
                 LOGGER.error(errorStr);
                 LOGGER.error("Error occurred in " + logPath + ".You can stop plan or ignore the information.");
+                PortalControl.status = Status.ERROR;
+                PortalControl.errorMsg = errorStr;
+                flag = false;
             }
         }
         return flag;
@@ -1515,15 +1652,18 @@ public class Tools {
         if (new File(logPath).exists()) {
             try {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(logPath))));
-                String tempStr = "";
+                String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
-                    if (tempStr.contains("Exception:")) {
+                    if (tempStr.contains("Exception:") || tempStr.contains("Error:")) {
                         str.append(tempStr).append(System.lineSeparator());
+                        break;
                     }
                 }
                 fileReader.close();
             } catch (IOException e) {
-                LOGGER.info("IO exception occurred in read file " + logPath);
+                PortalException portalException = new PortalException("IO exception", "getting error message in file " + logPath, e.getMessage());
+                LOGGER.error(portalException.toString());
+                Tools.shutDownPortal(portalException.toString());
             }
         }
         return str.toString();
@@ -1555,7 +1695,6 @@ public class Tools {
             Hashtable<String, String> parameterTable = new Hashtable<>();
             parameterTable.put("wal_level", "logical");
             parameterTable.put("ssl", "on");
-            parameterTable.put("enable_thread_pool", "off");
             int parameter = 0;
             for (String key : parameterTable.keySet()) {
                 if (JdbcTools.selectGlobalVariables(connection, key, parameterTable.get(key))) {
@@ -1575,13 +1714,13 @@ public class Tools {
      * Sets x log path.
      */
     public static void setXLogPath() {
-        String xLogPath = PortalControl.portalWorkSpacePath + "status/incremental/xlog.txt";
+        String xLogPath = PortalControl.toolsConfigParametersTable.get(Status.XLOG_PATH);
         String xLogLocation = "";
         File file = new File(xLogPath);
         try {
             if (file.exists()) {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr = "";
+                String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
                     if (tempStr.contains("xlog location")) {
                         int index = tempStr.lastIndexOf(":") + 1;
@@ -1591,11 +1730,116 @@ public class Tools {
                 fileReader.close();
             }
         } catch (IOException e) {
-            LOGGER.info("IO exception occurred in read file " + file.getAbsolutePath());
+            PortalException portalException = new PortalException("IO exception", "reading xlog.path in file " + file.getAbsolutePath(), e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+            return;
         }
-        Hashtable<String, String> hashtable = new Hashtable<>();
-        hashtable.put("xlog.location", xLogLocation);
-        Tools.changePropertiesParameters(hashtable, portalWorkSpacePath + "config/debezium/opengauss-source.properties");
+        String configPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONFIG_PATH);
+        Tools.changeSinglePropertiesParameter("xlog.location", xLogLocation, configPath);
     }
 
+
+    /**
+     * Read file start sign boolean.
+     *
+     * @param path      the path
+     * @param sign      the sign
+     * @param timestamp the timestamp
+     * @return the boolean
+     * @throws PortalException the portal exception
+     */
+    public static boolean readFileStartSign(String path, String sign, long timestamp) throws PortalException {
+        boolean flag = false;
+        File file = new File(path);
+        try {
+            if (file.exists()) {
+                BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
+                String tempStr;
+                while ((tempStr = fileReader.readLine()) != null) {
+                    if (tempStr.contains(sign)) {
+                        String[] strs = tempStr.split(" ");
+                        try {
+                            String timeStr = strs[0] + " " + strs[1].substring(0, strs[1].lastIndexOf("."));
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            Date date = sdf.parse(timeStr);
+                            long currentTimeStamp = date.getTime();
+                            if (currentTimeStamp >= timestamp) {
+                                flag = true;
+                                break;
+                            }
+                        } catch (ParseException | StringIndexOutOfBoundsException e) {
+                            LOGGER.warn(e.getMessage());
+                            LOGGER.warn("Please check LOG_PATTERN of log4j2.xml , log4j2source.xml and log4j2sink.xml");
+                            LOGGER.warn("The value should start with %d{yyyy-MM-dd HH:mm:ss.SSS}");
+                            throw new PortalException("String index out of bounds exception", "reading log in file " + file.getAbsolutePath(), e.getMessage());
+                        }
+                    }
+                }
+                fileReader.close();
+            }
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "reading start sign in file " + file.getAbsolutePath(), e.getMessage());
+            Tools.shutDownPortal(portalException.toString());
+            throw portalException;
+        }
+        return flag;
+    }
+
+    /**
+     * Is full datacheck success boolean.
+     *
+     * @return the boolean
+     */
+    public static boolean isFullDatacheckSuccess() {
+        boolean runningFullDatacheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
+        String checkPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
+        boolean successSign = Tools.readFile(new File(checkPath)).contains("check task execute success ,cost time =");
+        return runningFullDatacheck && successSign;
+    }
+
+
+    /**
+     * Combain order string.
+     *
+     * @param parts the parts
+     * @return the string
+     */
+    public static String combainOrder(String[] parts) {
+        StringBuilder path;
+        path = new StringBuilder(parts[0]);
+        for (int i = 1; i < parts.length; i++) {
+            path.append(" ").append(parts[i]);
+        }
+
+        return path.toString();
+    }
+
+    /**
+     * Shut down portal.
+     *
+     * @param str the str
+     */
+    public static void shutDownPortal(String str) {
+        Plan.stopPlan = true;
+        PortalControl.status = Status.ERROR;
+        PortalControl.errorMsg = str;
+    }
+
+    /**
+     * Contain string boolean.
+     *
+     * @param order the order
+     * @param key   the key
+     * @return the boolean
+     */
+    public static boolean containString(String order, String key) {
+        String[] orderPart = order.split(" ");
+        for (String part : orderPart) {
+            if (part.equals(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

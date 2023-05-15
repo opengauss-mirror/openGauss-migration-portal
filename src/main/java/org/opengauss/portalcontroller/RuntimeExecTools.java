@@ -1,18 +1,30 @@
+/*
+ * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
+ *
+ * openGauss is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *
+ *           http://license.coscl.org.cn/MulanPSL2
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 package org.opengauss.portalcontroller;
 
-import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 
@@ -23,79 +35,76 @@ public class RuntimeExecTools {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(RuntimeExecTools.class);
 
     /**
-     * Execute order.
+     * Execute order long.
      *
-     * @param command       Command to execute.
-     * @param time          Time with unit milliseconds.If timeout,the process will exit.
+     * @param command       the command
+     * @param time          the time
      * @param errorFilePath the error file path
-     * @return the boolean
+     * @throws PortalException the portal exception
      */
-    public static boolean executeOrder(String command, int time, String errorFilePath) {
-        boolean timeOut = false;
+    public static void executeOrder(String command, int time, String errorFilePath) throws PortalException {
         ProcessBuilder processBuilder = new ProcessBuilder();
         String[] commands = command.split(" ");
         processBuilder.command(commands);
-        processBuilder.redirectError(new File(errorFilePath));
         try {
             Process process = processBuilder.start();
-            timeOut = process.waitFor(time, TimeUnit.MILLISECONDS);
-            Tools.outputFileString(PortalControl.portalControlPath + "logs/error.log");
+            process.waitFor(time, TimeUnit.MILLISECONDS);
+            String errorStr = getInputStreamString(process.getErrorStream());
+            if (!errorStr.equals("")) {
+                LOGGER.warn("Error command:" + command);
+                LOGGER.error(errorStr);
+            }
+            Tools.writeFile(errorStr, new File(errorFilePath), true);
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in execute command " + command);
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in execute command " + command);
+            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
         }
-        return timeOut;
     }
 
     /**
      * Execute order.
      *
-     * @param command        the command
-     * @param time           the time
-     * @param workDirectory  the work directory
-     * @param outputFilePath the output file path
+     * @param command            the command
+     * @param time               the time
+     * @param workDirectory      the work directory
+     * @param errorFilePath      the error file path
+     * @param shouldChangeOutput the should change output
+     * @throws PortalException the portal exception
      */
-    public static void executeOrder(String command, int time, String workDirectory, String outputFilePath) {
+    public static void executeOrder(String command, int time, String workDirectory, String errorFilePath,
+                                    boolean shouldChangeOutput) throws PortalException {
         ProcessBuilder processBuilder = new ProcessBuilder();
         String[] commands = command.split(" ");
         processBuilder.directory(new File(workDirectory));
         processBuilder.command(commands);
-        processBuilder.redirectOutput(new File(outputFilePath));
-        processBuilder.redirectError(new File(PortalControl.portalWorkSpacePath + "logs/error.log"));
+        if (shouldChangeOutput) {
+            processBuilder.redirectErrorStream(true);
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
+        } else {
+            processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
+        }
         try {
             Process process = processBuilder.start();
-            String errorStr = "";
             if (time == 0) {
                 int retCode = process.waitFor();
                 if (retCode == 0) {
                     LOGGER.info("Execute order finished.");
                 } else {
-                    errorStr = getInputStreamString(process.getErrorStream());
+                    String errorStr = getInputStreamString(process.getErrorStream());
                     if (!errorStr.equals("")) {
                         LOGGER.error(errorStr);
                     }
                 }
             } else {
                 process.waitFor(time, TimeUnit.MILLISECONDS);
-                errorStr = getInputStreamString(process.getErrorStream());
-                if (!errorStr.equals("")) {
-                    LOGGER.error(errorStr);
-                }
-                BufferedWriter bufferedErrorWriter = new BufferedWriter(new FileWriter(PortalControl.portalWorkSpacePath + "logs/error.log", true));
-                if (!errorStr.equals("")) {
-                    bufferedErrorWriter.write(errorStr);
-                    bufferedErrorWriter.flush();
-                }
-                bufferedErrorWriter.close();
             }
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in execute command " + command);
-            Thread.interrupted();
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in execute command " + command);
-            Thread.interrupted();
+            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
         }
+
     }
 
     /**
@@ -105,8 +114,9 @@ public class RuntimeExecTools {
      * @param time           the time
      * @param outputFilePath the output file path
      * @param errorLog       the error log
+     * @throws PortalException the portal exception
      */
-    public static void executeOrderCurrentRuntime(String[] cmdParts, int time, String outputFilePath, String errorLog) {
+    public static void executeOrderCurrentRuntime(String[] cmdParts, int time, String outputFilePath, String errorLog) throws PortalException {
         try {
             Process process = Runtime.getRuntime().exec(cmdParts);
             String errorStr = getInputStreamString(process.getErrorStream());
@@ -134,96 +144,63 @@ public class RuntimeExecTools {
                 bufferedWriter.close();
             }
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in execute commands.");
-            Tools.stopPortal();
-            Thread.interrupted();
+            String command = Tools.combainOrder(cmdParts);
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in execute commands.");
-            Tools.stopPortal();
-            Thread.interrupted();
-        }
-    }
-
-
-    /**
-     * Execute order.
-     *
-     * @param cmdParts       the cmd parts
-     * @param time           the time
-     * @param workDirectory  the work directory
-     * @param outputFilePath the output file path
-     */
-    public static void executeOrder(String[] cmdParts, int time, String workDirectory, String outputFilePath) {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(cmdParts);
-        processBuilder.directory(new File(workDirectory));
-        processBuilder.redirectErrorStream(true);
-        processBuilder.redirectOutput(new File(outputFilePath));
-        try {
-            Process process = processBuilder.start();
-            if (time == 0) {
-                int retCode = process.waitFor();
-                if (retCode == 0) {
-                    LOGGER.info("Execute order finished.");
-                } else {
-                    LOGGER.error("Execute order failed.");
-                }
-            } else {
-                process.waitFor(time, TimeUnit.MILLISECONDS);
-            }
-
-        } catch (IOException e) {
-            LOGGER.error("IO exception occurred in execute commands.");
-        } catch (InterruptedException e) {
-            LOGGER.error("Interrupted exception occurred in execute commands.");
+            String command = Tools.combainOrder(cmdParts);
+            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
         }
     }
 
     /**
-     * Execute order.
+     * Download boolean.
      *
-     * @param urlParameter  Url parameter.
-     * @param pathParameter Path parameter.
-     * @return the boolean
+     * @param urlParameter  the url parameter
+     * @param pathParameter the path parameter
+     * @throws PortalException the portal exception
      */
-    public static boolean download(String urlParameter, String pathParameter) {
-        boolean flag = true;
+    public static void download(String urlParameter, String pathParameter) throws PortalException {
         String url = PortalControl.toolsConfigParametersTable.get(urlParameter);
         String path = PortalControl.toolsConfigParametersTable.get(pathParameter);
-        String[] urlParameters = url.split("/");
+        String[] urlParameters = url.split(File.separator);
         String packageName = urlParameters[urlParameters.length - 1];
-        Tools.createFile(path, false);
-        File file = new File(path + packageName);
-        if (file.exists() && file.isFile()) {
-            LOGGER.info("File " + path + packageName + " already exists.Skip the download package.");
-            flag = false;
-        } else if (file.exists()) {
-            LOGGER.error("Directory " + path + packageName + " already exists.Please rename the directory.");
-        } else {
-            String command = "wget -c -P " + path + " " + url + " --no-check-certificate";
-            executeOrder(command, 600000, PortalControl.portalControlPath + "logs/error.log");
-            LOGGER.info("Download file " + url + " to " + path + " finished.");
+        try {
+            Tools.createFile(path, false);
+            File file = new File(path + packageName);
+            if (file.exists() && file.isFile()) {
+                LOGGER.info("File " + path + packageName + " already exists.Skip the download package.");
+            } else if (file.exists()) {
+                LOGGER.error("Directory " + path + packageName + " already exists.Please rename the directory.");
+            } else {
+                String command = "wget -c -P " + path + " " + url + " --no-check-certificate";
+                executeOrder(command, 600000, PortalControl.portalErrorPath);
+                LOGGER.info("Download file " + url + " to " + path + " finished.");
+            }
+        } catch (PortalException e) {
+            e.setRequestInformation("Cannot download package " + packageName + " to destination folder");
+            e.setRepairTips("change the value of " + pathParameter + " or " + urlParameter);
+            throw e;
         }
-        return flag;
     }
 
     /**
-     * Execute order.
+     * Gets input stream string.
      *
-     * @param in Inputstream.
-     * @return String input.
+     * @param in the in
+     * @return the input stream string
+     * @throws PortalException the portal exception
      */
-    public static String getInputStreamString(InputStream in) {
+    public static String getInputStreamString(InputStream in) throws PortalException {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
-        String str = "";
+        String str;
         StringBuilder sb = new StringBuilder();
         try {
             while ((str = br.readLine()) != null) {
-                sb.append(str + System.lineSeparator());
+                sb.append(str).append(System.lineSeparator());
             }
+            br.close();
         } catch (IOException e) {
-            LOGGER.error("IO exception occurred in get inputStream.");
-            Thread.interrupted();
+            throw new PortalException("IO exception", "getting error stream information", e.getMessage());
         }
         return sb.toString();
     }
@@ -231,11 +208,12 @@ public class RuntimeExecTools {
     /**
      * Copy file.
      *
-     * @param filePath  Filepath.
+     * @param filePath  the file path
      * @param directory the directory
      * @param recovery  the recovery
+     * @throws PortalException the portal exception
      */
-    public static void copyFile(String filePath, String directory, boolean recovery) {
+    public static void copyFile(String filePath, String directory, boolean recovery) throws PortalException {
         File file = new File(filePath);
         if (file.exists()) {
             String fileName = file.getName();
@@ -243,7 +221,7 @@ public class RuntimeExecTools {
             boolean exist = new File(newFilePath).exists();
             if (!exist || recovery) {
                 String command = "cp -R " + filePath + " " + directory;
-                executeOrder(command, 60000, PortalControl.portalWorkSpacePath + "logs/error.log");
+                executeOrder(command, 60000, PortalControl.portalErrorPath);
             }
         } else {
             LOGGER.error("File " + filePath + " not exist.");
@@ -253,10 +231,11 @@ public class RuntimeExecTools {
     /**
      * Remove file.
      *
-     * @param path          Filepath.
+     * @param path          the path
      * @param errorFilePath the error file path
+     * @throws PortalException the portal exception
      */
-    public static void removeFile(String path, String errorFilePath) {
+    public static void removeFile(String path, String errorFilePath) throws PortalException {
         if (new File(path).exists()) {
             String command = "rm -rf " + path;
             executeOrder(command, 60000, errorFilePath);
@@ -269,25 +248,29 @@ public class RuntimeExecTools {
     /**
      * Unzip file.
      *
-     * @param packagePath Package path.
+     * @param packagePath the package path
      * @param directory   the directory
+     * @throws PortalException the portal exception
      */
-    public static void unzipFile(String packagePath, String directory) {
-        String command = "";
-        if (!new File(packagePath).exists()) {
-            LOGGER.error("Error message: No package to install.");
-        }
-        if (packagePath.endsWith(".zip")) {
-            command = "unzip -q -o " + packagePath + " -d " + directory;
-            executeOrder(command, 900000, PortalControl.portalControlPath + "logs/error.log");
-            LOGGER.info("Unzip file finished.");
-        } else if (packagePath.endsWith(".tar.gz") || packagePath.endsWith(".tgz")) {
-            command = "tar -zxf " + packagePath + " -C " + directory;
-            executeOrder(command, 900000, PortalControl.portalControlPath + "logs/error.log");
+    public static void unzipFile(String packagePath, String directory) throws PortalException {
+        String command;
+        try {
+            if (!new File(packagePath).exists()) {
+                throw new PortalException("Portal exception", "unzip package", "No package to install.", "No package to install,please check the location of package");
+            }
+            if (packagePath.endsWith(".zip")) {
+                command = "unzip -q -o " + packagePath + " -d " + directory;
+                executeOrder(command, 900000, PortalControl.portalErrorPath);
+            } else if (packagePath.endsWith(".tar.gz") || packagePath.endsWith(".tgz")) {
+                command = "tar -zxf " + packagePath + " -C " + directory;
+                executeOrder(command, 900000, PortalControl.portalErrorPath);
+            } else {
+                throw new PortalException("Portal exception", "unzip package", "Invalid package type", "Invalid package type.Please check if the package is ends with .zip or .tar.gz or .tgz");
+            }
             LOGGER.info("Unzip file " + packagePath + " to " + directory + " finished.");
-        } else {
-            LOGGER.error("Error message: Invalid package type.");
-            LOGGER.error("Invalid package type.Please check if the package is ends with .zip or .tar.gz or .tgz");
+        } catch (PortalException e) {
+            e.setRequestInformation("Unzip package failed.");
+            throw e;
         }
     }
 
@@ -296,16 +279,55 @@ public class RuntimeExecTools {
      *
      * @param oldName the old name
      * @param newName the new name
+     * @throws PortalException the portal exception
      */
-    public static void rename(String oldName, String newName) {
+    public static void rename(String oldName, String newName) throws PortalException {
         String command = "mv " + oldName + " " + newName;
-        executeOrder(command, 600000, PortalControl.portalWorkSpacePath + "logs/error.log");
+        if (new File(oldName).exists()) {
+            executeOrder(command, 600000, PortalControl.portalErrorPath);
+        }
         LOGGER.info("Rename file " + oldName + " to " + newName + " finished.");
     }
 
-    public static void copyFileStartWithWord(File file, String workDirectory, String criticalWord,String replaceWord, boolean recovery) {
+    /**
+     * Copy file start with word.
+     *
+     * @param file          the file
+     * @param workDirectory the work directory
+     * @param criticalWord  the critical word
+     * @param replaceWord   the replace word
+     * @param recovery      the recovery
+     * @throws PortalException the portal exception
+     */
+    public static void copyFileStartWithWord(File file, String workDirectory, String criticalWord, String replaceWord, boolean recovery) throws PortalException {
         if (file.getName().startsWith(criticalWord)) {
             RuntimeExecTools.copyFile(file.getAbsolutePath(), workDirectory + replaceWord, recovery);
+        }
+    }
+
+    /**
+     * Execute start order.
+     *
+     * @param command            the command
+     * @param time               the time
+     * @param workDirectory      the work directory
+     * @param errorFilePath      the error file path
+     * @param shouldChangeOutput the should change output
+     * @param information        the information
+     */
+    public static void executeStartOrder(String command, int time, String workDirectory, String errorFilePath,
+                                         boolean shouldChangeOutput, String information) {
+        try {
+            if (!workDirectory.equals("")) {
+                RuntimeExecTools.executeOrder(command, time, workDirectory, errorFilePath, shouldChangeOutput);
+            } else {
+                RuntimeExecTools.executeOrder(command, time, errorFilePath);
+            }
+            LOGGER.info(information + ".");
+        } catch (PortalException e) {
+            e.setRequestInformation(information + " failed");
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
         }
     }
 }
