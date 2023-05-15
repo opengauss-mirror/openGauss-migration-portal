@@ -60,15 +60,21 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             Tools.sleepThread(1000, "waiting for process running");
             if (Tools.getCommandPid(installCommand) == -1) {
                 String chameleonVersion = chameleonRunnableFilePath + " --version";
-                RuntimeExecTools.executeOrder(chameleonVersion, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true);
+                try {
+                    RuntimeExecTools.executeOrder(chameleonVersion, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true);
+                } catch (PortalException portalException) {
+                    String logStr = Tools.outputFileString(chameleonInstallLogPath);
+                    if (logStr.equals("")) {
+                        portalException.setRequestInformation("Please check pip download source.");
+                    } else {
+                        portalException.setRequestInformation(logStr);
+                    }
+                    throw portalException;
+                }
                 if (Tools.readFile(new File(chameleonTestLogPath)).contains("chameleon")) {
                     LOGGER.info("Install chameleon success.");
                 } else {
-                    PortalException portalException = new PortalException("Portal exception", "installing chameleon", "Install chameleon failed.");
-                    if (Tools.outputFileString(chameleonInstallLogPath).equals("")) {
-                        portalException.setRequestInformation("Please check pip download source.");
-                    }
-                    throw portalException;
+                    throw new PortalException("Portal exception", "installing chameleon", "Install chameleon failed.");
                 }
                 RuntimeExecTools.removeFile(chameleonTestLogPath, PortalControl.portalErrorPath);
                 break;

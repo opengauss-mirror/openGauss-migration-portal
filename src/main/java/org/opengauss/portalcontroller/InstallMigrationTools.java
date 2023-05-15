@@ -30,8 +30,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 /**
@@ -43,19 +46,23 @@ import java.util.LinkedHashMap;
  */
 public class InstallMigrationTools {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstallMigrationTools.class);
+    private static final Map<String, CheckTask> MIGRATION_SERVICES = new HashMap<>();
 
-    private static final CheckTask[] allCheckTaskList = new CheckTask[]{
-            new CheckTaskMysqlFullMigration(), new CheckTaskIncrementalMigration(), new CheckTaskReverseMigration(), new CheckTaskIncrementalDatacheck()
-    };
+    static {
+        MIGRATION_SERVICES.put(MigrationParameters.Type.FULL, new CheckTaskMysqlFullMigration());
+        MIGRATION_SERVICES.put(MigrationParameters.Type.INCREMENTAL, new CheckTaskIncrementalMigration());
+        MIGRATION_SERVICES.put(MigrationParameters.Type.REVERSE, new CheckTaskReverseMigration());
+        MIGRATION_SERVICES.put(MigrationParameters.Type.CHECK, new CheckTaskIncrementalDatacheck());
+    }
 
-    private static final LinkedHashMap<String, String> installWayParameterHashMap = new LinkedHashMap<>() {{
+    private static final LinkedHashMap<String, String> INSTALL_WAY_PARAMETER_HASH_MAP = new LinkedHashMap<>() {{
         put(Command.Install.Mysql.FullMigration.DEFAULT, MigrationParameters.Install.FULL_MIGRATION);
         put(Command.Install.Mysql.IncrementalMigration.DEFAULT, MigrationParameters.Install.INCREMENTAL_MIGRATION);
         put(Command.Install.Mysql.ReverseMigration.DEFAULT, MigrationParameters.Install.REVERSE_MIGRATION);
         put(Command.Install.Mysql.Check.DEFAULT, MigrationParameters.Install.DATACHECK);
     }};
 
-    private static final LinkedHashMap<String, String[]> installOrderList = new LinkedHashMap<>() {{
+    private static final LinkedHashMap<String, String[]> INSTALL_ORDER_LIST = new LinkedHashMap<>() {{
         put(Command.Install.Mysql.All.ONLINE, new String[]{
                 Command.Install.Mysql.FullMigration.ONLINE, Command.Install.Mysql.IncrementalMigration.ONLINE, Command.Install.Mysql.ReverseMigration.ONLINE, Command.Install.Mysql.Check.ONLINE,
         });
@@ -85,7 +92,6 @@ public class InstallMigrationTools {
             RuntimeExecTools.download(pkgUrl, pkgPath);
         }
         Tools.installPackage(criticalFileList, pkgPath, pkgName, PortalControl.toolsConfigParametersTable.get(installPath));
-
     }
 
     /**
@@ -109,7 +115,7 @@ public class InstallMigrationTools {
      * Uninstall migration tools.
      */
     public void uninstallAllMigrationTools() {
-        for (CheckTask checkTask : allCheckTaskList) {
+        for (CheckTask checkTask : MIGRATION_SERVICES.values()) {
             checkTask.uninstall();
         }
     }
@@ -130,9 +136,9 @@ public class InstallMigrationTools {
      * @return the install way
      */
     public boolean getInstallWay(String order) {
-        if (order.contains(InstallWay.OFFLINE.getName())) return false;
-        if (order.contains(InstallWay.ONLINE.getName())) return true;
-        String installWayValue = PortalControl.toolsMigrationParametersTable.get(installWayParameterHashMap.get(order));
+        if (Tools.containString(order, InstallWay.OFFLINE.getName())) return false;
+        if (Tools.containString(order, InstallWay.ONLINE.getName())) return true;
+        String installWayValue = PortalControl.toolsMigrationParametersTable.get(INSTALL_WAY_PARAMETER_HASH_MAP.get(order));
         return InstallWay.ONLINE.getName().equals(installWayValue);
     }
 
@@ -143,11 +149,8 @@ public class InstallMigrationTools {
      * @return the check task
      */
     public CheckTask getCheckTask(String order) {
-        if (order.contains(MigrationParameters.Type.FULL)) return new CheckTaskMysqlFullMigration();
-        if (order.contains(MigrationParameters.Type.INCREMENTAL)) return new CheckTaskIncrementalMigration();
-        if (order.contains(MigrationParameters.Type.REVERSE)) return new CheckTaskReverseMigration();
-        if (order.contains(MigrationParameters.Type.CHECK)) return new CheckTaskIncrementalDatacheck();
-        return null;
+        String taskCommand = Arrays.stream(order.split(" ")).filter(part -> MigrationParameters.Type.ALL.contains(part)).findAny().get();
+        return MIGRATION_SERVICES.getOrDefault(taskCommand, null);
     }
 
     /**
@@ -173,7 +176,7 @@ public class InstallMigrationTools {
      * @param order the order
      */
     public void runAllInstallOrder(String order) {
-        for (String singleOrder : installOrderList.get(order)) {
+        for (String singleOrder : INSTALL_ORDER_LIST.get(order)) {
             if (!runInstallOrder(singleOrder)) {
                 return;
             }
