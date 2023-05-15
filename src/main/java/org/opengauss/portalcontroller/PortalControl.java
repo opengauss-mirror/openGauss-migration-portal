@@ -27,7 +27,6 @@ import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
-import org.opengauss.portalcontroller.software.Software;
 import org.opengauss.portalcontroller.status.ChangeStatusTools;
 import org.opengauss.portalcontroller.status.ThreadStatusController;
 import org.slf4j.LoggerFactory;
@@ -130,11 +129,6 @@ public class PortalControl {
     public static int status = Status.START_FULL_MIGRATION;
 
     /**
-     * The constant fullDatacheckFinished.
-     */
-    public static boolean fullDatacheckFinished = false;
-
-    /**
      * The constant allowReverseMigration.
      */
     public static boolean allowReverseMigration = false;
@@ -167,11 +161,6 @@ public class PortalControl {
      * The constant workspaceId.
      */
     public static String workspaceId = "1";
-
-    /**
-     * The constant softwareList.
-     */
-    public static ArrayList<Software> softwareList = new ArrayList<>();
 
     /**
      * The entry point of application.
