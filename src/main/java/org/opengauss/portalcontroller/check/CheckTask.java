@@ -15,9 +15,8 @@
 
 package org.opengauss.portalcontroller.check;
 
-import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.exception.PortalException;
-import org.opengauss.portalcontroller.constant.Command.Install.Mysql.FullMigration;
+
 /**
  * The interface Check task.
  */
@@ -27,7 +26,7 @@ public interface CheckTask {
      * Install all packages boolean.
      *
      * @param download the download
-     * @return the boolean
+     * @throws PortalException the portal exception
      */
     void installAllPackages(boolean download) throws PortalException;
 

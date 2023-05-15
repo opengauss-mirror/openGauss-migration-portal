@@ -67,13 +67,6 @@ public class PortalControlTest {
     }
 
     @Test
-    public void initCommandHandlerHashMapTest(){
-        PortalControl.initCommandHandlerHashMap();
-        assert PortalControl.commandHandlerHashMap.containsKey("start mysql full migration");
-        PortalControl.commandHandlerHashMap.clear();
-    }
-
-    @Test
     public void checkPathTest(){
         File file1 =new File("test");
         file1.mkdir();

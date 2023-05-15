@@ -40,6 +40,7 @@ public class JdbcTools {
      * Gets mysql connection.
      *
      * @return the mysql connection
+     * @throws PortalException the portal exception
      */
     public static Connection getMysqlConnection() throws PortalException {
         String ip = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_HOST);
@@ -64,6 +65,7 @@ public class JdbcTools {
      *
      * @param connection the connection
      * @return the current uuid
+     * @throws SQLException the sql exception
      */
     public static String getCurrentUuid(Connection connection) throws SQLException {
         String uuid = "";

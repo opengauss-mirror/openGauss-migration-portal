@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.portalcontroller.command.ConcreteCommand;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
@@ -64,9 +65,9 @@ public class PortalControl {
     public static Hashtable<String, List<String>> planList = new Hashtable<>();
 
     /**
-     * The constant commandHandlerHashMap.
+     * The constant validOrderList.
      */
-    public static HashMap<String, EventHandler> commandHandlerHashMap = new HashMap<>();
+    public static List<String> validOrderList = new ArrayList<>();
 
     /**
      * The constant portalControlPath.
@@ -181,23 +182,9 @@ public class PortalControl {
         initPlanList();
         initParametersRegexMap();
         initCommandLineParameters();
-        initCommandHandlerHashMap();
-        String path = commandLineParameterStringMap.get(Command.Parameters.PATH);
-        String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
-        if (!workspaceId.equals("")) {
-            PortalControl.workspaceId = workspaceId;
-        }
-        portalControlPath = path;
-        portalErrorPath = PathUtils.combainPath(true, portalControlPath + "logs", "error.log");
-        if (workspaceId.equals("")) {
-            portalWorkSpacePath = path;
-        } else {
-            portalWorkSpacePath = PathUtils.combainPath(false, path + "workspace", workspaceId);
-        }
-        toolsConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "toolspath.properties");
-        migrationConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "migrationConfig.properties");
+        initValidOrderList();
+        initPortalPath();
         Plan.createWorkspace(workspaceId);
-        checkPath();
         Task.initTaskProcessMap();
         Task.initTaskLogMap();
         threadCheckProcess.setName("threadCheckProcess");
@@ -205,39 +192,32 @@ public class PortalControl {
         Tools.cleanInputOrder();
         threadGetOrder.start();
         String order = commandLineParameterStringMap.get(Command.Parameters.ORDER);
-        if (order != null) {
-            String[] orders = order.split("_");
-            String newOrder = orders[0];
-            for (int i = 1; i < orders.length; i++) {
-                newOrder += " " + orders[i];
-            }
-            if (commandHandlerHashMap.containsKey(newOrder)) {
-                EventHandler eventHandler = commandHandlerHashMap.get(newOrder);
-                eventHandler.handle(newOrder);
-            } else {
-                LOGGER.error("Invalid command.Please input help to get valid command.");
-            }
+        String standardOrder = order.replaceAll("_", " ").trim();
+        if (validOrderList.contains(standardOrder)) {
+            ConcreteCommand concreteCommand = new ConcreteCommand();
+            concreteCommand.execute(standardOrder);
         } else {
-            LOGGER.error("Invalid command.Please input help to get valid command.");
+            LOGGER.error("Invalid command.");
         }
         threadCheckProcess.exit = true;
         threadGetOrder.exit = true;
-        threadStatusController.exit = true;
     }
 
     /**
      * Init tasklist.
      *
      * @param path the path
+     * @return the array list
      */
-    public static void initTasklist(String path) {
+    public static ArrayList<String> initTasklist(String path) {
+        ArrayList<String> taskArrayList = new ArrayList<>();
         File file = new File(path);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
             while (true) {
                 String str;
                 if ((str = in.readLine()) != null) {
                     str = str.replaceFirst(System.lineSeparator(), "").replaceAll("_", " ");
-                    taskList.add(str);
+                    taskArrayList.add(str);
                 } else {
                     break;
                 }
@@ -248,6 +228,7 @@ public class PortalControl {
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         }
+        return taskArrayList;
     }
 
     /**
@@ -331,24 +312,6 @@ public class PortalControl {
     }
 
     /**
-     * Stop.
-     */
-    public static void stop() {
-        String stopOrder = "stop";
-        String plan = commandLineParameterStringMap.get(Command.Parameters.PARAMETER);
-        if (plan.equals("plan")) {
-            stopOrder += " plan";
-        }
-        EventHandler stopEventHandler = commandHandlerHashMap.get(stopOrder);
-        if (stopEventHandler != null) {
-            LOGGER.info(stopOrder);
-            stopEventHandler.handle(stopOrder);
-        } else {
-            LOGGER.error("Invalid command.");
-        }
-    }
-
-    /**
      * Show migration parameters.
      */
     public static void showMigrationParameters() {
@@ -360,83 +323,6 @@ public class PortalControl {
             } else {
                 LOGGER.info(key + ":" + toolsMigrationParametersTable.get(key));
             }
-        }
-    }
-
-    /**
-     * Install.
-     */
-    public static void install() {
-        String installOrder = "install";
-        String type = commandLineParameterStringMap.get(Command.Parameters.TYPE);
-        installOrder += " " + type;
-        String migrationType = commandLineParameterStringMap.get(Command.Parameters.MIGRATION_TYPE);
-        if (commandLineParameterStringMap.get(Command.Parameters.CHECK).equals("true")) {
-            installOrder += " datacheck";
-        } else {
-            installOrder += " " + migrationType + " migration";
-        }
-        installOrder += " tools";
-        String parameter = commandLineParameterStringMap.get(Command.Parameters.PARAMETER);
-        if (parameter.equals("online") || parameter.equals("offline")) {
-            installOrder += " " + parameter;
-        }
-        EventHandler installEventHandler = commandHandlerHashMap.get(installOrder);
-        if (installEventHandler != null) {
-            LOGGER.info(installOrder);
-            installEventHandler.handle(installOrder);
-        } else {
-            LOGGER.error("Invalid command.");
-        }
-    }
-
-    /**
-     * Uninstall.
-     */
-    public static void uninstall() {
-        String uninstallOrder = "uninstall";
-        String migrationType = commandLineParameterStringMap.get(Command.Parameters.MIGRATION_TYPE);
-        String type = commandLineParameterStringMap.get(Command.Parameters.TYPE);
-        uninstallOrder += " " + type;
-        if (commandLineParameterStringMap.get(Command.Parameters.CHECK).equals("true")) {
-            uninstallOrder += " datacheck";
-        } else {
-            uninstallOrder += " " + migrationType + " migration";
-        }
-        uninstallOrder += " tools";
-        EventHandler uninstallEventHandler = commandHandlerHashMap.get(uninstallOrder);
-        if (uninstallEventHandler != null) {
-            LOGGER.info(uninstallOrder);
-            uninstallEventHandler.handle(uninstallOrder);
-        } else {
-            LOGGER.error("Invalid command.");
-        }
-    }
-
-    /**
-     * Start.
-     */
-    public static void start() {
-        String startOrder = "start";
-        String plan = commandLineParameterStringMap.get(Command.Parameters.PARAMETER);
-        if (planList.containsKey(plan)) {
-            startOrder += " " + plan;
-        } else if (plan.equals("current")) {
-            startOrder += " " + plan + " plan";
-        } else {
-            String type = commandLineParameterStringMap.get(Command.Parameters.TYPE);
-            String migrationType = commandLineParameterStringMap.get(Command.Parameters.MIGRATION_TYPE);
-            startOrder += " " + type + " " + migrationType + " migration";
-            if (commandLineParameterStringMap.get(Command.Parameters.CHECK).equals("true")) {
-                startOrder += " datacheck";
-            }
-        }
-        EventHandler startEventHandler = commandHandlerHashMap.get(startOrder);
-        if (startEventHandler != null) {
-            LOGGER.info(startOrder);
-            startEventHandler.handle(startOrder);
-        } else {
-            LOGGER.error("Invalid command.");
         }
     }
 
@@ -478,54 +364,12 @@ public class PortalControl {
     }
 
     /**
-     * Start default plan.
-     *
-     * @param plan the plan
-     */
-    public static void startDefaultPlan(String plan) {
-        if (!Plan.isPlanRunnable) {
-            LOGGER.error("There is a plan already running.");
-            return;
-        }
-        if (planList.containsKey(plan)) {
-            taskList.addAll(planList.get(plan));
-            startPlan();
-        } else {
-            LOGGER.error("Default plan list don't have plan whose name is " + plan + ".");
-        }
-    }
-
-    /**
-     * Start current plan.
-     */
-    public static void startCurrentPlan() {
-        if (!Plan.isPlanRunnable) {
-            LOGGER.error("There is a plan already running.");
-            return;
-        }
-        String path = PortalControl.portalControlPath + "config/currentPlan";
-        initTasklist(path);
-        startPlan();
-    }
-
-    /**
-     * Start single task plan.
-     *
-     * @param task the task
-     */
-    public static void startSingleTaskPlan(String task) {
-        if (!Plan.isPlanRunnable) {
-            LOGGER.error("There is a plan already running.");
-            return;
-        }
-        taskList.add(task);
-        startPlan();
-    }
-
-    /**
      * Start plan.
+     *
+     * @param taskList the task list
      */
-    public static void startPlan() {
+    public static void startPlan(List<String> taskList) {
+        PortalControl.taskList = taskList;
         threadStatusController.setWorkspaceId(workspaceId);
         threadStatusController.start();
         Tools.generatePlanHistory(taskList);
@@ -539,7 +383,8 @@ public class PortalControl {
             PortalControl.allowReverseMigration = flag;
         }
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
-        Plan.getInstance(workspaceId).execPlan(PortalControl.taskList);
+        Plan.getInstance(workspaceId).execPlan(taskList);
+        threadStatusController.exit = true;
     }
 
     /**
@@ -587,47 +432,46 @@ public class PortalControl {
     /**
      * Init command handler hash map.
      */
-    public static void initCommandHandlerHashMap() {
-        InstallMigrationTools installMigrationTools = new InstallMigrationTools();
-        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.FullMigration.ONLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.FullMigration.OFFLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.FullMigration.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.FullMigration.DEFAULT));
-        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.IncrementalMigration.ONLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.IncrementalMigration.OFFLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.IncrementalMigration.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.IncrementalMigration.DEFAULT));
-        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.ReverseMigration.ONLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.ReverseMigration.OFFLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.ReverseMigration.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.ReverseMigration.DEFAULT));
-        commandHandlerHashMap.put(Command.Install.Mysql.Check.ONLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.Check.ONLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.Check.OFFLINE, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.Check.OFFLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.Check.DEFAULT, (event) -> installMigrationTools.runInstallOrder(Command.Install.Mysql.Check.DEFAULT));
-        commandHandlerHashMap.put(Command.Install.Mysql.All.DEFAULT, (event) -> installMigrationTools.runAllInstallOrder(Command.Install.Mysql.All.DEFAULT));
-        commandHandlerHashMap.put(Command.Install.Mysql.All.ONLINE, (event) -> installMigrationTools.runAllInstallOrder(Command.Install.Mysql.All.OFFLINE));
-        commandHandlerHashMap.put(Command.Install.Mysql.All.OFFLINE, (event) -> installMigrationTools.runAllInstallOrder(Command.Install.Mysql.All.ONLINE));
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.FULL, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.FULL));
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.INCREMENTAL, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.INCREMENTAL));
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.CHECK, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.CHECK));
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.REVERSE, (event) -> installMigrationTools.uninstallMigrationTools(Command.Uninstall.Mysql.REVERSE));
-        commandHandlerHashMap.put(Command.Uninstall.Mysql.ALL, (event) -> installMigrationTools.uninstallAllMigrationTools());
-        commandHandlerHashMap.put(Command.Start.Mysql.FULL, (event) -> startSingleTaskPlan(Command.Start.Mysql.FULL));
-        commandHandlerHashMap.put(Command.Start.Mysql.INCREMENTAL, (event) -> startSingleTaskPlan(Command.Start.Mysql.INCREMENTAL));
-        commandHandlerHashMap.put(Command.Start.Mysql.REVERSE, (event) -> startSingleTaskPlan(Command.Start.Mysql.REVERSE));
-        commandHandlerHashMap.put(Command.Start.Mysql.FULL_CHECK, (event) -> startSingleTaskPlan(Command.Start.Mysql.FULL_CHECK));
-        commandHandlerHashMap.put(Command.Start.Mysql.INCREMENTAL_CHECK, (event) -> startSingleTaskPlan(Command.Start.Mysql.INCREMENTAL_CHECK));
-        commandHandlerHashMap.put(Command.Start.Plan.PLAN1, (event) -> startDefaultPlan("plan1"));
-        commandHandlerHashMap.put(Command.Start.Plan.PLAN2, (event) -> startDefaultPlan("plan2"));
-        commandHandlerHashMap.put(Command.Start.Plan.PLAN3, (event) -> startDefaultPlan("plan3"));
-        commandHandlerHashMap.put(Command.Start.Plan.CURRENT, (event) -> startCurrentPlan());
-        commandHandlerHashMap.put(Command.HELP, (event) -> help());
-        commandHandlerHashMap.put(Command.Show.PLAN, (event) -> showPlanList());
-        commandHandlerHashMap.put(Command.Show.STATUS, (event) -> showStatus());
-        commandHandlerHashMap.put(Command.Show.INFORMATION, (event) -> showMigrationParameters());
-        commandHandlerHashMap.put(Command.Show.PARAMETERS, (event) -> showParameters());
-        commandHandlerHashMap.put(Command.Stop.PLAN, (event) -> Tools.writeInputOrder(Command.Stop.PLAN));
-        commandHandlerHashMap.put(Command.Stop.INCREMENTAL_MIGRATION, (event) -> Tools.writeInputOrder(Command.Stop.INCREMENTAL_MIGRATION));
-        commandHandlerHashMap.put(Command.Stop.REVERSE_MIGRATION, (event) -> Tools.writeInputOrder(Command.Stop.REVERSE_MIGRATION));
-        commandHandlerHashMap.put(Command.Run.INCREMENTAL_MIGRATION, (event) -> Tools.writeInputOrder(Command.Run.INCREMENTAL_MIGRATION));
-        commandHandlerHashMap.put(Command.Run.REVERSE_MIGRATION, (event) -> Tools.writeInputOrder(Command.Run.REVERSE_MIGRATION));
+    public static void initValidOrderList() {
+        validOrderList.add(Command.Install.Mysql.FullMigration.ONLINE);
+        validOrderList.add(Command.Install.Mysql.FullMigration.OFFLINE);
+        validOrderList.add(Command.Install.Mysql.FullMigration.DEFAULT);
+        validOrderList.add(Command.Install.Mysql.IncrementalMigration.ONLINE);
+        validOrderList.add(Command.Install.Mysql.IncrementalMigration.OFFLINE);
+        validOrderList.add(Command.Install.Mysql.IncrementalMigration.DEFAULT);
+        validOrderList.add(Command.Install.Mysql.ReverseMigration.ONLINE);
+        validOrderList.add(Command.Install.Mysql.ReverseMigration.OFFLINE);
+        validOrderList.add(Command.Install.Mysql.ReverseMigration.DEFAULT);
+        validOrderList.add(Command.Install.Mysql.Check.ONLINE);
+        validOrderList.add(Command.Install.Mysql.Check.OFFLINE);
+        validOrderList.add(Command.Install.Mysql.Check.DEFAULT);
+        validOrderList.add(Command.Install.Mysql.All.DEFAULT);
+        validOrderList.add(Command.Install.Mysql.All.ONLINE);
+        validOrderList.add(Command.Install.Mysql.All.OFFLINE);
+        validOrderList.add(Command.Uninstall.Mysql.FULL);
+        validOrderList.add(Command.Uninstall.Mysql.INCREMENTAL);
+        validOrderList.add(Command.Uninstall.Mysql.CHECK);
+        validOrderList.add(Command.Uninstall.Mysql.REVERSE);
+        validOrderList.add(Command.Uninstall.Mysql.ALL);
+        validOrderList.add(Command.Start.Mysql.FULL);
+        validOrderList.add(Command.Start.Mysql.INCREMENTAL);
+        validOrderList.add(Command.Start.Mysql.REVERSE);
+        validOrderList.add(Command.Start.Mysql.FULL_CHECK);
+        validOrderList.add(Command.Start.Mysql.INCREMENTAL_CHECK);
+        validOrderList.add(Command.Start.Plan.PLAN1);
+        validOrderList.add(Command.Start.Plan.PLAN2);
+        validOrderList.add(Command.Start.Plan.PLAN3);
+        validOrderList.add(Command.Start.Plan.CURRENT);
+        validOrderList.add(Command.HELP);
+        validOrderList.add(Command.Show.PLAN);
+        validOrderList.add(Command.Show.STATUS);
+        validOrderList.add(Command.Show.INFORMATION);
+        validOrderList.add(Command.Show.PARAMETERS);
+        validOrderList.add(Command.Stop.PLAN);
+        validOrderList.add(Command.Stop.INCREMENTAL_MIGRATION);
+        validOrderList.add(Command.Stop.REVERSE_MIGRATION);
+        validOrderList.add(Command.Run.INCREMENTAL_MIGRATION);
+        validOrderList.add(Command.Run.REVERSE_MIGRATION);
     }
 
     /**
@@ -741,6 +585,28 @@ public class PortalControl {
         toolsConfigParametersTable.put(Debezium.Source.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_source.log");
         toolsConfigParametersTable.put(Debezium.Sink.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_sink.log");
         toolsConfigParametersTable.put(Parameter.ERROR_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "error.log"));
+    }
+
+    /**
+     * Init portal path.
+     */
+    public static void initPortalPath() {
+        String path = commandLineParameterStringMap.get(Command.Parameters.PATH);
+        if (!new File(path).exists() || new File(path).isFile()) {
+            LOGGER.error("portalControlPath not exist");
+            return;
+        }
+        String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
+        portalControlPath = path;
+        portalErrorPath = PathUtils.combainPath(true, portalControlPath + "logs", "error.log");
+        if (workspaceId.equals("")) {
+            portalWorkSpacePath = path;
+        } else {
+            PortalControl.workspaceId = workspaceId;
+            portalWorkSpacePath = PathUtils.combainPath(false, path + "workspace", workspaceId);
+        }
+        toolsConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "toolspath.properties");
+        migrationConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "migrationConfig.properties");
     }
 
     /**

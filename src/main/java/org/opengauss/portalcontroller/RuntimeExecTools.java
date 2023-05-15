@@ -188,6 +188,7 @@ public class RuntimeExecTools {
      *
      * @param in the in
      * @return the input stream string
+     * @throws PortalException the portal exception
      */
     public static String getInputStreamString(InputStream in) throws PortalException {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -195,7 +196,7 @@ public class RuntimeExecTools {
         StringBuilder sb = new StringBuilder();
         try {
             while ((str = br.readLine()) != null) {
-                sb.append(str + System.lineSeparator());
+                sb.append(str).append(System.lineSeparator());
             }
             br.close();
         } catch (IOException e) {

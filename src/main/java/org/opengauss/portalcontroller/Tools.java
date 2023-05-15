@@ -390,7 +390,7 @@ public class Tools {
             Process pro = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps ux"});
             BufferedInputStream in = new BufferedInputStream(pro.getInputStream());
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            String processName = "";
+            String processName;
             while ((processName = br.readLine()) != null) {
                 boolean flag = true;
                 for (String criticalWord : criticalWordList) {
@@ -550,23 +550,23 @@ public class Tools {
     /**
      * Gets hash map parameters.
      *
-     * @param tempHashMap the temp hash map
-     * @param currentKey  the current key
+     * @param hashMap    the temp hash map
+     * @param currentKey the current key
      * @return the hash map parameters
      */
-    public static HashMap<String, Object> getHashMapParameters(HashMap<String, Object> tempHashMap, String currentKey) {
+    public static HashMap<String, Object> getHashMapParameters(HashMap<String, Object> hashMap, String currentKey) {
         HashMap<String, Object> resultMap = new HashMap<>();
-        for (String key : tempHashMap.keySet()) {
+        for (String key : hashMap.keySet()) {
             String newKey = currentKey.concat(".").concat(key);
-            HashMap<String, Object> tempHash1Map = new HashMap<>();
-            if (tempHashMap.get(key) instanceof HashMap) {
-                tempHash1Map = (HashMap) tempHashMap.get(key);
-                HashMap<String, Object> resultHash1Map = getHashMapParameters(tempHash1Map, newKey);
-                for (String resultKey : resultHash1Map.keySet()) {
-                    resultMap.put(resultKey, resultHash1Map.get(resultKey));
+            HashMap<String, Object> tempHashMap;
+            if (hashMap.get(key) instanceof HashMap) {
+                tempHashMap = (HashMap) hashMap.get(key);
+                HashMap<String, Object> tempResultHashMap = getHashMapParameters(tempHashMap, newKey);
+                for (String resultKey : tempResultHashMap.keySet()) {
+                    resultMap.put(resultKey, tempResultHashMap.get(resultKey));
                 }
             } else {
-                resultMap.put(newKey, tempHashMap.get(key));
+                resultMap.put(newKey, hashMap.get(key));
             }
         }
         return resultMap;
@@ -579,11 +579,9 @@ public class Tools {
      * @return the string
      */
     public static String lastLine(String path) {
-        String last = "";
         File file = new File(path);
         StringBuilder builder = new StringBuilder();
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
             long fileLastPointer = randomAccessFile.length() - 1;
             for (long filePointer = fileLastPointer; filePointer != -1; filePointer--) {
                 randomAccessFile.seek(filePointer);
@@ -613,8 +611,7 @@ public class Tools {
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         }
-        last = builder.reverse().toString();
-        return last;
+        return builder.reverse().toString();
     }
 
     /**
@@ -778,8 +775,10 @@ public class Tools {
 
     /**
      * Find offset.
+     *
+     * @throws PortalException the portal exception
      */
-    public static void findOffset() throws PortalException{
+    public static void findOffset() throws PortalException {
         String offsetPath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH);
         String sql = "select t_binlog_name,i_binlog_position,t_gtid_set from sch_chameleon.t_replica_batch;";
         try (
@@ -799,8 +798,7 @@ public class Tools {
                 Tools.changePropertiesParameters(offsetHashtable, offsetPath);
             }
         } catch (SQLException e) {
-            PortalException portalException = new PortalException("SQL exception", "find offset", e.getMessage());
-            throw portalException;
+            throw new PortalException("SQL exception", "find offset", e.getMessage());
         }
     }
 
@@ -850,11 +848,11 @@ public class Tools {
             for (String str : planInforamtionPatrs) {
                 LOGGER.info(str);
             }
-            String planInformation = "";
+            StringBuilder planInformation = new StringBuilder();
             for (String str : planInforamtionPatrs) {
-                planInformation += str + System.lineSeparator();
+                planInformation.append(str).append(System.lineSeparator());
             }
-            Tools.writeFile(planInformation, file, true);
+            Tools.writeFile(planInformation.toString(), file, true);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "generating plan history", e.getMessage());
             portalException.setRequestInformation("Generating plan history failed");
@@ -869,7 +867,7 @@ public class Tools {
         File file = new File(PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH));
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            String str = "";
+            String str;
             while ((str = br.readLine()) != null) {
                 if (!PortalControl.latestCommand.equals(str.trim())) {
                     LOGGER.info(str);
@@ -897,8 +895,7 @@ public class Tools {
      * @param command the command
      * @return the int
      */
-    public static int writeInputOrder(String command) {
-        int temp = 0;
+    public static void writeInputOrder(String command) {
         String inputOrderPath = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
         File file = new File(inputOrderPath);
         try {
@@ -911,7 +908,6 @@ public class Tools {
             LOGGER.error(e.toString());
             Tools.shutDownPortal(e.toString());
         }
-        return temp;
     }
 
     /**
@@ -942,8 +938,7 @@ public class Tools {
      * @return the boolean
      * @throws PortalException the portal exception
      */
-    public static boolean createFile(String path, boolean isFile) throws PortalException {
-        boolean flag = true;
+    public static void createFile(String path, boolean isFile) throws PortalException {
         File file = new File(path);
         if (!file.exists()) {
             try {
@@ -960,10 +955,8 @@ public class Tools {
                 throw new PortalException("IO exception", "creating file " + path, e.getMessage());
             }
         } else {
-            flag = false;
             LOGGER.info("File " + path + " already exists.");
         }
-        return flag;
     }
 
     /**
@@ -988,7 +981,7 @@ public class Tools {
      * @param pkgPathParameter the pkg path parameter
      * @param pkgNameParameter the pkg name parameter
      * @param installPath      the install path
-     * @return the boolean
+     * @throws PortalException the portal exception
      */
     public static void installPackage(ArrayList<String> filePathList, String pkgPathParameter, String pkgNameParameter, String installPath) throws PortalException {
         String packagePath = Tools.getPackagePath(pkgPathParameter, pkgNameParameter);
@@ -1204,7 +1197,7 @@ public class Tools {
     public static void changeConnectXmlFile(String workspaceIdString, String path) {
         try {
             StringBuilder result = new StringBuilder();
-            String temp = "";
+            String temp;
             BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
             while ((temp = bufferedReader.readLine()) != null) {
                 if (temp.contains("/connect") && temp.contains(".log")) {
@@ -1358,15 +1351,6 @@ public class Tools {
     }
 
     /**
-     * Stop portal.
-     */
-    public static void stopPortal() {
-        PortalControl.threadCheckProcess.exit = true;
-        PortalControl.threadGetOrder.exit = true;
-        PortalControl.threadStatusController.exit = true;
-    }
-
-    /**
      * Joint chameleon orders string.
      *
      * @param chameleonParameterTable the chameleon parameter table
@@ -1386,32 +1370,6 @@ public class Tools {
     }
 
     /**
-     * Read file not matches regex string.
-     *
-     * @param file  the file
-     * @param regex the regex
-     * @return the string
-     */
-    public static String readFileNotMatchesRegex(File file, String regex) {
-        StringBuilder str = new StringBuilder();
-        try {
-            BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-            String tempStr;
-            while ((tempStr = fileReader.readLine()) != null) {
-                if (!tempStr.matches(regex)) {
-                    str.append(tempStr).append(System.lineSeparator());
-                }
-            }
-            fileReader.close();
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "reading file " + file.getAbsolutePath(), e.getMessage());
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
-        }
-        return str.toString();
-    }
-
-    /**
      * Output file string string.
      *
      * @param path the path
@@ -1421,7 +1379,7 @@ public class Tools {
         StringBuilder str = new StringBuilder();
         try {
             BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(path))));
-            String tempStr = "";
+            String tempStr;
             while ((tempStr = fileReader.readLine()) != null) {
                 str.append(tempStr).append(System.lineSeparator());
                 LOGGER.warn(tempStr);
@@ -1694,7 +1652,7 @@ public class Tools {
         if (new File(logPath).exists()) {
             try {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(logPath))));
-                String tempStr = "";
+                String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
                     if (tempStr.contains("Exception:") || tempStr.contains("Error:")) {
                         str.append(tempStr).append(System.lineSeparator());
@@ -1762,7 +1720,7 @@ public class Tools {
         try {
             if (file.exists()) {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr = "";
+                String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
                     if (tempStr.contains("xlog location")) {
                         int index = tempStr.lastIndexOf(":") + 1;
@@ -1789,7 +1747,7 @@ public class Tools {
      * @param sign      the sign
      * @param timestamp the timestamp
      * @return the boolean
-     * @throws Exception the exception
+     * @throws PortalException the portal exception
      */
     public static boolean readFileStartSign(String path, String sign, long timestamp) throws PortalException {
         boolean flag = false;
@@ -1797,7 +1755,7 @@ public class Tools {
         try {
             if (file.exists()) {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr = "";
+                String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
                     if (tempStr.contains(sign)) {
                         String[] strs = tempStr.split(" ");
@@ -1814,8 +1772,7 @@ public class Tools {
                             LOGGER.warn(e.getMessage());
                             LOGGER.warn("Please check LOG_PATTERN of log4j2.xml , log4j2source.xml and log4j2sink.xml");
                             LOGGER.warn("The value should start with %d{yyyy-MM-dd HH:mm:ss.SSS}");
-                            PortalException portalException = new PortalException("String index out of bounds exception", "reading log in file " + file.getAbsolutePath(), e.getMessage());
-                            throw portalException;
+                            throw new PortalException("String index out of bounds exception", "reading log in file " + file.getAbsolutePath(), e.getMessage());
                         }
                     }
                 }
@@ -1849,7 +1806,7 @@ public class Tools {
      * @return the string
      */
     public static String combainOrder(String[] parts) {
-        StringBuilder path = new StringBuilder();
+        StringBuilder path;
         path = new StringBuilder(parts[0]);
         for (int i = 1; i < parts.length; i++) {
             path.append(" ").append(parts[i]);
@@ -1858,6 +1815,11 @@ public class Tools {
         return path.toString();
     }
 
+    /**
+     * Shut down portal.
+     *
+     * @param str the str
+     */
     public static void shutDownPortal(String str) {
         Plan.stopPlan = true;
         PortalControl.status = Status.ERROR;

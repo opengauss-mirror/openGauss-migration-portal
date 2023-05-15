@@ -41,8 +41,7 @@ import java.util.List;
  *
  * @author ：liutong
  * @date ：Created in 2022/12/24
- * @since ：1
- * The type Task.
+ * @since ：1 The type Task.
  */
 public class Task {
     private static HashMap<String, String> taskProcessMap = new HashMap<>();
@@ -87,15 +86,6 @@ public class Task {
      * The constant stopTaskHandlerHashMap.
      */
     public static HashMap<String, PortalControl.EventHandler> stopTaskHandlerHashMap = new HashMap<>();
-
-    /**
-     * Gets task log map.
-     *
-     * @return the task log map
-     */
-    public static HashMap<String, String> getTaskLogMap() {
-        return taskLogMap;
-    }
 
     /**
      * Sets task log map.

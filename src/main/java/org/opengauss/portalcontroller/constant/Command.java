@@ -70,10 +70,6 @@ public interface Command {
     interface Parameters{
         String ID = "workspace.id";
         String PATH = "path";
-        String ACTION = "action";
-        String TYPE = "type";
-        String MIGRATION_TYPE = "migration.type";
-        String PARAMETER = "parameter";
         String CHECK = "check";
         String ORDER = "order";
     }
@@ -82,4 +78,15 @@ public interface Command {
         String INCREMENTAL_MIGRATION = "run incremental migration";
         String REVERSE_MIGRATION = "run reverse migration";
     }
+    interface Type{
+        String INSTALL = "install";
+        String RUN = "run";
+        String START = "start";
+        String UNINSTALL = "uninstall";
+        String STOP = "stop";
+        String SHOW = "show";
+        String HELP = "help";
+    }
+    String MYSQL = "mysql";
+    String ALL = "all";
 }

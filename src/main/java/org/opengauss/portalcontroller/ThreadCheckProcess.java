@@ -15,9 +15,6 @@
 
 package org.opengauss.portalcontroller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Thread check the process.
  *
@@ -26,7 +23,6 @@ import org.slf4j.LoggerFactory;
  * @since ：1
  */
 public class ThreadCheckProcess extends Thread implements Runnable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadCheckProcess.class);
     /**
      * The Exit.
      */

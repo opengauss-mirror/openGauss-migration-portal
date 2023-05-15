@@ -136,6 +136,12 @@ public class InstallMigrationTools {
         return InstallWay.ONLINE.getName().equals(installWayValue);
     }
 
+    /**
+     * Gets check task.
+     *
+     * @param order the order
+     * @return the check task
+     */
     public CheckTask getCheckTask(String order) {
         if (order.contains(MigrationParameters.Type.FULL)) return new CheckTaskMysqlFullMigration();
         if (order.contains(MigrationParameters.Type.INCREMENTAL)) return new CheckTaskIncrementalMigration();
