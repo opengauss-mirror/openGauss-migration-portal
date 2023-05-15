@@ -5,6 +5,9 @@ import org.opengauss.portalcontroller.constant.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The type Show command receiver.
+ */
 public class ShowCommandReceiver extends CommandReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShowCommandReceiver.class);
     public void action(String order) {

@@ -1826,6 +1826,13 @@ public class Tools {
         PortalControl.errorMsg = str;
     }
 
+    /**
+     * Contain string boolean.
+     *
+     * @param order the order
+     * @param key   the key
+     * @return the boolean
+     */
     public static boolean containString(String order, String key) {
         String[] orderPart = order.split(" ");
         for (String part : orderPart) {
