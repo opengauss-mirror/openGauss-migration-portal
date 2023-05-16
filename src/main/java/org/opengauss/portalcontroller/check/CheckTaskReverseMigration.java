@@ -83,7 +83,7 @@ public class CheckTaskReverseMigration implements CheckTask {
         }
         changeParameters(workspaceId);
         if (!PortalControl.allowReverseMigration) {
-            LOGGER.error("Can not run reverse migration" + PortalControl.refuseReverseMigrationReason);
+            LOGGER.error("Can not run reverse migration." + PortalControl.refuseReverseMigrationReason);
             Plan.stopPlan = true;
             PortalControl.status = Status.ERROR;
             PortalControl.errorMsg = PortalControl.refuseReverseMigrationReason;

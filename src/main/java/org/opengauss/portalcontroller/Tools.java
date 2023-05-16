@@ -21,6 +21,7 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Default;
+import org.opengauss.portalcontroller.constant.ExceptionType;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
@@ -1633,8 +1634,10 @@ public class Tools {
             if (!errorStr.equals("")) {
                 LOGGER.error(errorStr);
                 LOGGER.error("Error occurred in " + logPath + ".You can stop plan or ignore the information.");
-                PortalControl.status = Status.ERROR;
-                PortalControl.errorMsg = errorStr;
+                if(!errorStr.contains(ExceptionType.PSQL.getName())){
+                    PortalControl.status = Status.ERROR;
+                    PortalControl.errorMsg = errorStr;
+                }
                 flag = false;
             }
         }
@@ -1650,8 +1653,7 @@ public class Tools {
     public static String getErrorMsg(String logPath) {
         StringBuilder str = new StringBuilder();
         if (new File(logPath).exists()) {
-            try {
-                BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(logPath))));
+            try (BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(logPath))))) {
                 String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
                     if (tempStr.contains("Exception:") || tempStr.contains("Error:")) {
@@ -1659,7 +1661,6 @@ public class Tools {
                         break;
                     }
                 }
-                fileReader.close();
             } catch (IOException e) {
                 PortalException portalException = new PortalException("IO exception", "getting error message in file " + logPath, e.getMessage());
                 LOGGER.error(portalException.toString());
