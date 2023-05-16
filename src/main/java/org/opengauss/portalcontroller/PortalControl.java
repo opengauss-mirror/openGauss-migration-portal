@@ -277,7 +277,7 @@ public class PortalControl {
         } else {
             LOGGER.info("Plan " + PortalControl.workspaceId + " is not running.");
         }
-        int status = ChangeStatusTools.getPortalStatus(threadStatusController);
+        int status = ChangeStatusTools.getPortalStatus();
         LOGGER.info("Portal status: " + Status.HASHTABLE.get(status));
         if (status < Status.START_INCREMENTAL_MIGRATION) {
             ChangeStatusTools.outputChameleonStatus();

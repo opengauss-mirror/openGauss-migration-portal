@@ -25,6 +25,7 @@ import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
+import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
@@ -50,8 +51,7 @@ public class ChangeStatusTools {
     public static ArrayList<TableStatus> getChameleonTableStatus() {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
-        ArrayList<TableStatus> tableStatusList = getChameleonTableStatus(path);
-        return tableStatusList;
+        return getChameleonTableStatus(path);
     }
 
     /**
@@ -63,7 +63,7 @@ public class ChangeStatusTools {
     public static ArrayList<TableStatus> getChameleonTableStatus(String path) {
         ArrayList<TableStatus> tableStatusList = new ArrayList<>();
         File file = new File(path);
-        String tableChameleonStatus = "";
+        String tableChameleonStatus;
         if (!(tableChameleonStatus = Tools.readFile(file)).equals("")) {
             JSONObject root = JSONObject.parseObject(tableChameleonStatus);
             JSONArray table = root.getJSONArray("table");
@@ -96,8 +96,7 @@ public class ChangeStatusTools {
     public static ArrayList<TableStatus> getDatacheckTableStatus(ArrayList<TableStatus> tableStatusArrayList) {
         String successPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", "success.log");
         String failPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", "failed.log");
-        tableStatusArrayList = getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
-        return tableStatusArrayList;
+        return getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
     }
 
 
@@ -115,8 +114,7 @@ public class ChangeStatusTools {
             path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
         }
         File file = new File(path);
-        ArrayList<ObjectStatus> objectStatusList = getChameleonObjectStatus(name, file);
-        return objectStatusList;
+        return getChameleonObjectStatus(name, file);
     }
 
     /**
@@ -128,7 +126,7 @@ public class ChangeStatusTools {
      */
     public static ArrayList<ObjectStatus> getChameleonObjectStatus(String name, File file) {
         ArrayList<ObjectStatus> objectStatusList = new ArrayList<>();
-        String chameleonStr = "";
+        String chameleonStr;
         if (file.exists()) {
             chameleonStr = Tools.readFile(file);
             if (!chameleonStr.equals("")) {
@@ -163,8 +161,7 @@ public class ChangeStatusTools {
         ArrayList<ObjectStatus> functionStatusArrayList = getChameleonObjectStatus("function", "start_func_replica");
         ArrayList<ObjectStatus> triggerStatusArrayList = getChameleonObjectStatus("trigger", "start_trigger_replica");
         ArrayList<ObjectStatus> procedureStatusArrayList = getChameleonObjectStatus("procedure", "start_proc_replica");
-        FullMigrationStatus fullMigrationStatus = new FullMigrationStatus(tableStatusArrayList, viewStatusArrayList, functionStatusArrayList, triggerStatusArrayList, procedureStatusArrayList);
-        return fullMigrationStatus;
+        return new FullMigrationStatus(tableStatusArrayList, viewStatusArrayList, functionStatusArrayList, triggerStatusArrayList, procedureStatusArrayList);
     }
 
     /**
@@ -172,7 +169,7 @@ public class ChangeStatusTools {
      */
     public static void changeFullStatus() {
         FullMigrationStatus tempFullMigrationStatus;
-        String fullMigrationStatusString = "";
+        String fullMigrationStatusString;
         try {
             tempFullMigrationStatus = getAllChameleonStatus();
         } catch (JSONException e) {
@@ -194,13 +191,13 @@ public class ChangeStatusTools {
      */
     public static int changeIncrementalStatus(String sourceMigrationStatusPath, String sinkMigrationStatusPath, String incrementalMigrationStatusPath, String count) {
         int time = 0;
-        String sourceStr = "";
+        String sourceStr;
         sourceStr = Tools.readFile(new File(sourceMigrationStatusPath));
         JSONObject sourceObject = JSONObject.parseObject(sourceStr);
         int createCount = sourceObject.getInteger(count);
         int sourceSpeed = sourceObject.getInteger("speed");
         long sourceFirstTimestamp = sourceObject.getLong("timestamp");
-        String sinkStr = "";
+        String sinkStr;
         sinkStr = Tools.readFile(new File(sinkMigrationStatusPath));
         JSONObject sinkObject = JSONObject.parseObject(sinkStr);
         int replayedCount = sinkObject.getInteger("replayedCount");
@@ -219,7 +216,7 @@ public class ChangeStatusTools {
             time = 1000;
         }
         Tools.sleepThread(time, "writing the status");
-        String incrementalMigrationString = "";
+        String incrementalMigrationString;
         int status = Status.Incremental.RUNNING;
         if (PortalControl.status == Status.ERROR) {
             status = Status.Incremental.ERROR;
@@ -329,10 +326,9 @@ public class ChangeStatusTools {
     /**
      * Gets portal status.
      *
-     * @param threadStatusController the thread status controller
      * @return the portal status
      */
-    public static int getPortalStatus(ThreadStatusController threadStatusController) {
+    public static int getPortalStatus() {
         int status = 0;
         String str = Tools.readFile(new File(PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH)));
         JSONArray array = JSONArray.parseArray(str);
@@ -388,7 +384,9 @@ public class ChangeStatusTools {
                         tableStatus.setStatus(Status.Object.ERROR);
                         String errorMsg = array.getJSONObject(index).getString("message");
                         errorMsg += "If you want to repair data.please read the following files:";
-                        errorMsg += "";
+                        String repairFileName = "repair_" + PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME) + "_" + tableName + "_0_0.txt";
+                        String repairPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", repairFileName);
+                        errorMsg += repairPath;
                         tableStatus.setErrorMsg(errorMsg);
                         break;
                     }
