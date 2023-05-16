@@ -547,6 +547,7 @@ public class PortalControl {
         toolsConfigParametersTable.put(Status.REVERSE_FOLDER, PathUtils.combainPath(false, statusFolder, "reverse"));
         toolsConfigParametersTable.put(Status.PORTAL_PATH, PathUtils.combainPath(true, statusFolder, "portal.txt"));
         toolsConfigParametersTable.put(Status.FULL_PATH, PathUtils.combainPath(true, statusFolder, "full_migration.txt"));
+        toolsConfigParametersTable.put(Status.FULL_CHECK_PATH, PathUtils.combainPath(true, statusFolder, "full_migration_datacheck.txt"));
         toolsConfigParametersTable.put(Status.INCREMENTAL_PATH, PathUtils.combainPath(true, statusFolder, "incremental_migration.txt"));
         toolsConfigParametersTable.put(Status.REVERSE_PATH, PathUtils.combainPath(true, statusFolder, "reverse_migration.txt"));
         toolsConfigParametersTable.put(Status.XLOG_PATH, PathUtils.combainPath(true, statusFolder, "xlog.txt"));
@@ -556,6 +557,7 @@ public class PortalControl {
         toolsConfigParametersTable.put(Check.Source.LOG_PATH, checkLogFolder + "source.log");
         toolsConfigParametersTable.put(Check.Sink.LOG_PATH, checkLogFolder + "sink.log");
         toolsConfigParametersTable.put(Check.Result.FULL, PathUtils.combainPath(false, workPath + "check_result"));
+        toolsConfigParametersTable.put(Check.Result.FULL_CURRENT, PathUtils.combainPath(false, workPath + "check_result", "result"));
         toolsConfigParametersTable.put(Check.Result.INCREMENTAL, PathUtils.combainPath(false, workPath + "check_result", "incremental"));
         toolsConfigParametersTable.put(Check.Result.REVERSE, PathUtils.combainPath(false, workPath + "check_result", "reverse"));
         toolsConfigParametersTable.put(Debezium.Connector.LOG_PATTERN_PATH, PathUtils.combainPath(true, confluentPath + "etc", "kafka", "connect-log4j.properties"));

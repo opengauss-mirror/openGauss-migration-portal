@@ -88,6 +88,7 @@ public interface Status {
     String FOLDER = "status.folder";
     String PORTAL_PATH =  "status.portal.path";
     String FULL_PATH = "status.full.path";
+    String FULL_CHECK_PATH = "status.full.check.path";
     String INCREMENTAL_FOLDER = "status.incremental.folder";
     String INCREMENTAL_PATH = "status.incremental.path";
     String REVERSE_FOLDER = "status.reverse.folder";

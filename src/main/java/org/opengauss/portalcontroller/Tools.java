@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller;
 
+import com.alibaba.fastjson.JSON;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -30,6 +31,9 @@ import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.status.CheckColumnRule;
+import org.opengauss.portalcontroller.status.CheckRule;
+import org.opengauss.portalcontroller.status.RuleParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -77,7 +81,6 @@ import java.util.Properties;
  */
 public class Tools {
     private static final Logger LOGGER = LoggerFactory.getLogger(Tools.class);
-
     /**
      * Change single yml parameter.
      *
@@ -467,6 +470,7 @@ public class Tools {
                     table.put(o.toString(), pps.getProperty(o.toString()));
                 }
             }
+            pps.clear();
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "getting properties parameters", e.getMessage());
             LOGGER.error(portalException.toString());
@@ -866,8 +870,7 @@ public class Tools {
      */
     public static void readInputOrder() {
         File file = new File(PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH));
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
             String str;
             while ((str = br.readLine()) != null) {
                 if (!PortalControl.latestCommand.equals(str.trim())) {
@@ -1221,55 +1224,97 @@ public class Tools {
     }
 
     /**
-     * Write check rules.
+     * Change datacheck speed status.
+     *
+     * @param progressPath the progress path
+     * @param statusPath   the status path
      */
-    public static void writeCheckRules() {
-        StringBuilder rules = new StringBuilder();
-        String rulesTableAmount = getOrDefault(Check.Rules.Table.AMOUNT, String.valueOf(Default.Check.TABLE_AMOUNT));
-        int tableAmount = Integer.parseInt(rulesTableAmount);
-        if (Boolean.parseBoolean(getOrDefault(Check.Rules.ENABLE, Default.Check.RULES_ENABLE)) && tableAmount != 0) {
-            rules.append(rules);
-            rules.append("table-parameter:").append(System.lineSeparator());
-            for (int i = 1; i <= tableAmount; i++) {
-                String rulesTableName = System.getProperty(Check.Rules.Table.NAME + i);
-                String rulesTableText = System.getProperty(Check.Rules.Table.TEXT + i);
-                rules.append("table-name").append(i).append(":").append(rulesTableName).append(System.lineSeparator());
-                rules.append("table-text").append(i).append(":").append(rulesTableText).append(System.lineSeparator());
-            }
-            rules.append("row-parameter:").append(System.lineSeparator());
-            int rulesRowAmount = Integer.parseInt(getOrDefault(Check.Rules.Row.AMOUNT, String.valueOf(Default.Check.ROW_AMOUNT)));
-            for (int i = 1; i <= rulesRowAmount; i++) {
-                String rulesRowName = System.getProperty(Check.Rules.Row.NAME + i);
-                String rulesRowText = System.getProperty(Check.Rules.Row.TEXT + i);
-                rules.append("row-name").append(i).append(":").append(rulesRowName).append(System.lineSeparator());
-                rules.append("row-text").append(i).append(":").append(rulesRowText).append(System.lineSeparator());
-            }
-            rules.append("column-parameter:" + System.lineSeparator());
-            int rulesColumnAmount = Integer.parseInt(getOrDefault(Check.Rules.Row.AMOUNT, String.valueOf(Default.Check.COLUMN_AMOUNT)));
-            for (int i = 1; i <= rulesColumnAmount; i++) {
-                String rulesColumnName = System.getProperty(Check.Rules.Column.NAME + i);
-                String rulesColumnText = System.getProperty(Check.Rules.Column.TEXT + i);
-                String rulesColumnAttribute = System.getProperty(Check.Rules.Column.ATTRIBUTE + i);
-                rules.append("column-name" + i + ":" + rulesColumnName + System.lineSeparator());
-                rules.append("column-text" + i + ":" + rulesColumnText + System.lineSeparator());
-                rules.append("column-attribute" + i + ":" + rulesColumnAttribute + System.lineSeparator());
-            }
-        }
+    public static void changeDatacheckSpeedStatus(String progressPath, String statusPath) {
         try {
-            Tools.createFile(PortalControl.portalWorkSpacePath + "parameter-datacheck.txt", true);
-        } catch (PortalException e) {
-            LOGGER.error(e.toString());
-        }
-        try {
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(PortalControl.portalWorkSpacePath + "parameter-datacheck.txt"));
-            bufferedWriter.write(rules.toString());
-            bufferedWriter.flush();
-            bufferedWriter.close();
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "writing parameter", e.getMessage());
+            if (new File(progressPath).exists()) {
+                RuntimeExecTools.copyFile(progressPath, statusPath, true);
+            }
+        } catch (PortalException portalException) {
+            portalException.setRequestInformation("Cannot get datacheck status.");
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         }
+    }
+
+    /**
+     * Write check rules.
+     */
+    public static void writeCheckRules() {
+        String path = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
+        HashMap<String, Object> hashMap = Tools.getYmlParameters(path);
+        RuleParameter tableRuleParameter = new RuleParameter(Check.Rules.Table.AMOUNT, Check.Rules.Table.NAME,
+                Check.Rules.Table.TEXT, "");
+        RuleParameter rowRuleParameter = new RuleParameter(Check.Rules.Row.AMOUNT, Check.Rules.Row.NAME,
+                Check.Rules.Row.TEXT, "");
+        RuleParameter columnRuleParameter = new RuleParameter(Check.Rules.Column.AMOUNT, Check.Rules.Column.NAME,
+                Check.Rules.Column.TEXT, Check.Rules.Column.ATTRIBUTE);
+        String rulesEnableParameter = Tools.getOrDefault(Check.Rules.ENABLE, String.valueOf(hashMap.get(Check.Rules.ENABLE)));
+        hashMap.put(Check.Rules.ENABLE, Boolean.valueOf(rulesEnableParameter));
+        hashMap = getCheckRulesFromCommandLine(hashMap, tableRuleParameter, false);
+        hashMap = getCheckRulesFromCommandLine(hashMap, rowRuleParameter, false);
+        hashMap = getCheckRulesFromCommandLine(hashMap, columnRuleParameter, true);
+        Tools.changeYmlParameters(hashMap, path);
+    }
+
+    /**
+     * Gets check rules from command line.
+     *
+     * @param hashMap       the hash map
+     * @param ruleParameter the rule parameter
+     * @param hasAttribute  the has attribute
+     * @return the check rules from command line
+     */
+    public static HashMap<String, Object> getCheckRulesFromCommandLine(HashMap<String, Object> hashMap, RuleParameter ruleParameter, boolean hasAttribute) {
+        ArrayList<CheckRule> checkRules = new ArrayList<>();
+        String ruleAmount = ruleParameter.getAmount();
+        String ruleName = ruleParameter.getName();
+        String ruleText = ruleParameter.getText();
+        String ruleAttribute = ruleParameter.getAttribute();
+        if (System.getProperty(ruleAmount) != null) {
+            int amount = Integer.parseInt(System.getProperty(ruleAmount));
+            for (int i = 1; i <= amount; i++) {
+                CheckRule checkRule;
+                String name = System.getProperty(ruleName + i);
+                String text = System.getProperty(ruleText + i);
+                if (hasAttribute) {
+                    String attribute = System.getProperty(ruleAttribute + i);
+                    checkRule = new CheckColumnRule(name, text, attribute);
+                } else {
+                    checkRule = new CheckRule(name, text);
+                }
+                checkRules.add(checkRule);
+            }
+            changeCheckRules(hashMap, Check.Rules.Table.AMOUNT, checkRules);
+        }
+        return hashMap;
+    }
+
+    /**
+     * Change check rules hash map.
+     *
+     * @param oldMap     the old map
+     * @param key        the key
+     * @param checkRules the check rules
+     * @return the hash map
+     */
+    public static HashMap<String, Object> changeCheckRules(HashMap<String, Object> oldMap, String key, ArrayList<CheckRule> checkRules) {
+        ArrayList<Object> objectArrayList = new ArrayList<>();
+        for (CheckRule checkRule : checkRules) {
+            Object jsonObject = JSON.toJSON(checkRule);
+            objectArrayList.add(jsonObject);
+        }
+        if (oldMap.containsKey(key)) {
+            oldMap.replace(key, objectArrayList);
+        } else {
+            oldMap.put(key, objectArrayList);
+        }
+
+        return oldMap;
     }
 
     /**
@@ -1278,7 +1323,7 @@ public class Tools {
     public static void writeChameleonOverrideType() {
         StringBuilder rules = new StringBuilder();
         rules.append("chameleon-parameter:").append(System.lineSeparator());
-        int chameleonOverrideTypeAmount = Integer.parseInt(getOrDefault(Chameleon.Override.AMOUNT, String.valueOf(Default.Chameleon.Override.AMOUNT)));
+        int chameleonOverrideTypeAmount = Integer.parseInt(Tools.getOrDefault(Chameleon.Override.AMOUNT, String.valueOf(Default.Chameleon.Override.AMOUNT)));
         for (int i = 0; i <= chameleonOverrideTypeAmount; i++) {
             rules.append("override").append(i).append(": ").append(System.lineSeparator());
             String overrideType = System.getProperty(Chameleon.Override.SOURCE_TYPE + i);
@@ -1634,7 +1679,7 @@ public class Tools {
             if (!errorStr.equals("")) {
                 LOGGER.error(errorStr);
                 LOGGER.error("Error occurred in " + logPath + ".You can stop plan or ignore the information.");
-                if(!errorStr.contains(ExceptionType.PSQL.getName())){
+                if (!errorStr.contains(ExceptionType.PSQL.getName())) {
                     PortalControl.status = Status.ERROR;
                     PortalControl.errorMsg = errorStr;
                 }
