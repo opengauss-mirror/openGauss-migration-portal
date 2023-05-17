@@ -57,6 +57,7 @@ public interface Debezium {
         String PORT = "database.port";
         String USER = "database.user";
         String PASSWORD = "database.password";
+        String SERVER_ID = "database.server.id";
         String WHITELIST = "database.include.list";
         String NAME = "database.dbname";
         String CONNECTOR_PATH = "source.incremental.connector.path";

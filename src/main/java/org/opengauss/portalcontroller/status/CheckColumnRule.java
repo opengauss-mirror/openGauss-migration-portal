@@ -16,54 +16,29 @@
 package org.opengauss.portalcontroller.status;
 
 /**
- * The type Check rules.
+ * The type Check column rule.
  */
-public class CheckRules {
-    /**
-     * The Name.
-     */
-    String name;
-    /**
-     * The Text.
-     */
-    String text;
-    /**
-     * The Attribute.
-     */
-    String attribute;
+public class CheckColumnRule extends CheckRule {
+    private String name;
+    private String text;
+    private String attribute;
 
-    /**
-     * Gets name.
-     *
-     * @return the name
-     */
+    @Override
     public String getName() {
         return name;
     }
 
-    /**
-     * Sets name.
-     *
-     * @param name the name
-     */
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     * Gets text.
-     *
-     * @return the text
-     */
+    @Override
     public String getText() {
         return text;
     }
 
-    /**
-     * Sets text.
-     *
-     * @param text the text
-     */
+    @Override
     public void setText(String text) {
         this.text = text;
     }
@@ -87,26 +62,15 @@ public class CheckRules {
     }
 
     /**
-     * Instantiates a new Check rules.
+     * Instantiates a new Check column rule.
      *
      * @param name      the name
      * @param text      the text
      * @param attribute the attribute
      */
-    public CheckRules(String name, String text, String attribute) {
+    public CheckColumnRule(String name, String text, String attribute) {
         this.name = name;
         this.text = text;
         this.attribute = attribute;
-    }
-
-    /**
-     * Instantiates a new Check rules.
-     *
-     * @param name the name
-     * @param text the text
-     */
-    public CheckRules(String name, String text) {
-        this.name = name;
-        this.text = text;
     }
 }

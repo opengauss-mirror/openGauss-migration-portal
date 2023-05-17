@@ -67,11 +67,14 @@ public class CheckTaskReverseMigration implements CheckTask {
         hashtable1.put("transforms.route.regex", "^" + "opengauss_server_" + workspaceId + "(.*)");
         hashtable1.put("transforms.route.replacement", "opengauss_server_" + workspaceId + "_topic");
         hashtable1.put("source.process.file.path", hashtable.get(Status.REVERSE_FOLDER));
+        hashtable1.put("create.count.info.path", hashtable.get(Status.REVERSE_FOLDER));
         hashtable1.put("slot.name", Plan.slotName);
         Tools.changePropertiesParameters(hashtable1, sourceConfigPath);
         Hashtable<String, String> hashtable2 = new Hashtable<>();
         hashtable2.put("topics", "opengauss_server_" + workspaceId + "_topic");
         hashtable2.put("sink.process.file.path", hashtable.get(Status.REVERSE_FOLDER));
+        hashtable2.put("create.count.info.path", hashtable.get(Status.REVERSE_FOLDER));
+        hashtable2.put("fail.sql.path", hashtable.get(Status.REVERSE_FOLDER));
         Tools.changePropertiesParameters(hashtable2, sinkConfigPath);
         Tools.setXLogPath();
     }
@@ -83,7 +86,7 @@ public class CheckTaskReverseMigration implements CheckTask {
         }
         changeParameters(workspaceId);
         if (!PortalControl.allowReverseMigration) {
-            LOGGER.error("Can not run reverse migration." + PortalControl.refuseReverseMigrationReason);
+            LOGGER.error("Can not run reverse migration" + PortalControl.refuseReverseMigrationReason);
             Plan.stopPlan = true;
             PortalControl.status = Status.ERROR;
             PortalControl.errorMsg = PortalControl.refuseReverseMigrationReason;

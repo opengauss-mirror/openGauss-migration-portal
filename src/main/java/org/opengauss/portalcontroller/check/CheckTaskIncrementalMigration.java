@@ -66,6 +66,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         hashtable1.put("transforms.route.replacement", "mysql_server_" + workspaceId + "_topic");
         String incrementalFolder = hashtable.get(Status.INCREMENTAL_FOLDER);
         hashtable1.put("source.process.file.path", incrementalFolder);
+        hashtable1.put("create.count.info.path", incrementalFolder);
         Tools.changePropertiesParameters(hashtable1, hashtable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
         Hashtable<String, String> hashtable2 = new Hashtable<>();
         hashtable2.put("name", "mysql-sink-" + workspaceId);
@@ -78,7 +79,9 @@ public class CheckTaskIncrementalMigration implements CheckTask {
             return;
         }
         hashtable2.put("sink.process.file.path", incrementalFolder);
+        hashtable2.put("create.count.info.path", incrementalFolder);
         hashtable2.put("xlog.location", hashtable.get(Status.XLOG_PATH));
+        hashtable2.put("fail.sql.path", incrementalFolder);
         Tools.changePropertiesParameters(hashtable2, hashtable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
     }
 

@@ -76,7 +76,6 @@ public class ThreadStatusController extends Thread {
     @Override
     public void run() {
         while (!exit) {
-            int time = 0;
             ChangeStatusTools.writePortalStatus();
             Hashtable<String, String> toolsConfigHashtable = PortalControl.toolsConfigParametersTable;
             String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
@@ -99,12 +98,12 @@ public class ThreadStatusController extends Thread {
                 }
                 String incrementalStatusPath = toolsConfigHashtable.get(Status.INCREMENTAL_PATH);
                 if (new File(sourceIncrementalStatusPath).exists() && new File(sinkIncrementalStatusPath).exists()) {
-                    time = ChangeStatusTools.changeIncrementalStatus(sourceIncrementalStatusPath, sinkIncrementalStatusPath, incrementalStatusPath, "createCount");
+                    ChangeStatusTools.changeIncrementalStatus(sourceIncrementalStatusPath, sinkIncrementalStatusPath, incrementalStatusPath, true);
                 }
             }
             if (PortalControl.status >= Status.START_REVERSE_MIGRATION && PortalControl.status != Status.ERROR) {
-                String sourceReverseStatusPath = PathUtils.combainPath(true, toolsConfigHashtable.get(Status.REVERSE_FOLDER), "reverse-source-process.txt");
-                String sinkReverseStatusPath = PathUtils.combainPath(true, toolsConfigHashtable.get(Status.REVERSE_FOLDER), "reverse-sink-process.txt");
+                String sourceReverseStatusPath = "";
+                String sinkReverseStatusPath = "";
                 File directory = new File(toolsConfigHashtable.get(Status.REVERSE_FOLDER));
                 if (directory.exists() && directory.isDirectory()) {
                     for (File file : Objects.requireNonNull(directory.listFiles())) {
@@ -117,7 +116,7 @@ public class ThreadStatusController extends Thread {
                 }
                 String reverseStatusPath = toolsConfigHashtable.get(Status.REVERSE_PATH);
                 if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
-                    time = ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath, reverseStatusPath, "count");
+                    ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath, reverseStatusPath, false);
                 }
             }
             try {
@@ -147,9 +146,7 @@ public class ThreadStatusController extends Thread {
                 LOGGER.error(e.toString());
                 Tools.shutDownPortal(e.toString());
             }
-            if (1000 - time > 0) {
-                Tools.sleepThread(1000 - time, "writing the status");
-            }
+            Tools.sleepThread(1000, "writing the status");
         }
     }
 }

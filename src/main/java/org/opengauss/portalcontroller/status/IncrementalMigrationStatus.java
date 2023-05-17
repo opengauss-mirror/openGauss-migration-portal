@@ -24,7 +24,13 @@ public class IncrementalMigrationStatus {
     private int sourceSpeed;
     private int sinkSpeed;
     private int rest;
+    private int failCount;
+    private int successCount;
+    private int replayedCount;
+    private int skippedCount;
     private String msg;
+
+    public IncrementalMigrationStatus(){}
 
     /**
      * Gets status.
@@ -135,38 +141,74 @@ public class IncrementalMigrationStatus {
     }
 
     /**
-     * Instantiates a new Incremental migration status.
+     * Gets fail count.
      *
-     * @param status      the status
-     * @param count       the count
-     * @param sourceSpeed the source speed
-     * @param sinkSpeed   the sink speed
-     * @param rest        the rest
-     * @param msg         the msg
+     * @return the fail count
      */
-    public IncrementalMigrationStatus(int status, int count, int sourceSpeed, int sinkSpeed, int rest, String msg) {
-        this.status = status;
-        this.count = count;
-        this.sourceSpeed = sourceSpeed;
-        this.sinkSpeed = sinkSpeed;
-        this.rest = rest;
-        this.msg = msg;
+    public int getFailCount() {
+        return failCount;
     }
 
     /**
-     * Instantiates a new Incremental migration status.
+     * Sets fail count.
      *
-     * @param status      the status
-     * @param count       the count
-     * @param sourceSpeed the source speed
-     * @param sinkSpeed   the sink speed
-     * @param rest        the rest
+     * @param failCount the fail count
      */
-    public IncrementalMigrationStatus(int status, int count, int sourceSpeed, int sinkSpeed, int rest) {
-        this.status = status;
-        this.count = count;
-        this.sourceSpeed = sourceSpeed;
-        this.sinkSpeed = sinkSpeed;
-        this.rest = rest;
+    public void setFailCount(int failCount) {
+        this.failCount = failCount;
+    }
+
+    /**
+     * Gets success count.
+     *
+     * @return the success count
+     */
+    public int getSuccessCount() {
+        return successCount;
+    }
+
+    /**
+     * Sets success count.
+     *
+     * @param successCount the success count
+     */
+    public void setSuccessCount(int successCount) {
+        this.successCount = successCount;
+    }
+
+    /**
+     * Gets replayed count.
+     *
+     * @return the replayed count
+     */
+    public int getReplayedCount() {
+        return replayedCount;
+    }
+
+    /**
+     * Sets replayed count.
+     *
+     * @param replayedCount the replayed count
+     */
+    public void setReplayedCount(int replayedCount) {
+        this.replayedCount = replayedCount;
+    }
+
+    /**
+     * Gets skipped count.
+     *
+     * @return the skipped count
+     */
+    public int getSkippedCount() {
+        return skippedCount;
+    }
+
+    /**
+     * Sets skipped count.
+     *
+     * @param skippedCount the skipped count
+     */
+    public void setSkippedCount(int skippedCount) {
+        this.skippedCount = skippedCount;
     }
 }

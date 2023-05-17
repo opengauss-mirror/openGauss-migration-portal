@@ -76,6 +76,7 @@ public interface Check {
     }
     interface Result{
         String FULL = "full.migration.datacheck.result";
+        String FULL_CURRENT = "full.migration.datacheck.current.result";
         String INCREMENTAL = "incremental.migration.datacheck.result";
         String REVERSE = "reverse.migration.datacheck.result";
     }

@@ -26,6 +26,7 @@ import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Mysql;
+import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
@@ -79,9 +80,12 @@ public class ChangeStatusTools {
                 iterator.next();
             }
             boolean isFullCheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
-            File checkResultFolder = new File(PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "check_result", "result"));
-            if (checkResultFolder.exists() && isFullCheck) {
+            String checkResultPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT);
+            if (new File(checkResultPath).exists() && isFullCheck) {
                 tableStatusList = getDatacheckTableStatus(tableStatusList);
+                String progressPath = checkResultPath + "progress.log";
+                String destinationPath = PortalControl.toolsConfigParametersTable.get(Status.FULL_CHECK_PATH);
+                Tools.changeDatacheckSpeedStatus(progressPath, destinationPath);
             }
         }
         return tableStatusList;
@@ -94,8 +98,8 @@ public class ChangeStatusTools {
      * @return the datacheck table status
      */
     public static ArrayList<TableStatus> getDatacheckTableStatus(ArrayList<TableStatus> tableStatusArrayList) {
-        String successPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", "success.log");
-        String failPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result", "failed.log");
+        String successPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT) + "success.log";
+        String failPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT) + "failed.log";
         return getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
     }
 
@@ -183,53 +187,40 @@ public class ChangeStatusTools {
     /**
      * Change incremental status int.
      *
-     * @param sourceMigrationStatusPath      the source migration status path
-     * @param sinkMigrationStatusPath        the sink migration status path
-     * @param incrementalMigrationStatusPath the incremental migration status path
-     * @param count                          the count
-     * @return the int
+     * @param sourcePath           the source migration status path
+     * @param sinkPath             the sink migration status path
+     * @param incrementalPath      the incremental migration status path
+     * @param incrementalOrReverse the incremental or reverse
      */
-    public static int changeIncrementalStatus(String sourceMigrationStatusPath, String sinkMigrationStatusPath, String incrementalMigrationStatusPath, String count) {
-        int time = 0;
-        String sourceStr;
-        sourceStr = Tools.readFile(new File(sourceMigrationStatusPath));
-        JSONObject sourceObject = JSONObject.parseObject(sourceStr);
-        int createCount = sourceObject.getInteger(count);
-        int sourceSpeed = sourceObject.getInteger("speed");
-        long sourceFirstTimestamp = sourceObject.getLong("timestamp");
-        String sinkStr;
-        sinkStr = Tools.readFile(new File(sinkMigrationStatusPath));
-        JSONObject sinkObject = JSONObject.parseObject(sinkStr);
-        int replayedCount = sinkObject.getInteger("replayedCount");
-        int sinkSpeed = sinkObject.getInteger("speed");
-        long sinkTimestamp = sinkObject.getLong("timestamp");
-        if (sinkTimestamp > sourceFirstTimestamp) {
-            String timeStr = String.valueOf(sourceFirstTimestamp + 1000 - sinkTimestamp);
-            time = Integer.parseInt(timeStr);
-            sourceStr = Tools.readFile(new File(sourceMigrationStatusPath));
-            JSONObject sourceSecondObject = JSONObject.parseObject(sourceStr);
-            createCount = sourceSecondObject.getInteger(count);
-            sourceSpeed = sourceSecondObject.getInteger("speed");
-        }
-        int rest = createCount - replayedCount;
-        if (time > 1000) {
-            time = 1000;
-        }
-        Tools.sleepThread(time, "writing the status");
-        String incrementalMigrationString;
-        int status = Status.Incremental.RUNNING;
-        if (PortalControl.status == Status.ERROR) {
-            status = Status.Incremental.ERROR;
-            String msg = "error";
-            IncrementalMigrationStatus incrementalMigrationStatus = new IncrementalMigrationStatus(status, createCount, sourceSpeed, sinkSpeed, rest, msg);
-            incrementalMigrationString = JSON.toJSONString(incrementalMigrationStatus);
+    public static void changeIncrementalStatus(String sourcePath, String sinkPath, String incrementalPath, boolean incrementalOrReverse) {
+        JSONObject sourceObject = JSONObject.parseObject(Tools.readFile(new File(sourcePath)));
+        JSONObject sinkObject = JSONObject.parseObject(Tools.readFile(new File(sinkPath)));
+        IncrementalMigrationStatus incrementalMigrationStatus = new IncrementalMigrationStatus();
+        incrementalMigrationStatus.setCount(sinkObject.getInteger(Parameter.IncrementalStatus.REPLAYED_COUNT) + sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
+        incrementalMigrationStatus.setSourceSpeed(sourceObject.getInteger(Parameter.IncrementalStatus.SPEED));
+        incrementalMigrationStatus.setSinkSpeed(sinkObject.getInteger(Parameter.IncrementalStatus.SPEED));
+        incrementalMigrationStatus.setRest(sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
+        incrementalMigrationStatus.setFailCount(sinkObject.getInteger(Parameter.IncrementalStatus.FAIL));
+        incrementalMigrationStatus.setSuccessCount(sinkObject.getInteger(Parameter.IncrementalStatus.SUCCESS));
+        incrementalMigrationStatus.setReplayedCount(sinkObject.getInteger(Parameter.IncrementalStatus.REPLAYED_COUNT));
+        String failSqlPath;
+        if (incrementalOrReverse) {
+            incrementalMigrationStatus.setSkippedCount(sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED) + sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_EVENT_COUNT));
+            failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.INCREMENTAL_FOLDER), "fail-sql.txt");
         } else {
-            IncrementalMigrationStatus incrementalMigrationStatus = new IncrementalMigrationStatus(status, createCount, sourceSpeed, sinkSpeed, rest);
-            incrementalMigrationString = JSON.toJSONString(incrementalMigrationStatus);
+            incrementalMigrationStatus.setSkippedCount(sourceObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_EVENT_COUNT));
+            failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.REVERSE_FOLDER), "fail-sql.txt");
         }
-        Tools.writeFile(incrementalMigrationString, new File(incrementalMigrationStatusPath), false);
-        return time;
+        int status = Status.Incremental.RUNNING;
+        if (PortalControl.status == Status.ERROR || !Tools.readFile(new File(failSqlPath)).equals("")) {
+            status = Status.Incremental.ERROR;
+            String msg = "Please read " + failSqlPath + " to get fail sqls.";
+            incrementalMigrationStatus.setMsg(msg);
+        }
+        incrementalMigrationStatus.setStatus(status);
+        Tools.writeFile(JSON.toJSONString(incrementalMigrationStatus), new File(incrementalPath), false);
     }
+
 
     /**
      * Write portal status.

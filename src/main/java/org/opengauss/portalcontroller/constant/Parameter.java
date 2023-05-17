@@ -20,4 +20,13 @@ public interface Parameter {
     String CHECK_REVERSE = "Reverse migration datacheck";
     String ERROR_PATH = "error.path";
     String INPUT_ORDER_PATH = "input.order.path";
+    interface IncrementalStatus{
+        String REPLAYED_COUNT = "replayedCount";
+        String OVER_ALL_PIPE = "overallPipe";
+        String SPEED = "speed";
+        String FAIL = "failCount";
+        String SUCCESS = "successCount";
+        String SKIPPED = "skippedCount";
+        String SKIPPED_EXCLUDE_EVENT_COUNT = "skippedExcludeEventCount";
+    }
 }
