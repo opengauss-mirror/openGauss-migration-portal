@@ -19,6 +19,7 @@ package org.opengauss.portalcontroller.status;
  * The type Rule parameter.
  */
 public class RuleParameter {
+
     /**
      * The Name.
      */

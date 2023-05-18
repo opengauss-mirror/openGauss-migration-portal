@@ -160,12 +160,13 @@ public class ChangeStatusTools {
      * @return the all chameleon status
      */
     public static FullMigrationStatus getAllChameleonStatus() {
+        Object total = getChameleonTotalStatus();
         ArrayList<TableStatus> tableStatusArrayList = getChameleonTableStatus();
         ArrayList<ObjectStatus> viewStatusArrayList = getChameleonObjectStatus("view", "start_view_replica");
         ArrayList<ObjectStatus> functionStatusArrayList = getChameleonObjectStatus("function", "start_func_replica");
         ArrayList<ObjectStatus> triggerStatusArrayList = getChameleonObjectStatus("trigger", "start_trigger_replica");
         ArrayList<ObjectStatus> procedureStatusArrayList = getChameleonObjectStatus("procedure", "start_proc_replica");
-        return new FullMigrationStatus(tableStatusArrayList, viewStatusArrayList, functionStatusArrayList, triggerStatusArrayList, procedureStatusArrayList);
+        return new FullMigrationStatus(total, tableStatusArrayList, viewStatusArrayList, functionStatusArrayList, triggerStatusArrayList, procedureStatusArrayList);
     }
 
     /**
@@ -387,5 +388,22 @@ public class ChangeStatusTools {
             }
         }
         return tableStatusArrayList;
+    }
+
+    /**
+     * Get chameleon total status object.
+     *
+     * @return the object
+     */
+    public static Object getChameleonTotalStatus() {
+        String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
+        String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
+        File file = new File(path);
+        String tableChameleonStatus;
+        if (!(tableChameleonStatus = Tools.readFile(file)).equals("")) {
+            JSONObject root = JSONObject.parseObject(tableChameleonStatus);
+            return JSONObject.parseObject(root.getString("total"));
+        }
+        return "";
     }
 }
