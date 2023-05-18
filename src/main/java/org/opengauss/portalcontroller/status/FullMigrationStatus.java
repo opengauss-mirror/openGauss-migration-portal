@@ -26,6 +26,7 @@ public class FullMigrationStatus {
     private ArrayList<ObjectStatus> function = new ArrayList<>();
     private ArrayList<ObjectStatus> trigger = new ArrayList<>();
     private ArrayList<ObjectStatus> procedure = new ArrayList<>();
+    private Object total;
 
     /**
      * Gets table.
@@ -117,6 +118,14 @@ public class FullMigrationStatus {
         this.procedure = procedure;
     }
 
+    public Object getTotal() {
+        return total;
+    }
+
+    public void setTotal(Object total) {
+        this.total = total;
+    }
+
     /**
      * Instantiates a new Full migration status.
      */
@@ -132,7 +141,8 @@ public class FullMigrationStatus {
      * @param trigger   the trigger
      * @param procedure the procedure
      */
-    public FullMigrationStatus(ArrayList<TableStatus> table, ArrayList<ObjectStatus> view, ArrayList<ObjectStatus> function, ArrayList<ObjectStatus> trigger, ArrayList<ObjectStatus> procedure) {
+    public FullMigrationStatus(Object total,ArrayList<TableStatus> table, ArrayList<ObjectStatus> view, ArrayList<ObjectStatus> function, ArrayList<ObjectStatus> trigger, ArrayList<ObjectStatus> procedure) {
+        this.total = total;
         this.table = table;
         this.view = view;
         this.function = function;

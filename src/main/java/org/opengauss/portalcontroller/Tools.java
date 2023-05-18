@@ -21,7 +21,6 @@ import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.Default;
 import org.opengauss.portalcontroller.constant.ExceptionType;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
@@ -81,6 +80,7 @@ import java.util.Properties;
  */
 public class Tools {
     private static final Logger LOGGER = LoggerFactory.getLogger(Tools.class);
+
     /**
      * Change single yml parameter.
      *
@@ -647,6 +647,7 @@ public class Tools {
             Tools.changeSingleYmlParameter(Chameleon.Parameters.Mysql.MAPPING, null, chameleonConfigPath);
             chameleonMap.put(Chameleon.Parameters.Mysql.MAPPING + "." + mysqlDatabaseName, migrationparametersTable.get(Opengauss.DATABASE_SCHEMA));
             Tools.changeYmlParameters(chameleonMap, chameleonConfigPath);
+            Tools.writeChameleonOverrideType();
         } else {
             LOGGER.error("Invalid parameters.");
         }
@@ -1141,7 +1142,6 @@ public class Tools {
         checkSourceTable.put(Check.Parameters.NUM_PERIOD, Integer.parseInt(getOrDefault(Check.Source.NUM_PERIOD, checkSourceOldTable.get(Check.Parameters.NUM_PERIOD).toString())));
         Tools.changeYmlParameters(checkSourceTable, checkSourcePath);
         Tools.writeCheckRules();
-        Tools.writeChameleonOverrideType();
     }
 
     /**
@@ -1246,19 +1246,19 @@ public class Tools {
      */
     public static void writeCheckRules() {
         String path = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
-        HashMap<String, Object> hashMap = Tools.getYmlParameters(path);
+        HashMap<String, Object> checkConfigHashMap = Tools.getYmlParameters(path);
         RuleParameter tableRuleParameter = new RuleParameter(Check.Rules.Table.AMOUNT, Check.Rules.Table.NAME,
                 Check.Rules.Table.TEXT, "");
         RuleParameter rowRuleParameter = new RuleParameter(Check.Rules.Row.AMOUNT, Check.Rules.Row.NAME,
                 Check.Rules.Row.TEXT, "");
         RuleParameter columnRuleParameter = new RuleParameter(Check.Rules.Column.AMOUNT, Check.Rules.Column.NAME,
                 Check.Rules.Column.TEXT, Check.Rules.Column.ATTRIBUTE);
-        String rulesEnableParameter = Tools.getOrDefault(Check.Rules.ENABLE, String.valueOf(hashMap.get(Check.Rules.ENABLE)));
-        hashMap.put(Check.Rules.ENABLE, Boolean.valueOf(rulesEnableParameter));
-        hashMap = getCheckRulesFromCommandLine(hashMap, tableRuleParameter, false);
-        hashMap = getCheckRulesFromCommandLine(hashMap, rowRuleParameter, false);
-        hashMap = getCheckRulesFromCommandLine(hashMap, columnRuleParameter, true);
-        Tools.changeYmlParameters(hashMap, path);
+        String rulesEnableParameter = Tools.getOrDefault(Check.Rules.ENABLE, String.valueOf(checkConfigHashMap.get(Check.Rules.ENABLE)));
+        checkConfigHashMap.put(Check.Rules.ENABLE, Boolean.valueOf(rulesEnableParameter));
+        checkConfigHashMap = getCheckRulesFromCommandLine(checkConfigHashMap, tableRuleParameter, false);
+        checkConfigHashMap = getCheckRulesFromCommandLine(checkConfigHashMap, rowRuleParameter, false);
+        checkConfigHashMap = getCheckRulesFromCommandLine(checkConfigHashMap, columnRuleParameter, true);
+        Tools.changeYmlParameters(checkConfigHashMap, path);
     }
 
     /**
@@ -1321,34 +1321,28 @@ public class Tools {
      * Write chameleon override type.
      */
     public static void writeChameleonOverrideType() {
-        StringBuilder rules = new StringBuilder();
-        rules.append("chameleon-parameter:").append(System.lineSeparator());
-        int chameleonOverrideTypeAmount = Integer.parseInt(Tools.getOrDefault(Chameleon.Override.AMOUNT, String.valueOf(Default.Chameleon.Override.AMOUNT)));
-        for (int i = 0; i <= chameleonOverrideTypeAmount; i++) {
-            rules.append("override").append(i).append(": ").append(System.lineSeparator());
-            String overrideType = System.getProperty(Chameleon.Override.SOURCE_TYPE + i);
-            String overrideTo = System.getProperty(Chameleon.Override.SINK_TYPE + i);
-            String overrideTables = System.getProperty(Chameleon.Override.TABLES + i);
-            rules.append(overrideType).append(System.lineSeparator());
-            rules.append(overrideTo).append(System.lineSeparator());
-            rules.append(overrideTables).append(System.lineSeparator());
-            rules.append(System.lineSeparator());
+        String path = PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH);
+        HashMap<String, Object> oldChameleonConfigMap = Tools.getYmlParameters(path);
+        if (System.getProperty(Chameleon.Override.AMOUNT) != null) {
+            int amount = Integer.parseInt(System.getProperty(Chameleon.Override.AMOUNT));
+            oldChameleonConfigMap.remove(Chameleon.Override.AMOUNT);
+            for (int i = 1; i <= amount; i++) {
+                String sourceType = System.getProperty(Chameleon.Override.SOURCE_TYPE + i);
+                String sinkType = System.getProperty(Chameleon.Override.SINK_TYPE + i);
+                String tables = System.getProperty(Chameleon.Override.TABLES + i);
+                String[] tableArray;
+                if (tables.contains(",")) {
+                    tableArray = tables.split(",");
+                } else {
+                    tableArray = new String[]{tables};
+                }
+                HashMap<String, Object> typeOverrideHashMap = new HashMap<>();
+                typeOverrideHashMap.put(Chameleon.Override.SINK_TYPE, sinkType);
+                typeOverrideHashMap.put(Chameleon.Override.TABLES, tableArray);
+                oldChameleonConfigMap.put(Chameleon.Override.AMOUNT + "." + sourceType, typeOverrideHashMap);
+            }
         }
-        try {
-            Tools.createFile(PortalControl.portalWorkSpacePath + "parameter-chameleon.txt", true);
-        } catch (PortalException e) {
-            LOGGER.error(e.toString());
-        }
-        try {
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(PortalControl.portalWorkSpacePath + "parameter-chameleon.txt"));
-            bufferedWriter.write(rules.toString());
-            bufferedWriter.flush();
-            bufferedWriter.close();
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "writing parameter", e.getMessage());
-            LOGGER.error(portalException.toString());
-        }
-
+        Tools.changeYmlParameters(oldChameleonConfigMap, path);
     }
 
     /**
