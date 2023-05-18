@@ -33,7 +33,7 @@ public interface Status {
         String ERROR = "error";
     }
 
-    Hashtable<Integer, String> HASHTABLE = new Hashtable<Integer, String>() {
+    Hashtable<Integer, String> HASHTABLE = new Hashtable<>() {
         {
             put(START_FULL_MIGRATION, Information.START_FULL_MIGRATION);
             put(RUNNING_FULL_MIGRATION, Information.RUNNING_FULL_MIGRATION);
@@ -58,6 +58,7 @@ public interface Status {
         int RUNNING_FULL_MIGRATION_CHECK = 4;
         int FULL_MIGRATION_CHECK_FINISHED = 5;
         int ERROR = 6;
+        int CHECK_FAILED = 7;
 
         interface Information {
             String START_FULL_MIGRATION = "waiting";
@@ -68,7 +69,7 @@ public interface Status {
             String ERROR = "failed";
         }
 
-        Hashtable<Integer, String> HASHTABLE = new Hashtable<Integer, String>() {
+        Hashtable<Integer, String> HASHTABLE = new Hashtable<>() {
             {
                 put(START_FULL_MIGRATION, Information.START_FULL_MIGRATION);
                 put(RUNNING_FULL_MIGRATION, Information.RUNNING_FULL_MIGRATION);

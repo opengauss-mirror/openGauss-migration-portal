@@ -372,8 +372,7 @@ public class ChangeStatusTools {
                 String tableName = array.getJSONObject(index).getString("tableName");
                 for (TableStatus tableStatus : tableStatusArrayList) {
                     if (tableStatus.getName().equals(tableName)) {
-                        tableStatus.setPercent(0.0);
-                        tableStatus.setStatus(Status.Object.ERROR);
+                        tableStatus.setStatus(Status.Object.CHECK_FAILED);
                         String errorMsg = array.getJSONObject(index).getString("message");
                         errorMsg += "If you want to repair data.please read the following files:";
                         String repairFileName = "repair_" + PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME) + "_" + tableName + "_0_0.txt";
