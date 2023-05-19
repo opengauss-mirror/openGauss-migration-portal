@@ -51,6 +51,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -1881,5 +1883,21 @@ public class Tools {
             }
         }
         return false;
+    }
+
+    /**
+     * Gets current portal pid.
+     *
+     * @return the current portal pid
+     */
+    public static int getCurrentPortalPid() {
+        int pid = -1;
+        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+        String name = runtime.getName();
+        int index = name.indexOf("@");
+        if (index != -1) {
+            pid = Integer.parseInt(name.substring(0, index));
+        }
+        return pid;
     }
 }

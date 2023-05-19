@@ -61,6 +61,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         Hashtable<String, String> hashtable1 = new Hashtable<>();
         hashtable1.put("name", "mysql-source-" + workspaceId);
         hashtable1.put("database.server.name", "mysql_server_" + workspaceId);
+        hashtable1.put("database.server.id",String.valueOf(Tools.getCurrentPortalPid()));
         hashtable1.put("database.history.kafka.topic", "mysql_server_" + workspaceId + "_history");
         hashtable1.put("transforms.route.regex", "^" + "mysql_server_" + workspaceId + "(.*)");
         hashtable1.put("transforms.route.replacement", "mysql_server_" + workspaceId + "_topic");
