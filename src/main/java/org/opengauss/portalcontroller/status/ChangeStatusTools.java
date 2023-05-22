@@ -209,7 +209,7 @@ public class ChangeStatusTools {
             incrementalMigrationStatus.setSkippedCount(sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED) + sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_EVENT_COUNT));
             failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.INCREMENTAL_FOLDER), "fail-sql.txt");
         } else {
-            incrementalMigrationStatus.setSkippedCount(sourceObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_EVENT_COUNT));
+            incrementalMigrationStatus.setSkippedCount(sourceObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_COUNT));
             failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.REVERSE_FOLDER), "fail-sql.txt");
         }
         int status = Status.Incremental.RUNNING;

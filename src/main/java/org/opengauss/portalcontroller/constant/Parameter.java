@@ -28,5 +28,6 @@ public interface Parameter {
         String SUCCESS = "successCount";
         String SKIPPED = "skippedCount";
         String SKIPPED_EXCLUDE_EVENT_COUNT = "skippedExcludeEventCount";
+        String SKIPPED_EXCLUDE_COUNT = "skippedExcludeCount";
     }
 }

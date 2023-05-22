@@ -87,7 +87,7 @@ public class ThreadStatusController extends Thread {
                 String sourceIncrementalStatusPath = "";
                 String sinkIncrementalStatusPath = "";
                 File directory = new File(toolsConfigHashtable.get(Status.INCREMENTAL_FOLDER));
-                if (directory.exists() && directory.isDirectory()) {
+                if (directory.exists() && directory.isDirectory() && directory.listFiles() != null) {
                     for (File file : Objects.requireNonNull(directory.listFiles())) {
                         if (file.getName().contains("forward-source-process")) {
                             sourceIncrementalStatusPath = file.getAbsolutePath();
@@ -105,7 +105,7 @@ public class ThreadStatusController extends Thread {
                 String sourceReverseStatusPath = "";
                 String sinkReverseStatusPath = "";
                 File directory = new File(toolsConfigHashtable.get(Status.REVERSE_FOLDER));
-                if (directory.exists() && directory.isDirectory()) {
+                if (directory.exists() && directory.isDirectory() && directory.listFiles() != null) {
                     for (File file : Objects.requireNonNull(directory.listFiles())) {
                         if (file.getName().contains("reverse-source-process")) {
                             sourceReverseStatusPath = file.getAbsolutePath();
