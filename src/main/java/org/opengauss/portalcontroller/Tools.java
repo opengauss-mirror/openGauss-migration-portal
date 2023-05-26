@@ -1291,7 +1291,7 @@ public class Tools {
                 }
                 checkRules.add(checkRule);
             }
-            changeCheckRules(hashMap, Check.Rules.Table.AMOUNT, checkRules);
+            changeCheckRules(hashMap, ruleAmount, checkRules);
         }
         return hashMap;
     }

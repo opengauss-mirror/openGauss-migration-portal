@@ -29,9 +29,9 @@ public interface Chameleon {
     }
 
     interface Override{
-        String AMOUNT = "type.override";
-        String SOURCE_TYPE = "override.type";
-        String SINK_TYPE = "override.to";
-        String TABLES = "override.tables";
+        String AMOUNT = "type_override";
+        String SOURCE_TYPE = "override_type";
+        String SINK_TYPE = "override_to";
+        String TABLES = "override_tables";
     }
 }
