@@ -21,7 +21,6 @@ import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -71,7 +70,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
                     }
                     throw portalException;
                 }
-                if (Tools.readFile(new File(chameleonTestLogPath)).contains("chameleon")) {
+                if (LogView.getFullLog(chameleonTestLogPath).contains("chameleon")) {
                     LOGGER.info("Install chameleon success.");
                 } else {
                     throw new PortalException("Portal exception", "installing chameleon", "Install chameleon failed.");

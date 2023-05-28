@@ -27,6 +27,7 @@ import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.LoggerFactory;
 
@@ -114,9 +115,9 @@ public class Task {
         tempTaskProcessMap.put(Method.Run.REVERSE_CONNECT_SINK, "ConnectStandalone " + hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH) + " " + hashtable.get(Debezium.Sink.REVERSE_CONFIG_PATH));
         String extractName = hashtable.get(Check.EXTRACT_NAME);
         String checkName = hashtable.get(Check.CHECK_NAME);
-        tempTaskProcessMap.put(Method.Run.CHECK_SOURCE, "java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + hashtable.get(Check.Source.CONFIG_PATH) + " -jar " + datacheckPath + extractName + " --source");
-        tempTaskProcessMap.put(Method.Run.CHECK_SINK, "java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + hashtable.get(Check.Sink.CONFIG_PATH) + " -jar " + datacheckPath + extractName + " --sink");
-        tempTaskProcessMap.put(Method.Run.CHECK, "java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + hashtable.get(Check.CONFIG_PATH) + " -jar " + datacheckPath + checkName);
+        tempTaskProcessMap.put(Method.Run.CHECK_SOURCE, "spring.config.additional-location=" + hashtable.get(Check.Source.CONFIG_PATH) + " -jar " + datacheckPath + extractName + " --source");
+        tempTaskProcessMap.put(Method.Run.CHECK_SINK, "spring.config.additional-location=" + hashtable.get(Check.Sink.CONFIG_PATH) + " -jar " + datacheckPath + extractName + " --sink");
+        tempTaskProcessMap.put(Method.Run.CHECK, "spring.config.additional-location=" + hashtable.get(Check.CONFIG_PATH) + " -jar " + datacheckPath + checkName);
         setTaskProcessMap(tempTaskProcessMap);
     }
 
@@ -205,7 +206,7 @@ public class Task {
                         Tools.sleepThread(1000, "starting task");
                         sleepTime -= 1000;
                         try {
-                            if (Tools.readFileStartSign(logPath, startSign, timestamp)) {
+                            if (LogView.checkStartSignFlag(logPath, startSign, timestamp)) {
                                 break;
                             }
                         } catch (PortalException e) {
@@ -259,7 +260,8 @@ public class Task {
      * @param order             the order
      * @param parametersTable   the parameters table
      */
-    public void useChameleonReplicaOrder(String chameleonVenvPath, String order, Hashtable<String, String> parametersTable) {
+    public void useChameleonReplicaOrder(String chameleonVenvPath, String
+            order, Hashtable<String, String> parametersTable) {
         startChameleonReplicaOrder(chameleonVenvPath, order, parametersTable);
         checkChameleonReplicaOrder(order);
     }
@@ -271,7 +273,8 @@ public class Task {
      * @param order             the order
      * @param parametersTable   the parameters table
      */
-    public void startChameleonReplicaOrder(String chameleonVenvPath, String order, Hashtable<String, String> parametersTable) {
+    public void startChameleonReplicaOrder(String chameleonVenvPath, String
+            order, Hashtable<String, String> parametersTable) {
         if (Plan.stopPlan && !order.equals("drop_replica_schema")) {
             return;
         }
@@ -308,7 +311,7 @@ public class Task {
                 LOGGER.info(order + " finished");
                 break;
             } else if (processQuit) {
-                String errMsg = Tools.getErrorMsg(logPath);
+                String errMsg = LogView.getErrorMsg(logPath);
                 PortalException e = new PortalException("Process " + processString + " exit abnormally", "checking chameleon replica order", errMsg);
                 e.setRequestInformation("Run chameleon order " + order + " failed");
                 e.setRepairTips("read " + logPath + " or error.log to get detailed information");
@@ -488,8 +491,14 @@ public class Task {
         String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH);
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
-        String order = "nohup java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + sinkConfigPath + " -jar " + path + extractName + " --sink > /dev/null &";
-        RuntimeExecTools.executeStartOrder(order, 3000, datacheckPath, errorPath, false, "Start datacheck sink");
+        String jvmParameter;
+        if (PortalControl.status < Status.START_INCREMENTAL_MIGRATION) {
+            jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.FULL_EXTRACT_SINK_JVM);
+        } else {
+            jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_EXTRACT_SINK_JVM);
+        }
+        String order = "nohup java " + jvmParameter + " -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + sinkConfigPath + " -jar " + path + extractName + " --sink > /dev/null &";
+        RuntimeExecTools.executeStartOrder(order, 3000, PortalControl.portalWorkSpacePath, errorPath, false, "Start datacheck sink");
     }
 
     /**
@@ -502,8 +511,14 @@ public class Task {
         String sourceConfigPath = PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH);
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
-        String order = "nohup java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + sourceConfigPath + " -jar " + path + extractName + " --source > /dev/null &";
-        RuntimeExecTools.executeStartOrder(order, 3000, datacheckPath, errorPath, false, "Start datacheck source");
+        String jvmParameter;
+        if (PortalControl.status < Status.START_INCREMENTAL_MIGRATION) {
+            jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.FULL_EXTRACT_SOURCE_JVM);
+        } else {
+            jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_EXTRACT_SOURCE_JVM);
+        }
+        String order = "nohup java " + jvmParameter + " -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + sourceConfigPath + " -jar " + path + extractName + " --source > /dev/null &";
+        RuntimeExecTools.executeStartOrder(order, 3000, PortalControl.portalWorkSpacePath, errorPath, false, "Start datacheck source");
     }
 
     /**
@@ -516,8 +531,14 @@ public class Task {
         String checkConfigPath = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String checkName = PortalControl.toolsConfigParametersTable.get(Check.CHECK_NAME);
-        String order = "nohup java -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + checkConfigPath + " -jar " + path + checkName + " > /dev/null &";
-        RuntimeExecTools.executeStartOrder(order, 1000, datacheckPath, errorPath, false, "Start datacheck");
+        String jvmParameter;
+        if (PortalControl.status < Status.START_INCREMENTAL_MIGRATION) {
+            jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.FULL_CHECK_JVM);
+        } else {
+            jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_CHECK_JVM);
+        }
+        String order = "nohup java " + jvmParameter + " -Dloader.path=" + datacheckPath + "lib -Dspring.config.additional-location=" + checkConfigPath + " -jar " + path + checkName + " > /dev/null &";
+        RuntimeExecTools.executeStartOrder(order, 1000, PortalControl.portalWorkSpacePath, errorPath, false, "Start datacheck");
     }
 
     /**

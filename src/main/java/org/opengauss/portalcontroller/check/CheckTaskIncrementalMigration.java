@@ -61,7 +61,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         Hashtable<String, String> hashtable1 = new Hashtable<>();
         hashtable1.put("name", "mysql-source-" + workspaceId);
         hashtable1.put("database.server.name", "mysql_server_" + workspaceId);
-        hashtable1.put("database.server.id",String.valueOf(Tools.getCurrentPortalPid()));
+        hashtable1.put("database.server.id", String.valueOf(Tools.getCurrentPortalPid()));
         hashtable1.put("database.history.kafka.topic", "mysql_server_" + workspaceId + "_history");
         hashtable1.put("transforms.route.regex", "^" + "mysql_server_" + workspaceId + "(.*)");
         hashtable1.put("transforms.route.replacement", "mysql_server_" + workspaceId + "_topic");
@@ -92,7 +92,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         changeParameters(workspaceId);
         Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
         Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-        Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
+        Task.startTaskMethod(Method.Run.REGISTRY, 5000, "");
         if (checkAnotherConnectExists()) {
             LOGGER.error("Another connector is running.Cannot run incremental migration whose workspace id is " + workspaceId + " .");
             return;
@@ -109,7 +109,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         int sourcePort = StartPort.REST_MYSQL_SOURCE + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sourcePort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSourcePath);
-        Task.startTaskMethod(Method.Run.CONNECT_SOURCE, 8000, "");
+        Task.startTaskMethod(Method.Run.CONNECT_SOURCE, 5000, "");
     }
 
     @Override
@@ -123,7 +123,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         int sinkPort = StartPort.REST_MYSQL_SINK + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sinkPort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSinkFilePath);
-        Task.startTaskMethod(Method.Run.CONNECT_SINK, 8000, "");
+        Task.startTaskMethod(Method.Run.CONNECT_SINK, 5000, "");
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_INCREMENTAL_MIGRATION;
         }

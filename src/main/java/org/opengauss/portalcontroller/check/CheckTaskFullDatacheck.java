@@ -116,7 +116,7 @@ public class CheckTaskFullDatacheck implements CheckTask {
             if (!Tools.outputDatacheckStatus(Parameter.CHECK_FULL)) {
                 break;
             }
-            Tools.sleepThread(1000, "running full migration datacheck");
+            Tools.sleepThread(LogParseConstants.PERIOD_WATCH_LOG, "running full migration datacheck");
         }
     }
 

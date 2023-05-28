@@ -293,7 +293,7 @@ public final class Plan {
                         String logPath = thread.getLogPath();
                         String errorStr = "Error message: Process " + str[0] + " exit abnormally or process " + str[0]
                                 + " has started." + System.lineSeparator();
-                        errorStr += Tools.getErrorMsg(logPath) + System.lineSeparator();
+                        errorStr += LogView.getErrorMsg(logPath) + System.lineSeparator();
                         errorStr += "Please read " + logPath + " or error.log to get information.";
                         PortalControl.status = Status.ERROR;
                         PortalControl.errorMsg = errorStr;

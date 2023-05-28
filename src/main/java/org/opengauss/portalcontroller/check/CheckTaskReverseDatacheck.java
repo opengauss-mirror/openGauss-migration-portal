@@ -78,7 +78,7 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         runningTaskList.add(Command.Start.Mysql.REVERSE_CHECK);
         Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
         Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-        Task.startTaskMethod(Method.Run.REGISTRY, 8000, "");
+        Task.startTaskMethod(Method.Run.REGISTRY, 5000, "");
         changeParameters(workspaceId);
     }
 
