@@ -62,7 +62,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -196,6 +195,7 @@ public class Tools {
                 bufferedWriter.flush();
             }
             bufferedWriter.close();
+            LogView.writeFile(stringList, path, false);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing single properties parameter", e.getMessage());
             LOGGER.error(portalException.toString());
@@ -860,7 +860,7 @@ public class Tools {
             for (String str : planInforamtionPatrs) {
                 planInformation.append(str).append(System.lineSeparator());
             }
-            Tools.writeFile(planInformation.toString(), file, true);
+            LogView.writeFile(planInformation.toString(), planHistoryFilePath, true);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "generating plan history", e.getMessage());
             portalException.setRequestInformation("Generating plan history failed");
@@ -909,7 +909,7 @@ public class Tools {
             if (!file.exists()) {
                 Tools.createFile(inputOrderPath, true);
             }
-            Tools.writeFile(command, file, false);
+            LogView.writeFile(command, inputOrderPath, false);
         } catch (PortalException e) {
             e.setRequestInformation("Write input order failed");
             LOGGER.error(e.toString());
@@ -1183,10 +1183,7 @@ public class Tools {
                 result.append(temp).append(System.lineSeparator());
             }
             bufferedReader.close();
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path));
-            bufferedWriter.write(result.toString());
-            bufferedWriter.flush();
-            bufferedWriter.close();
+            LogView.writeFile(result.toString(), path, false);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters", e.getMessage());
             LOGGER.error(portalException.toString());
@@ -1232,15 +1229,8 @@ public class Tools {
      * @param statusPath   the status path
      */
     public static void changeDatacheckSpeedStatus(String progressPath, String statusPath) {
-        try {
-            if (new File(progressPath).exists()) {
-                RuntimeExecTools.copyFile(progressPath, statusPath, true);
-            }
-        } catch (PortalException portalException) {
-            portalException.setRequestInformation("Cannot get datacheck status.");
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
-        }
+        String progressStr = LogView.getFullLog(progressPath);
+        LogView.writeFile(progressStr, statusPath, false);
     }
 
     /**
@@ -1345,51 +1335,6 @@ public class Tools {
             }
         }
         Tools.changeYmlParameters(oldChameleonConfigMap, path);
-    }
-
-    /**
-     * Read file string.
-     *
-     * @param file the file
-     * @return the string
-     */
-    public static String readFile(File file) {
-        StringBuilder str = new StringBuilder();
-        try {
-            if (file.exists()) {
-                BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr;
-                while ((tempStr = fileReader.readLine()) != null) {
-                    str.append(tempStr);
-                }
-                fileReader.close();
-            }
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "reading file " + file.getAbsolutePath(), e.getMessage());
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
-        }
-        return str.toString();
-    }
-
-    /**
-     * Write file.
-     *
-     * @param str    the str
-     * @param file   the file
-     * @param append the append
-     */
-    public static void writeFile(String str, File file, boolean append) {
-        try {
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file, append));
-            bufferedWriter.write(str);
-            bufferedWriter.flush();
-            bufferedWriter.close();
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "writing file " + file.getAbsolutePath(), e.getMessage());
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
-        }
     }
 
     /**
@@ -1671,11 +1616,11 @@ public class Tools {
     public static boolean outputStatus(String logPath) {
         boolean flag = true;
         if (new File(logPath).exists()) {
-            String errorStr = getErrorMsg(logPath);
+            String errorStr = LogView.getErrorMsg(logPath);
             if (!errorStr.equals("")) {
                 LOGGER.error(errorStr);
                 LOGGER.error("Error occurred in " + logPath + ".You can stop plan or ignore the information.");
-                if (!errorStr.contains(ExceptionType.PSQL.getName())) {
+                if (!ExceptionType.IGNORED_EXCEPTION_LIST.stream().map(errorStr::contains).anyMatch(Boolean::booleanValue)) {
                     PortalControl.status = Status.ERROR;
                     PortalControl.errorMsg = errorStr;
                 }
@@ -1683,32 +1628,6 @@ public class Tools {
             }
         }
         return flag;
-    }
-
-    /**
-     * Gets error msg.
-     *
-     * @param logPath the log path
-     * @return the error msg
-     */
-    public static String getErrorMsg(String logPath) {
-        StringBuilder str = new StringBuilder();
-        if (new File(logPath).exists()) {
-            try (BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(logPath))))) {
-                String tempStr;
-                while ((tempStr = fileReader.readLine()) != null) {
-                    if (tempStr.contains("Exception:") || tempStr.contains("Error:")) {
-                        str.append(tempStr).append(System.lineSeparator());
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                PortalException portalException = new PortalException("IO exception", "getting error message in file " + logPath, e.getMessage());
-                LOGGER.error(portalException.toString());
-                Tools.shutDownPortal(portalException.toString());
-            }
-        }
-        return str.toString();
     }
 
     /**
@@ -1781,53 +1700,6 @@ public class Tools {
         Tools.changeSinglePropertiesParameter("xlog.location", xLogLocation, configPath);
     }
 
-
-    /**
-     * Read file start sign boolean.
-     *
-     * @param path      the path
-     * @param sign      the sign
-     * @param timestamp the timestamp
-     * @return the boolean
-     * @throws PortalException the portal exception
-     */
-    public static boolean readFileStartSign(String path, String sign, long timestamp) throws PortalException {
-        boolean flag = false;
-        File file = new File(path);
-        try {
-            if (file.exists()) {
-                BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr;
-                while ((tempStr = fileReader.readLine()) != null) {
-                    if (tempStr.contains(sign)) {
-                        String[] strs = tempStr.split(" ");
-                        try {
-                            String timeStr = strs[0] + " " + strs[1].substring(0, strs[1].lastIndexOf("."));
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            Date date = sdf.parse(timeStr);
-                            long currentTimeStamp = date.getTime();
-                            if (currentTimeStamp >= timestamp) {
-                                flag = true;
-                                break;
-                            }
-                        } catch (ParseException | StringIndexOutOfBoundsException e) {
-                            LOGGER.warn(e.getMessage());
-                            LOGGER.warn("Please check LOG_PATTERN of log4j2.xml , log4j2source.xml and log4j2sink.xml");
-                            LOGGER.warn("The value should start with %d{yyyy-MM-dd HH:mm:ss.SSS}");
-                            throw new PortalException("String index out of bounds exception", "reading log in file " + file.getAbsolutePath(), e.getMessage());
-                        }
-                    }
-                }
-                fileReader.close();
-            }
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "reading start sign in file " + file.getAbsolutePath(), e.getMessage());
-            Tools.shutDownPortal(portalException.toString());
-            throw portalException;
-        }
-        return flag;
-    }
-
     /**
      * Is full datacheck success boolean.
      *
@@ -1836,10 +1708,8 @@ public class Tools {
     public static boolean isFullDatacheckSuccess() {
         boolean runningFullDatacheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
         String checkPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
-        boolean successSign = Tools.readFile(new File(checkPath)).contains("check task execute success ,cost time =");
-        return runningFullDatacheck && successSign;
+        return runningFullDatacheck && LogView.checkCheckSuccessLogFlag(checkPath);
     }
-
 
     /**
      * Combain order string.

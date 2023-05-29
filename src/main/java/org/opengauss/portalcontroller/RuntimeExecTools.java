@@ -19,9 +19,7 @@ import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -54,7 +52,7 @@ public class RuntimeExecTools {
                 LOGGER.warn("Error command:" + command);
                 LOGGER.error(errorStr);
             }
-            Tools.writeFile(errorStr, new File(errorFilePath), true);
+            LogView.writeFile(errorStr, errorFilePath, true);
         } catch (IOException e) {
             throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
@@ -132,16 +130,12 @@ public class RuntimeExecTools {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String str = bufferedReader.readLine();
                 bufferedReader.close();
-                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(outputFilePath, true));
                 if (str != null && !str.equals("")) {
-                    bufferedWriter.write(str);
+                    LogView.writeFile(str, outputFilePath, true);
                 } else {
                     LOGGER.error(errorLog);
                 }
-                bufferedWriter.flush();
-                bufferedWriter.write(errorStr);
-                bufferedWriter.flush();
-                bufferedWriter.close();
+                LogView.writeFile(errorStr, outputFilePath, true);
             }
         } catch (IOException e) {
             String command = Tools.combainOrder(cmdParts);

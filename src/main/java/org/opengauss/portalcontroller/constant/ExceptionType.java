@@ -1,14 +1,9 @@
 package org.opengauss.portalcontroller.constant;
 
-public enum ExceptionType {
-    PSQL("PSQLException");
-    private final String name;
+import java.util.List;
 
-    ExceptionType(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
+public interface ExceptionType {
+    String PSQL = "PSQLException";
+    String RETRYABLE = "RetryableException";
+    List<String> IGNORED_EXCEPTION_LIST = List.of(PSQL,RETRYABLE);
 }

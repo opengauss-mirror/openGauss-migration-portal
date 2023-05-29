@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import org.opengauss.portalcontroller.LogView;
 import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.PortalControl;
@@ -28,13 +29,10 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -63,9 +61,8 @@ public class ChangeStatusTools {
      */
     public static ArrayList<TableStatus> getChameleonTableStatus(String path) {
         ArrayList<TableStatus> tableStatusList = new ArrayList<>();
-        File file = new File(path);
         String tableChameleonStatus;
-        if (!(tableChameleonStatus = Tools.readFile(file)).equals("")) {
+        if (!(tableChameleonStatus = LogView.getFullLog(path)).equals("")) {
             JSONObject root = JSONObject.parseObject(tableChameleonStatus);
             JSONArray table = root.getJSONArray("table");
             Iterator<Object> iterator = table.iterator();
@@ -103,7 +100,6 @@ public class ChangeStatusTools {
         return getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
     }
 
-
     /**
      * Gets chameleon object status.
      *
@@ -117,36 +113,21 @@ public class ChangeStatusTools {
         if (!new File(path).exists()) {
             path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
         }
-        File file = new File(path);
-        return getChameleonObjectStatus(name, file);
-    }
-
-    /**
-     * Gets chameleon object status.
-     *
-     * @param name the name
-     * @param file the file
-     * @return the chameleon object status
-     */
-    public static ArrayList<ObjectStatus> getChameleonObjectStatus(String name, File file) {
         ArrayList<ObjectStatus> objectStatusList = new ArrayList<>();
-        String chameleonStr;
-        if (file.exists()) {
-            chameleonStr = Tools.readFile(file);
-            if (!chameleonStr.equals("")) {
-                JSONObject root = JSONObject.parseObject(chameleonStr);
-                if (root.getJSONArray(name) != null) {
-                    JSONArray objects = root.getJSONArray(name);
-                    Iterator iterator = objects.iterator();
-                    int index = 0;
-                    while (iterator.hasNext()) {
-                        String objectName = objects.getJSONObject(index).getString("name");
-                        int status = objects.getJSONObject(index).getInteger("status");
-                        ObjectStatus objectStatus = new ObjectStatus(objectName, status);
-                        objectStatusList.add(objectStatus);
-                        index++;
-                        iterator.next();
-                    }
+        String chameleonStr = LogView.getFullLogNoSeparator(path);
+        if (!chameleonStr.equals("")) {
+            JSONObject root = JSONObject.parseObject(chameleonStr);
+            if (root.getJSONArray(name) != null) {
+                JSONArray objects = root.getJSONArray(name);
+                Iterator iterator = objects.iterator();
+                int index = 0;
+                while (iterator.hasNext()) {
+                    String objectName = objects.getJSONObject(index).getString("name");
+                    int status = objects.getJSONObject(index).getInteger("status");
+                    ObjectStatus objectStatus = new ObjectStatus(objectName, status);
+                    objectStatusList.add(objectStatus);
+                    index++;
+                    iterator.next();
                 }
             }
         }
@@ -182,7 +163,7 @@ public class ChangeStatusTools {
         }
         ThreadStatusController.fullMigrationStatus = tempFullMigrationStatus;
         fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.fullMigrationStatus);
-        Tools.writeFile(fullMigrationStatusString, new File(PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH)), false);
+        LogView.writeFile(fullMigrationStatusString, PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH), false);
     }
 
     /**
@@ -194,8 +175,8 @@ public class ChangeStatusTools {
      * @param incrementalOrReverse the incremental or reverse
      */
     public static void changeIncrementalStatus(String sourcePath, String sinkPath, String incrementalPath, boolean incrementalOrReverse) {
-        JSONObject sourceObject = JSONObject.parseObject(Tools.readFile(new File(sourcePath)));
-        JSONObject sinkObject = JSONObject.parseObject(Tools.readFile(new File(sinkPath)));
+        JSONObject sourceObject = JSONObject.parseObject(LogView.getFullLogNoSeparator(sourcePath));
+        JSONObject sinkObject = JSONObject.parseObject(LogView.getFullLogNoSeparator(sinkPath));
         IncrementalMigrationStatus incrementalMigrationStatus = new IncrementalMigrationStatus();
         incrementalMigrationStatus.setCount(sinkObject.getInteger(Parameter.IncrementalStatus.REPLAYED_COUNT) + sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
         incrementalMigrationStatus.setSourceSpeed(sourceObject.getInteger(Parameter.IncrementalStatus.SPEED));
@@ -213,13 +194,13 @@ public class ChangeStatusTools {
             failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.REVERSE_FOLDER), "fail-sql.txt");
         }
         int status = Status.Incremental.RUNNING;
-        if (PortalControl.status == Status.ERROR || !Tools.readFile(new File(failSqlPath)).equals("")) {
+        if (PortalControl.status == Status.ERROR || !LogView.getFullLog(failSqlPath).equals("")) {
             status = Status.Incremental.ERROR;
             String msg = "Please read " + failSqlPath + " to get fail sqls.";
             incrementalMigrationStatus.setMsg(msg);
         }
         incrementalMigrationStatus.setStatus(status);
-        Tools.writeFile(JSON.toJSONString(incrementalMigrationStatus), new File(incrementalPath), false);
+        LogView.writeFile(JSON.toJSONString(incrementalMigrationStatus), incrementalPath, false);
     }
 
 
@@ -227,25 +208,15 @@ public class ChangeStatusTools {
      * Write portal status.
      */
     public static void writePortalStatus() {
-        try {
-            FileWriter fw = new FileWriter(PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH));
-            PortalStatusWriter portalStatusWriter;
-            if (PortalControl.status == Status.ERROR) {
-                portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(), PortalControl.errorMsg);
-            } else {
-                portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
-            }
-            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
-            String str = JSON.toJSONString(ThreadStatusController.portalStatusWriterArrayList);
-            fw.write(str);
-            fw.flush();
-            fw.close();
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "writing portal status", e.getMessage());
-            portalException.setRequestInformation("Write portal status failed");
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(e.toString());
+        PortalStatusWriter portalStatusWriter;
+        if (PortalControl.status == Status.ERROR) {
+            portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(), PortalControl.errorMsg);
+        } else {
+            portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
         }
+        ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+        String str = JSON.toJSONString(ThreadStatusController.portalStatusWriterArrayList);
+        LogView.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
     }
 
     /**
@@ -269,8 +240,7 @@ public class ChangeStatusTools {
         name = name.substring(0, 1).toUpperCase() + name.substring(1);
         LOGGER.info(name + ":");
         String path = PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH);
-        File file = new File(path);
-        ArrayList<ObjectStatus> tableStatusArrayList = getChameleonObjectStatus(name, file);
+        ArrayList<ObjectStatus> tableStatusArrayList = getChameleonObjectStatus(name, path);
         for (ObjectStatus objectStatus : tableStatusArrayList) {
             LOGGER.info("Name: " + objectStatus.getName() + ", status: " + Status.Object.HASHTABLE.get(objectStatus.getStatus()));
         }
@@ -293,7 +263,7 @@ public class ChangeStatusTools {
      * @param path the path
      */
     public static void outputIncrementalStatus(String path) {
-        String tempStr = Tools.readFile(new File(path));
+        String tempStr = LogView.getFullLogNoSeparator(path);
         if (!tempStr.equals("")) {
             JSONObject root = JSONObject.parseObject(tempStr);
             int status = root.getInteger("status");
@@ -322,7 +292,7 @@ public class ChangeStatusTools {
      */
     public static int getPortalStatus() {
         int status = 0;
-        String str = Tools.readFile(new File(PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH)));
+        String str = LogView.getFullLogNoSeparator(PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH));
         JSONArray array = JSONArray.parseArray(str);
         Iterator iterator = array.iterator();
         int index = 0;
@@ -343,7 +313,7 @@ public class ChangeStatusTools {
      * @return the datacheck table status
      */
     public static ArrayList<TableStatus> getDatacheckTableStatus(String successPath, ArrayList<TableStatus> tableStatusArrayList, String failPath) {
-        String successStr = Tools.readFile(new File(successPath));
+        String successStr = LogView.getFullLog(successPath);
         if (!successStr.equals("")) {
             successStr = "[" + successStr.substring(0, successStr.length() - 1) + "]";
             JSONArray array = JSONArray.parseArray(successStr);
@@ -362,7 +332,7 @@ public class ChangeStatusTools {
                 iterator.next();
             }
         }
-        String failStr = Tools.readFile(new File(failPath));
+        String failStr = LogView.getFullLog(failPath);
         if (!failStr.equals("")) {
             failStr = "[" + failStr.substring(0, failStr.length() - 1) + "]";
             JSONArray array = JSONArray.parseArray(failStr);
@@ -397,9 +367,8 @@ public class ChangeStatusTools {
     public static Object getChameleonTotalStatus() {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
-        File file = new File(path);
-        String tableChameleonStatus;
-        if (!(tableChameleonStatus = Tools.readFile(file)).equals("")) {
+        String tableChameleonStatus = LogView.getFullLogNoSeparator(path);
+        if (!tableChameleonStatus.equals("")) {
             JSONObject root = JSONObject.parseObject(tableChameleonStatus);
             return JSONObject.parseObject(root.getString("total"));
         }

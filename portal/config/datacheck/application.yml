@@ -5,12 +5,17 @@ logging:
 spring:
   kafka:
     bootstrap-servers: localhost:9092
+  check:
+    core-pool-size: 2
+    maximum-pool-size: 10
 data:
   check:
     data-path: ./check_result
     source-uri: http://127.0.0.1:9001 #  server.port=9001
     sink-uri: http://127.0.0.1:9002 # server.port=9002
     auto-delete-topic: 2
+    max-retry-times: 10
+    increment-max-diff-count: 1000
 rules:
   # There are three types of filtering rules: table-level rules, row-level rules, and column-level rules.
   # Rules are configured in the form of List collection.

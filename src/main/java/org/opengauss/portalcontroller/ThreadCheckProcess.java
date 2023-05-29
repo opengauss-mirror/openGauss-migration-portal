@@ -15,6 +15,8 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.portalcontroller.constant.LogParseConstants;
+
 /**
  * Thread check the process.
  *
@@ -34,7 +36,7 @@ public class ThreadCheckProcess extends Thread implements Runnable {
     @Override
     public void run() {
         while (!exit && !Plan.stopPlan && Plan.checkRunningThreads()) {
-            Tools.sleepThread(1000, "checking process");
+            Tools.sleepThread(LogParseConstants.PERIOD_WATCH_LOG, "checking process");
         }
     }
 }

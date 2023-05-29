@@ -13,6 +13,12 @@ public interface Check {
     String LOG_PATTERN_PATH = "datacheck.log.pattern.path";
     String EXTRACT_NAME = "datacheck.extract.jar.name";
     String CHECK_NAME = "datacheck.check.jar.name";
+    String FULL_EXTRACT_SOURCE_JVM = "full.check.extract.source.jvm";
+    String FULL_EXTRACT_SINK_JVM = "full.check.extract.sink.jvm";
+    String FULL_CHECK_JVM = "full.check.jvm";
+    String INCREMENTAL_EXTRACT_SOURCE_JVM = "incremental.check.extract.source.jvm";
+    String INCREMENTAL_EXTRACT_SINK_JVM = "incremental.check.extract.sink.jvm";
+    String INCREMENTAL_CHECK_JVM = "incremental.check.jvm";
 
     interface Parameters {
         String SCHEMA = "spring.extract.schema";
@@ -74,7 +80,8 @@ public interface Check {
             String ATTRIBUTE = "rules.column.attribute";
         }
     }
-    interface Result{
+
+    interface Result {
         String FULL = "full.migration.datacheck.result";
         String FULL_CURRENT = "full.migration.datacheck.current.result";
         String INCREMENTAL = "incremental.migration.datacheck.result";

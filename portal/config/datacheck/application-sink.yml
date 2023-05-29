@@ -5,6 +5,8 @@ logging:
 spring:
   check:
     server-uri: http://127.0.0.1:9000
+    core-pool-size: 2
+    maximum-pool-size: 10
   extract:
     schema: jack
     databaseType: OG
