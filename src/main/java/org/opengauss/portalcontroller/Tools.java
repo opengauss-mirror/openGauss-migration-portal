@@ -22,6 +22,7 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.ExceptionType;
+import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
@@ -259,6 +260,37 @@ public class Tools {
     }
 
     /**
+     * Gets process.
+     *
+     * @return the process
+     */
+    public static String getProcess() {
+        StringBuilder processString = new StringBuilder();
+        try {
+            Process pro = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps ux"});
+            BufferedInputStream in = new BufferedInputStream(pro.getInputStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            String s;
+            while ((s = br.readLine()) != null) {
+                processString.append(s).append(System.lineSeparator());
+            }
+            br.close();
+            in.close();
+            pro.waitFor();
+            pro.destroy();
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "search process", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        } catch (InterruptedException e) {
+            PortalException portalException = new PortalException("Interrupted exception", "search process", e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        }
+        return processString.toString();
+    }
+
+    /**
      * Gets command pid.
      *
      * @param command the command
@@ -266,31 +298,37 @@ public class Tools {
      */
     public static int getCommandPid(String command) {
         int pid = -1;
-        try {
-            Process pro = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps ux"});
-            BufferedInputStream in = new BufferedInputStream(pro.getInputStream());
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            String s;
-            while ((s = br.readLine()) != null) {
-                if (s.contains(command)) {
-                    String[] strs = s.split("\\s+");
+        String processString = getProcess();
+        if (!processString.equals("")) {
+            String[] processArray = processString.split(System.lineSeparator());
+            for (String singleProcess : processArray) {
+                if (singleProcess.trim().endsWith(command)) {
+                    String[] strs = singleProcess.split("\\s+");
                     pid = Integer.parseInt(strs[1]);
                 }
             }
-            br.close();
-            in.close();
-            pro.waitFor();
-            pro.destroy();
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "getting command pid", e.getMessage());
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
-        } catch (InterruptedException e) {
-            PortalException portalException = new PortalException("Interrupted exception", "getting command pid", e.getMessage());
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
         }
         return pid;
+    }
+
+    /**
+     * Is pid exists boolean.
+     *
+     * @param pid the pid
+     * @return the boolean
+     */
+    public static boolean isPidExists(long pid) {
+        String processString = getProcess();
+        if (!processString.equals("")) {
+            String[] processArray = processString.split(System.lineSeparator());
+            for (String singleProcess : processArray) {
+                String[] strs = singleProcess.split("\\s+");
+                if (Long.parseLong(strs[1]) == pid) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -872,27 +910,16 @@ public class Tools {
      * Read input order.
      */
     public static void readInputOrder() {
-        File file = new File(PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH));
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
-            String str;
-            while ((str = br.readLine()) != null) {
-                if (!PortalControl.latestCommand.equals(str.trim())) {
-                    LOGGER.info(str);
-                    PortalControl.latestCommand = str.trim();
-                    changeMigrationStatus(str.trim());
-                    break;
-                }
+        String path = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
+        String fullLog = LogView.getFullLog(path);
+        if (!fullLog.equals("")) {
+            String[] strParts = fullLog.split(System.lineSeparator());
+            String str = strParts[0].trim();
+            if (!PortalControl.latestCommand.equals(str)) {
+                LOGGER.info(str);
+                PortalControl.latestCommand = str;
+                changeMigrationStatus(str);
             }
-        } catch (FileNotFoundException e) {
-            PortalException portalException = new PortalException("File not found exception", "read input order", e.getMessage());
-            portalException.setRequestInformation("Read input order failed");
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "read input order", e.getMessage());
-            portalException.setRequestInformation("Read input order failed");
-            LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
         }
     }
 
@@ -1471,88 +1498,6 @@ public class Tools {
     }
 
     /**
-     * Stop exclusive software.
-     *
-     * @param methodName   the method name
-     * @param softwareName the software name
-     */
-    public static void stopExclusiveSoftware(String methodName, String softwareName) {
-        int pid = Tools.getCommandPid(Task.getTaskProcessMap().get(methodName));
-        for (RunningTaskThread runningTaskThread : Plan.getRunningTaskThreadsList()) {
-            if (runningTaskThread.getMethodName().equals(methodName)) {
-                if (pid != -1 && Tools.isProcessExists(pid)) {
-                    try {
-                        RuntimeExecTools.executeOrder("kill -15 " + pid, 2000, PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH));
-                        LOGGER.info("Stop " + softwareName + ".");
-                    } catch (PortalException e) {
-                        e.setRequestInformation("Stop " + softwareName + " failed");
-                        LOGGER.error(e.toString());
-                        Tools.shutDownPortal(e.toString());
-                        return;
-                    }
-                } else {
-                    String information = softwareName.substring(0, 1).toUpperCase() + softwareName.substring(1) + " has stopped.";
-                    LOGGER.info(information);
-                }
-                break;
-            }
-        }
-    }
-
-    /**
-     * Stop public software.
-     *
-     * @param taskThreadName the task thread name
-     * @param executeFile    the execute file
-     * @param order          the order
-     * @param name           the name
-     */
-    public static void stopPublicSoftware(String taskThreadName, String executeFile, String order, String name) {
-        boolean fileExist = new File(executeFile).exists();
-        boolean useSoftWare = Tools.usePublicSoftware(taskThreadName);
-        boolean isProcessExists = Tools.getCommandPid(Task.getTaskProcessMap().get(taskThreadName)) != -1;
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        ArrayList<String> criticalWordList = new ArrayList<>();
-        criticalWordList.add("-Dpath=" + PortalControl.portalControlPath);
-        criticalWordList.add(Parameter.PORTAL_NAME);
-        if (!Tools.checkAnotherProcessExist(criticalWordList)) {
-            try {
-                if (fileExist && useSoftWare && isProcessExists) {
-                    RuntimeExecTools.executeOrder(order, 3000, errorPath);
-                    LOGGER.info("Stop " + name + ".");
-                } else if (fileExist && isProcessExists) {
-                    RuntimeExecTools.executeOrder(order, 3000, errorPath);
-                } else if (useSoftWare) {
-                    LOGGER.info("File " + executeFile + " not exists.");
-                }
-            } catch (PortalException e) {
-                e.setRequestInformation("Stop " + name + " failed.");
-                LOGGER.error(e.toString());
-                Tools.shutDownPortal(e.toString());
-            }
-        } else if (useSoftWare) {
-            LOGGER.info("Another portal is running.Wait for the lastest portal to stop " + name + ".");
-        }
-    }
-
-    /**
-     * Use public software boolean.
-     *
-     * @param taskThreadName the task thread name
-     * @return the boolean
-     */
-    public static boolean usePublicSoftware(String taskThreadName) {
-        boolean flag = false;
-        for (RunningTaskThread taskThread : Plan.getRunningTaskThreadsList()) {
-            if (taskThreadName.equals(taskThread.getMethodName())) {
-                flag = true;
-                break;
-            }
-        }
-        return flag;
-    }
-
-    /**
      * Sets port id.
      *
      * @param name the name
@@ -1769,5 +1714,72 @@ public class Tools {
             pid = Integer.parseInt(name.substring(0, index));
         }
         return pid;
+    }
+
+    /**
+     * Change kafka parameters.
+     */
+    public static void changeKafkaParameters() {
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH),
+                hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
+        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
+        kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
+        kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
+        kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
+        kafkaConfigTable.put("delete.topic.enable", "true");
+        kafkaConfigTable.put("group.initial.rebalance.delay.ms", "0");
+        Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
+    }
+
+    /**
+     * Start kafka.
+     */
+    public static void startKafka() {
+        PortalControl.initHashTable();
+        Task.initRunTaskHandlerHashMap();
+        changeKafkaParameters();
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        String confluentPath = hashtable.get(Debezium.Confluent.PATH);
+        String configPath = PathUtils.combainPath(true, PortalControl.portalControlPath + "config",
+                "migrationConfig.properties");
+        Task.startTaskMethod(Method.Name.ZOOKEEPER, 2000, "", "");
+        String executeKafkaFile = PathUtils.combainPath(true, confluentPath + "bin", "kafka-topics");
+        String kafkaPort = Tools.getSinglePropertiesParameter(Parameter.Port.KAFKA, configPath);
+        String kafkaOrder = executeKafkaFile + " --list --bootstrap-server " + kafkaPort;
+        Task.startTaskMethod(Method.Name.KAFKA, 10000, kafkaOrder, "Broker may not be available.");
+        Task.startTaskMethod(Method.Name.REGISTRY, 5000, "", "");
+        ArrayList<String> stringArrayList = new ArrayList<>();
+        stringArrayList.add(Method.Run.ZOOKEEPER);
+        stringArrayList.add(Method.Run.KAFKA);
+        stringArrayList.add(Method.Run.REGISTRY);
+        for (String methodName : stringArrayList) {
+            if (Tools.getCommandPid(Task.getTaskProcessMap().get(methodName)) == -1) {
+                LOGGER.error("Start kafka failed.");
+                return;
+            }
+        }
+        LOGGER.info("Start kafka success.");
+    }
+
+    /**
+     * Stop kafka.
+     */
+    public static void stopKafka() {
+        PortalControl.initHashTable();
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        String path = hashtable.get(Debezium.Confluent.PATH);
+        RunningTaskThread schemaRegistry = new RunningTaskThread(Method.Name.REGISTRY);
+        String executeRegistryPath = PathUtils.combainPath(true, path + "bin", "schema-registry-stop");
+        String order = executeRegistryPath + " " + hashtable.get(Debezium.Registry.CONFIG_PATH);
+        schemaRegistry.stopTask(order);
+        RunningTaskThread kafka = new RunningTaskThread(Method.Name.KAFKA);
+        String executeKafkaPath = PathUtils.combainPath(true, path + "bin", "kafka-server-stop");
+        String kafkaOrder = executeKafkaPath + " " + hashtable.get(Debezium.Kafka.CONFIG_PATH);
+        kafka.stopTask(kafkaOrder);
+        RunningTaskThread zookeeper = new RunningTaskThread(Method.Name.ZOOKEEPER);
+        String executeZookeeperPath = PathUtils.combainPath(true, path + "bin", "zookeeper-server-stop");
+        String zookeeperOrder = executeZookeeperPath + " " + hashtable.get(Debezium.Zookeeper.CONFIG_PATH);
+        zookeeper.stopTask(zookeeperOrder);
     }
 }

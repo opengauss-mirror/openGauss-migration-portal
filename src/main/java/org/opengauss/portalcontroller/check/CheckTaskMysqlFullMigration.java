@@ -33,6 +33,11 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskMysqlFullMigration.class);
 
+    /**
+     * The constant shouldDetachReplica.
+     */
+    public static boolean shouldDetachReplica = true;
+
     public void installAllPackages(boolean download) throws PortalException {
         if (download) {
             RuntimeExecTools.download(Chameleon.PKG_URL, Chameleon.PKG_PATH);
@@ -50,7 +55,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             Tools.createFile(chameleonVenvPath, false);
             RuntimeExecTools.executeOrder(createVenvCommand, 3000, PortalControl.portalErrorPath);
             LOGGER.info("Installing chameleon ...");
-            RuntimeExecTools.executeOrder(installCommand, 3000, PortalControl.portalControlPath, chameleonInstallLogPath, true);
+            RuntimeExecTools.executeOrder(installCommand, 3000, PortalControl.portalControlPath, chameleonInstallLogPath, true, new ArrayList<>());
         } catch (PortalException e) {
             e.setRequestInformation("Install package failed");
             throw e;
@@ -60,7 +65,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             if (Tools.getCommandPid(installCommand) == -1) {
                 String chameleonVersion = chameleonRunnableFilePath + " --version";
                 try {
-                    RuntimeExecTools.executeOrder(chameleonVersion, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true);
+                    RuntimeExecTools.executeOrder(chameleonVersion, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true, new ArrayList<>());
                 } catch (PortalException portalException) {
                     String logStr = Tools.outputFileString(chameleonInstallLogPath);
                     if (logStr.equals("")) {
@@ -81,6 +86,12 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         }
     }
 
+    /**
+     * Copy config files.
+     *
+     * @param workspaceId the workspace id
+     * @throws PortalException the portal exception
+     */
     public void copyConfigFiles(String workspaceId) throws PortalException {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String chameleonRunnableFilePath = hashtable.get(Chameleon.RUNNABLE_FILE_PATH);
@@ -139,11 +150,11 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         String chameleonVenv = Tools.getSinglePropertiesParameter(Chameleon.VENV_PATH, PortalControl.toolsConfigPath);
         Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
         chameleonParameterTable.put("--config", "default_" + workspaceId);
-        task.useChameleonReplicaOrder(chameleonVenv, "drop_replica_schema", chameleonParameterTable);
-        task.useChameleonReplicaOrder(chameleonVenv, "create_replica_schema", chameleonParameterTable);
+        task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonParameterTable, new ArrayList<>());
+        task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.CREATE, chameleonParameterTable, new ArrayList<>());
         chameleonParameterTable.put("--source", "mysql");
-        task.useChameleonReplicaOrder(chameleonVenv, "add_source", chameleonParameterTable);
-        task.startChameleonReplicaOrder(chameleonVenv, "init_replica", chameleonParameterTable);
+        task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.ADD, chameleonParameterTable, new ArrayList<>());
+        task.startChameleonReplicaOrder(chameleonVenv, Chameleon.Order.INIT, chameleonParameterTable, new ArrayList<>());
         if (PortalControl.status != Status.ERROR) {
             LOGGER.info("Mysql full migration is running.");
             PortalControl.status = Status.RUNNING_FULL_MIGRATION;
@@ -157,14 +168,17 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
         chameleonParameterTable.put("--config", "default_" + workspaceId);
         chameleonParameterTable.put("--source", "mysql");
-        task.checkChameleonReplicaOrder("init_replica");
+        task.checkChameleonReplicaOrder(Chameleon.Order.INIT);
         if (PortalControl.toolsMigrationParametersTable.get(MigrationParameters.SNAPSHOT_OBJECT).equals("yes")) {
-            task.useChameleonReplicaOrder(chameleonVenv, "start_trigger_replica", chameleonParameterTable);
-            task.useChameleonReplicaOrder(chameleonVenv, "start_view_replica", chameleonParameterTable);
-            task.useChameleonReplicaOrder(chameleonVenv, "start_func_replica", chameleonParameterTable);
-            task.useChameleonReplicaOrder(chameleonVenv, "start_proc_replica", chameleonParameterTable);
+            task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.START_TRIGGER, chameleonParameterTable, new ArrayList<>());
+            task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.START_VIEW, chameleonParameterTable, new ArrayList<>());
+            task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.START_FUNC, chameleonParameterTable, new ArrayList<>());
+            task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.START_PROC, chameleonParameterTable, new ArrayList<>());
         }
         chameleonParameterTable.clear();
+        if (!PortalControl.taskList.contains(Command.Start.Mysql.INCREMENTAL) && shouldDetachReplica) {
+            runDetach();
+        }
         if (PortalControl.status != Status.ERROR) {
             LOGGER.info("Mysql full migration finished.");
             PortalControl.status = Status.FULL_MIGRATION_FINISHED;
@@ -182,20 +196,15 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         Task task = new Task();
         String chameleonVenv = Tools.getSinglePropertiesParameter(Chameleon.VENV_PATH, PortalControl.toolsConfigPath);
         String inputOrderPath = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
-        Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
-        chameleonParameterTable.put("--config", "default_" + workspaceId);
-        task.useChameleonReplicaOrder(chameleonVenv, "drop_replica_schema", chameleonParameterTable);
+        Hashtable<String, String> chameleonDropParameterTable = new Hashtable<>();
+        chameleonDropParameterTable.put("--config", "default_" + workspaceId);
+        task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonDropParameterTable, new ArrayList<>());
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         ArrayList<String> fileList = new ArrayList<>();
         String chameleonOrderStr = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_";
-        fileList.add(chameleonOrderStr + "drop_replica_schema.json");
-        fileList.add(chameleonOrderStr + "create_replica_schema.json");
-        fileList.add(chameleonOrderStr + "add_source.json");
-        fileList.add(chameleonOrderStr + "init_replica.json");
-        fileList.add(chameleonOrderStr + "start_view_replica.json");
-        fileList.add(chameleonOrderStr + "start_trigger_replica.json");
-        fileList.add(chameleonOrderStr + "start_proc_replica.json");
-        fileList.add(chameleonOrderStr + "start_func_replica.json");
+        for (String order : Chameleon.Order.ALL_ORDER_LIST) {
+            fileList.add(chameleonOrderStr + order + ".json");
+        }
         fileList.add(inputOrderPath);
         try {
             for (String name : fileList) {
@@ -221,6 +230,21 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         filePaths.add(PortalControl.toolsConfigParametersTable.get(Chameleon.PATH).replaceFirst("~", System.getProperty("user.home")));
         filePaths.add(PathUtils.combainPath(false, PortalControl.portalControlPath + "tmp", "chameleon"));
         InstallMigrationTools.removeSingleMigrationToolFiles(filePaths, errorPath);
+    }
+
+    /**
+     * Run detach.
+     */
+    public static void runDetach() {
+        Task task = new Task();
+        String chameleonVenv = Tools.getSinglePropertiesParameter(Chameleon.VENV_PATH, PortalControl.toolsConfigPath);
+        Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
+        chameleonParameterTable.put("--config", "default_" + Plan.workspaceId);
+        chameleonParameterTable.put("--source", "mysql");
+        ArrayList<String> outputList = new ArrayList<>();
+        outputList.add("YES");
+        task.useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DETACH, chameleonParameterTable, outputList);
+        shouldDetachReplica = false;
     }
 
 }

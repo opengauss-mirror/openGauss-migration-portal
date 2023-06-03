@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 /**
  * The type Check task incremental migration.
@@ -39,7 +40,6 @@ public class CheckTaskIncrementalMigration implements CheckTask {
 
     public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
-        softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new ConnectorMysql());
         InstallMigrationTools installMigrationTools = new InstallMigrationTools();
@@ -52,12 +52,6 @@ public class CheckTaskIncrementalMigration implements CheckTask {
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH), hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
-        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
-        kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
-        kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
-        kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
-        Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
         Hashtable<String, String> hashtable1 = new Hashtable<>();
         hashtable1.put("name", "mysql-source-" + workspaceId);
         hashtable1.put("database.server.name", "mysql_server_" + workspaceId);
@@ -90,9 +84,6 @@ public class CheckTaskIncrementalMigration implements CheckTask {
     public void prepareWork(String workspaceId) {
         Tools.changeIncrementalMigrationParameters(PortalControl.toolsMigrationParametersTable);
         changeParameters(workspaceId);
-        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
-        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-        Task.startTaskMethod(Method.Run.REGISTRY, 5000, "");
         if (checkAnotherConnectExists()) {
             LOGGER.error("Another connector is running.Cannot run incremental migration whose workspace id is " + workspaceId + " .");
             return;
@@ -109,7 +100,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         int sourcePort = StartPort.REST_MYSQL_SOURCE + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sourcePort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSourcePath);
-        Task.startTaskMethod(Method.Run.CONNECT_SOURCE, 5000, "");
+        Task.startTaskMethod(Method.Name.CONNECT_SOURCE, 5000, "");
     }
 
     @Override
@@ -123,7 +114,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         int sinkPort = StartPort.REST_MYSQL_SINK + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sinkPort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSinkFilePath);
-        Task.startTaskMethod(Method.Run.CONNECT_SINK, 5000, "");
+        Task.startTaskMethod(Method.Name.CONNECT_SINK, 5000, "");
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_INCREMENTAL_MIGRATION;
         }
@@ -132,27 +123,13 @@ public class CheckTaskIncrementalMigration implements CheckTask {
 
     @Override
     public void checkEnd() {
-        while (!Plan.stopPlan && !Plan.stopIncrementalMigration && !PortalControl.taskList.contains("start mysql incremental migration datacheck")) {
+        while (!Plan.stopPlan && !Plan.stopIncrementalMigration && !PortalControl.taskList.contains(Command.Start.Mysql.INCREMENTAL_CHECK)) {
             LOGGER.info("Incremental migration is running...");
             Tools.sleepThread(1000, "running incremental migraiton");
         }
+        List<String> taskThreadList = List.of(Method.Run.CONNECT_SINK, Method.Run.CONNECT_SOURCE);
         if (Plan.stopIncrementalMigration) {
-            if (PortalControl.status != Status.ERROR) {
-                PortalControl.status = Status.INCREMENTAL_MIGRATION_FINISHED;
-                Plan.pause = true;
-                Tools.sleepThread(50, "pausing the plan");
-            }
-            if (PortalControl.taskList.contains("start mysql reverse migration")) {
-                try (PgConnection conn = JdbcTools.getPgConnection()) {
-                    JdbcTools.changeAllTable(conn);
-                    JdbcTools.createLogicalReplicationSlot(conn);
-                } catch (SQLException e) {
-                    LOGGER.error("SQL exception occurred in create logical replication slot.");
-                }
-            }
-            Task.stopTaskMethod(Method.Run.CONNECT_SINK);
-            Task.stopTaskMethod(Method.Run.CONNECT_SOURCE);
-            LOGGER.info("Incremental migration stopped.");
+            beforeStop(taskThreadList);
         }
     }
 
@@ -162,23 +139,59 @@ public class CheckTaskIncrementalMigration implements CheckTask {
      * @return the boolean
      */
     public boolean checkAnotherConnectExists() {
-        boolean flag1 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SOURCE)) != -1;
-        boolean flag2 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SINK)) != -1;
-        boolean flag3 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SOURCE)) != -1;
-        boolean flag4 = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SINK)) != -1;
-        return flag1 || flag2 || flag3 || flag4;
+        ArrayList<String> connectorParameterList = new ArrayList<>();
+        connectorParameterList.add(Method.Run.REVERSE_CONNECT_SOURCE);
+        connectorParameterList.add(Method.Run.CONNECT_SOURCE);
+        connectorParameterList.add(Method.Run.CONNECT_SINK);
+        connectorParameterList.add(Method.Run.REVERSE_CONNECT_SINK);
+        for (String connectorParameter : connectorParameterList) {
+            if (Tools.getCommandPid(Task.getTaskProcessMap().get(connectorParameter)) != -1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void uninstall() {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String errorPath = PortalControl.portalErrorPath;
         ArrayList<String> filePaths = new ArrayList<>();
-        filePaths.add(hashtable.get(Debezium.Kafka.PATH));
         filePaths.add(hashtable.get(Debezium.Confluent.PATH));
         filePaths.add(hashtable.get(Debezium.Connector.MYSQL_PATH));
         filePaths.add(hashtable.get(Debezium.Connector.OPENGAUSS_PATH));
         filePaths.add(hashtable.get(Debezium.Kafka.TMP_PATH));
         filePaths.add(hashtable.get(Debezium.Zookeeper.TMP_PATH));
         InstallMigrationTools.removeSingleMigrationToolFiles(filePaths, errorPath);
+    }
+
+    /**
+     * Before stop.
+     *
+     * @param taskThreadList the task thread list
+     */
+    public static void beforeStop(List<String> taskThreadList) {
+        if (PortalControl.status != Status.ERROR) {
+            PortalControl.status = Status.INCREMENTAL_MIGRATION_FINISHED;
+            Plan.pause = true;
+            Tools.sleepThread(50, "pausing the plan");
+        }
+        if (PortalControl.taskList.contains(Command.Start.Mysql.REVERSE)) {
+            if (PortalControl.taskList.contains(Command.Start.Mysql.FULL) && CheckTaskMysqlFullMigration.shouldDetachReplica) {
+                CheckTaskMysqlFullMigration.runDetach();
+            }
+            try (PgConnection conn = JdbcTools.getPgConnection()) {
+                JdbcTools.changeAllTable(conn);
+                JdbcTools.createLogicalReplicationSlot(conn);
+            } catch (SQLException e) {
+                PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
+                portalException.setRequestInformation("Create slot failed.");
+                PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                LOGGER.error(portalException.toString());
+            }
+        }
+        for (String taskThread : taskThreadList) {
+            Task.stopTaskMethod(taskThread);
+        }
+        LOGGER.info("Incremental migration stopped.");
     }
 }

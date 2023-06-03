@@ -15,25 +15,22 @@
 
 package org.opengauss.portalcontroller.check;
 
-import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.*;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
-import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
-import org.opengauss.portalcontroller.software.Kafka;
 import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 import static org.opengauss.portalcontroller.Plan.runningTaskList;
 
@@ -64,7 +61,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
 
     public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
-        softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new Datacheck());
         InstallMigrationTools installMigrationTools = new InstallMigrationTools();
@@ -77,9 +73,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
     @Override
     public void prepareWork(String workspaceId) {
         runningTaskList.add(Command.Start.Mysql.INCREMENTAL_CHECK);
-        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
-        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-        Task.startTaskMethod(Method.Run.REGISTRY, 5000, "");
         changeParameters(workspaceId);
     }
 
@@ -89,12 +82,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH), hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
-        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
-        kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
-        kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
-        kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
-        Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
         Tools.changeSinglePropertiesParameter("offset.storage.file.filename", PathUtils.combainPath(true, PortalControl.portalControlPath + "tmp", "connect.offsets"), hashtable.get(Debezium.Connector.CONFIG_PATH));
         Tools.changeMigrationDatacheckParameters(PortalControl.toolsMigrationParametersTable);
         Tools.changeSingleYmlParameter("data.check.data-path", hashtable.get(Check.Result.INCREMENTAL), hashtable.get(Check.CONFIG_PATH));
@@ -108,9 +95,9 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
 
     @Override
     public void start(String workspaceId) {
-        Task.startTaskMethod(Method.Run.CHECK_SOURCE, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Run.CHECK_SINK, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Run.CHECK, 15000, "Started CheckApplication in");
+        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in");
         checkEnd();
     }
 
@@ -122,28 +109,10 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
             }
             Tools.sleepThread(1000, "running incremental migraiton datacheck");
         }
+        List<String> taskThreadList = List.of(Method.Run.CHECK, Method.Run.CHECK_SINK, Method.Run.CHECK_SOURCE, Method.Run.CONNECT_SINK, Method.Run.CONNECT_SOURCE);
         if (Plan.stopIncrementalMigration) {
-            if (PortalControl.status != Status.ERROR) {
-                PortalControl.status = Status.INCREMENTAL_MIGRATION_FINISHED;
-                Plan.pause = true;
-                Tools.sleepThread(50, "pausing the plan");
-            }
-            if (PortalControl.taskList.contains("start mysql reverse migration")) {
-                try (PgConnection conn = JdbcTools.getPgConnection()) {
-                    JdbcTools.changeAllTable(conn);
-                    JdbcTools.createLogicalReplicationSlot(conn);
-                } catch (SQLException e) {
-                    PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
-                    portalException.setRequestInformation("Create slot failed.");
-                    PortalControl.refuseReverseMigrationReason = portalException.getMessage();
-                    LOGGER.error(portalException.toString());
-                }
-            }
-            Task.stopTaskMethod(Method.Run.CHECK);
-            Task.stopTaskMethod(Method.Run.CHECK_SINK);
-            Task.stopTaskMethod(Method.Run.CHECK_SOURCE);
-            Task.stopTaskMethod(Method.Run.CONNECT_SINK);
-            Task.stopTaskMethod(Method.Run.CONNECT_SOURCE);
+            CheckTaskIncrementalMigration.beforeStop(taskThreadList);
+            LOGGER.info("Incremental migration datacheck stopped.");
         }
     }
 
@@ -151,7 +120,6 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String errorPath = PortalControl.portalErrorPath;
         ArrayList<String> filePaths = new ArrayList<>();
-        filePaths.add(hashtable.get(Debezium.Kafka.PATH));
         filePaths.add(hashtable.get(Debezium.Confluent.PATH));
         filePaths.add(hashtable.get(Debezium.Connector.MYSQL_PATH));
         filePaths.add(hashtable.get(Debezium.Connector.OPENGAUSS_PATH));

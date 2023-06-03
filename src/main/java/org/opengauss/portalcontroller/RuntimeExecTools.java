@@ -19,10 +19,14 @@ import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 
@@ -67,16 +71,17 @@ public class RuntimeExecTools {
      * @param time               the time
      * @param workDirectory      the work directory
      * @param errorFilePath      the error file path
-     * @param shouldChangeOutput the should change output
+     * @param shouldChangeOutPut the should change output
+     * @param outPutStringList   the output string list
      * @throws PortalException the portal exception
      */
     public static void executeOrder(String command, int time, String workDirectory, String errorFilePath,
-                                    boolean shouldChangeOutput) throws PortalException {
+                                    boolean shouldChangeOutPut, ArrayList<String> outPutStringList) throws PortalException {
         ProcessBuilder processBuilder = new ProcessBuilder();
         String[] commands = command.split(" ");
         processBuilder.directory(new File(workDirectory));
         processBuilder.command(commands);
-        if (shouldChangeOutput) {
+        if (shouldChangeOutPut) {
             processBuilder.redirectErrorStream(true);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
         } else {
@@ -96,6 +101,12 @@ public class RuntimeExecTools {
                 }
             } else {
                 process.waitFor(time, TimeUnit.MILLISECONDS);
+                try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8))) {
+                    for (String outputOrder : outPutStringList) {
+                        bw.write(outputOrder);
+                        Tools.sleepThread(1000, "input parameters");
+                    }
+                }
             }
         } catch (IOException e) {
             throw new PortalException("IO exception", "executing command " + command, e.getMessage());
@@ -313,7 +324,7 @@ public class RuntimeExecTools {
                                          boolean shouldChangeOutput, String information) {
         try {
             if (!workDirectory.equals("")) {
-                RuntimeExecTools.executeOrder(command, time, workDirectory, errorFilePath, shouldChangeOutput);
+                RuntimeExecTools.executeOrder(command, time, workDirectory, errorFilePath, shouldChangeOutput, new ArrayList<>());
             } else {
                 RuntimeExecTools.executeOrder(command, time, errorFilePath);
             }
