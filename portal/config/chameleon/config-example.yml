@@ -13,10 +13,10 @@ dump_json: Yes
 # into a different one.
 
 type_override:
-  "tinyint(1)":
-    override_to: boolean
-    override_tables:
-      - "*"
+#  "tinyint(1)":
+#    override_to: boolean
+#    override_tables:
+#      - "*"
 
 
 # postgres  destination connection
