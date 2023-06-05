@@ -302,7 +302,7 @@ public class Tools {
         if (!processString.equals("")) {
             String[] processArray = processString.split(System.lineSeparator());
             for (String singleProcess : processArray) {
-                if (singleProcess.trim().endsWith(command)) {
+                if (singleProcess.trim().contains(command)) {
                     String[] strs = singleProcess.split("\\s+");
                     pid = Integer.parseInt(strs[1]);
                 }
