@@ -17,7 +17,11 @@ public class StartCommandReceiver extends CommandReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(StartCommandReceiver.class);
 
     public void action(String order) {
-        PortalControl.startPlan(generateTaskList(order));
+        if (order.equals(Command.Start.KAFKA)) {
+            Tools.startKafka();
+        } else {
+            PortalControl.startPlan(generateTaskList(order));
+        }
     }
 
     /**

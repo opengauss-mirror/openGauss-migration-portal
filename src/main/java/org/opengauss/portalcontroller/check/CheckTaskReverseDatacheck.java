@@ -41,7 +41,6 @@ public class CheckTaskReverseDatacheck implements CheckTask {
     @Override
     public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
-        softwareArrayList.add(new Kafka());
         softwareArrayList.add(new Confluent());
         softwareArrayList.add(new Datacheck());
         InstallMigrationTools installMigrationTools = new InstallMigrationTools();
@@ -57,12 +56,6 @@ public class CheckTaskReverseDatacheck implements CheckTask {
     @Override
     public void changeParameters(String workspaceId) {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        Tools.changeSinglePropertiesParameter("dataDir", hashtable.get(Debezium.Zookeeper.TMP_PATH), hashtable.get(Debezium.Zookeeper.CONFIG_PATH));
-        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
-        kafkaConfigTable.put("log.dirs", hashtable.get(Debezium.Kafka.TMP_PATH));
-        kafkaConfigTable.put("zookeeper.connection.timeout.ms", "30000");
-        kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
-        Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
         Tools.changeMigrationDatacheckParameters(PortalControl.toolsMigrationParametersTable);
         Tools.changeSingleYmlParameter("data.check.data-path", hashtable.get(Check.Result.REVERSE), hashtable.get(Check.CONFIG_PATH));
         Tools.changeSingleYmlParameter("spring.extract.debezium-enable", true, hashtable.get(Check.Source.CONFIG_PATH));
@@ -76,17 +69,14 @@ public class CheckTaskReverseDatacheck implements CheckTask {
     @Override
     public void prepareWork(String workspaceId) {
         runningTaskList.add(Command.Start.Mysql.REVERSE_CHECK);
-        Task.startTaskMethod(Method.Run.ZOOKEEPER, 8000, "");
-        Task.startTaskMethod(Method.Run.KAFKA, 8000, "");
-        Task.startTaskMethod(Method.Run.REGISTRY, 5000, "");
         changeParameters(workspaceId);
     }
 
     @Override
     public void start(String workspaceId) {
-        Task.startTaskMethod(Method.Run.CHECK_SOURCE, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Run.CHECK_SINK, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Run.CHECK, 15000, "Started CheckApplication in");
+        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in");
+        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in");
         checkEnd();
     }
 
@@ -117,7 +107,6 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         String errorPath = PortalControl.portalErrorPath;
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         ArrayList<String> filePaths = new ArrayList<>();
-        filePaths.add(hashtable.get(Debezium.Kafka.PATH));
         filePaths.add(hashtable.get(Debezium.Confluent.PATH));
         filePaths.add(hashtable.get(Debezium.Connector.MYSQL_PATH));
         filePaths.add(hashtable.get(Debezium.Connector.OPENGAUSS_PATH));

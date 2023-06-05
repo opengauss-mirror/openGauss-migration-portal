@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -83,11 +82,6 @@ public final class Plan {
     public static void setCurrentTask(String currentTask) {
         Plan.currentTask = currentTask;
     }
-
-    /**
-     * The constant taskHandlerHashMap.
-     */
-    public static HashMap<String, PortalControl.EventHandler> taskHandlerHashMap = new HashMap<>();
 
     /**
      * The constant runningTaskList.
@@ -185,7 +179,6 @@ public final class Plan {
      */
     public void execPlan(List<String> taskList) {
         Task.initRunTaskHandlerHashMap();
-        Task.initStopTaskHandlerHashMap();
         PortalControl.showMigrationParameters();
         if (isPlanRunnable) {
             isPlanRunnable = false;
@@ -385,7 +378,6 @@ public final class Plan {
      * Stop all tasks.
      */
     public static void stopAllTasks() {
-        Task task = new Task();
         ArrayList<String> runArrayList = new ArrayList<>();
         runArrayList.add(Method.Run.CHECK);
         runArrayList.add(Method.Run.CHECK_SOURCE);
@@ -414,12 +406,6 @@ public final class Plan {
                 }
             }
         }
-        task.stopKafkaSchema(PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH));
-        Tools.sleepThread(1000, "stopping the plan");
-        task.stopKafka(PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH));
-        Tools.sleepThread(1000, "stopping the plan");
-        task.stopZookeeper(PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH));
-        Tools.sleepThread(1000, "stopping the plan");
     }
 }
 

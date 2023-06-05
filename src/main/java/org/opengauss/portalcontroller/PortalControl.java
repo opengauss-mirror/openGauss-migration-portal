@@ -174,6 +174,7 @@ public class PortalControl {
         initValidOrderList();
         initPortalPath();
         Plan.createWorkspace(workspaceId);
+        Task.initMethodNameMap();
         Task.initTaskProcessMap();
         Task.initTaskLogMap();
         threadCheckProcess.setName("threadCheckProcess");
@@ -447,10 +448,12 @@ public class PortalControl {
         validOrderList.add(Command.Start.Mysql.REVERSE);
         validOrderList.add(Command.Start.Mysql.FULL_CHECK);
         validOrderList.add(Command.Start.Mysql.INCREMENTAL_CHECK);
+        validOrderList.add(Command.PREPARE);
         validOrderList.add(Command.Start.Plan.PLAN1);
         validOrderList.add(Command.Start.Plan.PLAN2);
         validOrderList.add(Command.Start.Plan.PLAN3);
         validOrderList.add(Command.Start.Plan.CURRENT);
+        validOrderList.add(Command.Start.KAFKA);
         validOrderList.add(Command.HELP);
         validOrderList.add(Command.Show.PLAN);
         validOrderList.add(Command.Show.STATUS);
@@ -459,6 +462,7 @@ public class PortalControl {
         validOrderList.add(Command.Stop.PLAN);
         validOrderList.add(Command.Stop.INCREMENTAL_MIGRATION);
         validOrderList.add(Command.Stop.REVERSE_MIGRATION);
+        validOrderList.add(Command.Stop.KAFKA);
         validOrderList.add(Command.Run.INCREMENTAL_MIGRATION);
         validOrderList.add(Command.Run.REVERSE_MIGRATION);
     }
@@ -474,9 +478,6 @@ public class PortalControl {
         parametersRegexMap.put(Chameleon.PKG_URL, Regex.URL);
         parametersRegexMap.put(Debezium.PATH, Regex.FOLDER_PATH);
         parametersRegexMap.put(Debezium.PKG_PATH, Regex.FOLDER_PATH);
-        parametersRegexMap.put(Debezium.Kafka.PATH, Regex.FOLDER_PATH);
-        parametersRegexMap.put(Debezium.Kafka.PKG_URL, Regex.URL);
-        parametersRegexMap.put(Debezium.Kafka.PKG_NAME, Regex.PKG_NAME);
         parametersRegexMap.put(Debezium.Confluent.PATH, Regex.FOLDER_PATH);
         parametersRegexMap.put(Debezium.Confluent.PKG_NAME, Regex.PKG_NAME);
         parametersRegexMap.put(Debezium.Confluent.PKG_URL, Regex.URL);
@@ -513,14 +514,13 @@ public class PortalControl {
      */
     public static void initToolsConfigParametersTable() {
         WorkspacePath workspacePath = WorkspacePath.getInstance(portalControlPath, workspaceId);
-        String kafkaPath = toolsConfigParametersTable.get(Debezium.Kafka.PATH);
         String confluentPath = toolsConfigParametersTable.get(Debezium.Confluent.PATH);
         String workPath = PortalControl.portalWorkSpacePath;
         String workConfigDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(), "debezium");
         String workConfigDataCheckPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(), "datacheck");
         String portalPath = PortalControl.portalControlPath;
-        toolsConfigParametersTable.put(Debezium.Zookeeper.CONFIG_PATH, PathUtils.combainPath(true, kafkaPath + "config", "zookeeper.properties"));
-        toolsConfigParametersTable.put(Debezium.Kafka.CONFIG_PATH, PathUtils.combainPath(true, kafkaPath + "config", "server.properties"));
+        toolsConfigParametersTable.put(Debezium.Zookeeper.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "kafka", "zookeeper.properties"));
+        toolsConfigParametersTable.put(Debezium.Kafka.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "kafka", "server.properties"));
         toolsConfigParametersTable.put(Debezium.Registry.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry.properties"));
         toolsConfigParametersTable.put(Debezium.Zookeeper.TMP_PATH, PathUtils.combainPath(true, portalPath + "tmp", "zookeeper"));
         toolsConfigParametersTable.put(Debezium.Kafka.TMP_PATH, PathUtils.combainPath(true, portalPath + "tmp", "kafka-logs"));
@@ -568,9 +568,10 @@ public class PortalControl {
         toolsConfigParametersTable.put(Parameter.INPUT_ORDER_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceConfigPath(), "input"));
         String workLogDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceLogPath(), "debezium");
         toolsConfigParametersTable.put(Debezium.LOG_PATH, workLogDebeziumPath);
-        toolsConfigParametersTable.put(Debezium.Zookeeper.LOG_PATH, workLogDebeziumPath + "server.log");
-        toolsConfigParametersTable.put(Debezium.Kafka.LOG_PATH, workLogDebeziumPath + "server.log");
-        toolsConfigParametersTable.put(Debezium.Registry.LOG_PATH, workLogDebeziumPath + "schema-registry.log");
+        String confluentLogPath = PathUtils.combainPath(false, confluentPath, "logs");
+        toolsConfigParametersTable.put(Debezium.Zookeeper.LOG_PATH, confluentLogPath + "server.log");
+        toolsConfigParametersTable.put(Debezium.Kafka.LOG_PATH, confluentLogPath + "server.log");
+        toolsConfigParametersTable.put(Debezium.Registry.LOG_PATH, confluentLogPath + "schema-registry.log");
         toolsConfigParametersTable.put(Debezium.Source.LOG_PATH, workLogDebeziumPath + "connect_source.log");
         toolsConfigParametersTable.put(Debezium.Sink.LOG_PATH, workLogDebeziumPath + "connect_sink.log");
         toolsConfigParametersTable.put(Debezium.Source.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_source.log");
@@ -598,18 +599,6 @@ public class PortalControl {
         }
         toolsConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "toolspath.properties");
         migrationConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "migrationConfig.properties");
-    }
-
-    /**
-     * The interface Event handler.
-     */
-    public interface EventHandler {
-        /**
-         * Handle.
-         *
-         * @param str the str
-         */
-        void handle(String str);
     }
 
     /**

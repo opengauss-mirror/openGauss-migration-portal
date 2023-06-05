@@ -14,10 +14,6 @@ public interface Debezium {
     }
 
     interface Kafka {
-        String NAME = "kafka";
-        String PATH = "kafka.path";
-        String PKG_URL = "kafka.pkg.url";
-        String PKG_NAME = "kafka.pkg.name";
         String CONFIG_PATH = "kafka.config.path";
         String TMP_PATH = "kafka.tmp.path";
         String LOG_PATH = "kafka.log.path";

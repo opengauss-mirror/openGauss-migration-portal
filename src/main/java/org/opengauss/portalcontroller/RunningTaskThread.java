@@ -15,6 +15,12 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.exception.PortalException;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+
 /**
  * Thread running task.
  *
@@ -24,6 +30,8 @@ package org.opengauss.portalcontroller;
  */
 public class RunningTaskThread {
 
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(RunningTaskThread.class);
+    private String name;
     private String methodName;
     private String processName;
     private long pid;
@@ -39,6 +47,21 @@ public class RunningTaskThread {
     }
 
     /**
+     * Instantiates a new Running task thread.
+     *
+     * @param name the name
+     */
+    public RunningTaskThread(String name) {
+        this.name = name;
+        String getMethodName = Task.getMethodNameMap().get(name);
+        this.methodName = getMethodName;
+        String getProcessName = Task.getTaskProcessMap().get(getMethodName);
+        this.processName = getProcessName;
+        this.logPath = Task.getTaskLogMap().get(getMethodName);
+        this.pid = Tools.getCommandPid(getProcessName);
+    }
+
+    /**
      * Init a instance of RunningTaskThread with parameter methodname and processname.
      *
      * @param methodName  The method name.
@@ -51,29 +74,21 @@ public class RunningTaskThread {
     }
 
     /**
-     * Init a instance of RunningTaskThread with parameter methodname,processname,pid and tasklist.
+     * Gets name.
      *
-     * @param methodName  the method name
-     * @param processName the process name
-     * @param pid         the pid
+     * @return the name
      */
-    public RunningTaskThread(String methodName, String processName, int pid) {
-        this.methodName = methodName;
-        this.processName = processName;
-        this.pid = pid;
+    public String getName() {
+        return name;
     }
 
     /**
-     * Instantiates a new Running task thread.
+     * Sets name.
      *
-     * @param methodName  the method name
-     * @param processName the process name
-     * @param logPath     the log path
+     * @param name the name
      */
-    public RunningTaskThread(String methodName, String processName, String logPath) {
-        this.methodName = methodName;
-        this.processName = processName;
-        this.logPath = logPath;
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
@@ -150,8 +165,6 @@ public class RunningTaskThread {
 
     /**
      * Start task.Execute start task command.
-     *
-     * @return the long
      */
     public void startTask() {
         PortalControl.MethodRunner methodRunner = Task.runTaskHandlerHashMap.get(methodName);
@@ -160,10 +173,46 @@ public class RunningTaskThread {
 
     /**
      * Stop task.Execute stop task command.
+     *
+     * @param order the order
      */
-    public void stopTask() {
-        String stopMethodName = methodName.replaceFirst("run", "stop");
-        PortalControl.EventHandler eventHandler = Task.stopTaskHandlerHashMap.get(stopMethodName);
-        eventHandler.handle(stopMethodName);
+    public void stopTask(String order) {
+        if (pid == -1) {
+            LOGGER.info("No process {} to stop.", processName);
+            return;
+        }
+        try {
+            String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+            if (order.equals("")) {
+                String killOrder = "kill -15 " + pid;
+                RuntimeExecTools.executeOrder(killOrder, 3000, errorPath);
+            } else {
+                killProcessByOrder(order, errorPath);
+            }
+        } catch (PortalException e) {
+            e.setRequestInformation("Stop " + name + " failed.");
+            LOGGER.error(e.toString());
+            Tools.shutDownPortal(e.toString());
+        }
+        LOGGER.info("Stop {}.", name);
+    }
+
+    /**
+     * Kill process.
+     *
+     * @param order     the order
+     * @param errorPath the error path
+     * @throws PortalException the portal exception
+     */
+    public void killProcessByOrder(String order, String errorPath) throws PortalException {
+        String[] orderParts = order.split(" ");
+        String executeFilePath = orderParts[0];
+        if (!new File(executeFilePath).exists()) {
+            LOGGER.error("No file " + executeFilePath + " to execute.");
+            String killOrder = "kill -9 " + pid;
+            RuntimeExecTools.executeOrder(killOrder, 3000, errorPath);
+        } else {
+            RuntimeExecTools.executeOrder(order, 3000, errorPath);
+        }
     }
 }

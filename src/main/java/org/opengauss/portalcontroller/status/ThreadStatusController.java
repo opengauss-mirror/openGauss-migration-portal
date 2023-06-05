@@ -98,7 +98,8 @@ public class ThreadStatusController extends Thread {
                 }
                 String incrementalStatusPath = toolsConfigHashtable.get(Status.INCREMENTAL_PATH);
                 if (new File(sourceIncrementalStatusPath).exists() && new File(sinkIncrementalStatusPath).exists()) {
-                    ChangeStatusTools.changeIncrementalStatus(sourceIncrementalStatusPath, sinkIncrementalStatusPath, incrementalStatusPath, true);
+                    ChangeStatusTools.changeIncrementalStatus(sourceIncrementalStatusPath, sinkIncrementalStatusPath,
+                            incrementalStatusPath, true);
                 }
             }
             if (PortalControl.status >= Status.START_REVERSE_MIGRATION && PortalControl.status != Status.ERROR) {
@@ -116,15 +117,17 @@ public class ThreadStatusController extends Thread {
                 }
                 String reverseStatusPath = toolsConfigHashtable.get(Status.REVERSE_PATH);
                 if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
-                    ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath, reverseStatusPath, false);
+                    ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath,
+                            reverseStatusPath, false);
                 }
             }
             try {
-                String kafkaPath = PortalControl.toolsConfigParametersTable.get(Debezium.Kafka.PATH);
                 String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
                 Hashtable<String, String> hashtable = new Hashtable<>();
-                hashtable.put(PathUtils.combainPath(true, kafkaPath + "logs", "server.log"), toolsConfigHashtable.get(Debezium.LOG_PATH) + "server.log");
-                hashtable.put(PathUtils.combainPath(true, confluentPath + "logs", "schema-registry.log"), toolsConfigHashtable.get(Debezium.LOG_PATH) + "schema-registry.log");
+                hashtable.put(PathUtils.combainPath(true, confluentPath + "logs", "server.log"),
+                        toolsConfigHashtable.get(Debezium.LOG_PATH) + "server.log");
+                hashtable.put(PathUtils.combainPath(true, confluentPath + "logs", "schema-registry.log"),
+                        toolsConfigHashtable.get(Debezium.LOG_PATH) + "schema-registry.log");
                 for (String key : hashtable.keySet()) {
                     if (new File(key).exists()) {
                         RuntimeExecTools.copyFile(key, hashtable.get(key), true);
@@ -133,12 +136,22 @@ public class ThreadStatusController extends Thread {
                 File logFile = new File(confluentPath + "logs");
                 if (logFile.exists() && logFile.isDirectory()) {
                     File[] logFileList = logFile.listFiles();
-                    String workspaceDebeziumLogPath = toolsConfigHashtable.get(Debezium.LOG_PATH);
-                    for (File file : logFileList) {
-                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_source.log", "connect_source.log", true);
-                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_sink.log", "connect_sink.log", true);
-                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_source.log", "reverse_connect_source.log", true);
-                        RuntimeExecTools.copyFileStartWithWord(file, workspaceDebeziumLogPath, "connect_" + workspaceId + "_reverse_sink.log", "reverse_connect_sink.log", true);
+                    String debeziumLogPath = toolsConfigHashtable.get(Debezium.LOG_PATH);
+                    if (logFileList != null) {
+                        for (File file : logFileList) {
+                            RuntimeExecTools.copyFileStartWithWord(file, debeziumLogPath,
+                                    "connect_" + workspaceId + "_source.log",
+                                    "connect_source.log", true);
+                            RuntimeExecTools.copyFileStartWithWord(file, debeziumLogPath,
+                                    "connect_" + workspaceId + "_sink.log",
+                                    "connect_sink.log", true);
+                            RuntimeExecTools.copyFileStartWithWord(file, debeziumLogPath,
+                                    "connect_" + workspaceId + "_reverse_source.log",
+                                    "reverse_connect_source.log", true);
+                            RuntimeExecTools.copyFileStartWithWord(file, debeziumLogPath,
+                                    "connect_" + workspaceId + "_reverse_sink.log",
+                                    "reverse_connect_sink.log", true);
+                        }
                     }
                 }
             } catch (PortalException e) {

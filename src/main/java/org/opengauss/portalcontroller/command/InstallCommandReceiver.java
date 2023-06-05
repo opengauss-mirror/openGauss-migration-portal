@@ -15,5 +15,7 @@ public class InstallCommandReceiver extends CommandReceiver {
         } else {
             installMigrationTools.runInstallOrder(order);
         }
+        Tools.sleepThread(1000, "unzip package");
+        Tools.startKafka();
     }
 }

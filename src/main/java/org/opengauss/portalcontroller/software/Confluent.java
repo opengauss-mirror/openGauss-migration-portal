@@ -34,6 +34,12 @@ public class Confluent implements Software {
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "schema-registry-stop"));
         confluentList.add(PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry.properties"));
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "connect-standalone"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "zookeeper-server-start"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "zookeeper-server-stop"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "etc", "kafka", "zookeeper.properties"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "kafka-server-start"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "kafka-server-stop"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "etc", "kafka", "server.properties"));
         return confluentList;
     }
 

@@ -175,32 +175,45 @@ public class ChangeStatusTools {
      * @param incrementalOrReverse the incremental or reverse
      */
     public static void changeIncrementalStatus(String sourcePath, String sinkPath, String incrementalPath, boolean incrementalOrReverse) {
-        JSONObject sourceObject = JSONObject.parseObject(LogView.getFullLogNoSeparator(sourcePath));
-        JSONObject sinkObject = JSONObject.parseObject(LogView.getFullLogNoSeparator(sinkPath));
-        IncrementalMigrationStatus incrementalMigrationStatus = new IncrementalMigrationStatus();
-        incrementalMigrationStatus.setCount(sinkObject.getInteger(Parameter.IncrementalStatus.REPLAYED_COUNT) + sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
-        incrementalMigrationStatus.setSourceSpeed(sourceObject.getInteger(Parameter.IncrementalStatus.SPEED));
-        incrementalMigrationStatus.setSinkSpeed(sinkObject.getInteger(Parameter.IncrementalStatus.SPEED));
-        incrementalMigrationStatus.setRest(sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
-        incrementalMigrationStatus.setFailCount(sinkObject.getInteger(Parameter.IncrementalStatus.FAIL));
-        incrementalMigrationStatus.setSuccessCount(sinkObject.getInteger(Parameter.IncrementalStatus.SUCCESS));
-        incrementalMigrationStatus.setReplayedCount(sinkObject.getInteger(Parameter.IncrementalStatus.REPLAYED_COUNT));
-        String failSqlPath;
-        if (incrementalOrReverse) {
-            incrementalMigrationStatus.setSkippedCount(sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED) + sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_EVENT_COUNT));
-            failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.INCREMENTAL_FOLDER), "fail-sql.txt");
-        } else {
-            incrementalMigrationStatus.setSkippedCount(sourceObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_COUNT));
-            failSqlPath = PathUtils.combainPath(true, PortalControl.toolsConfigParametersTable.get(Status.REVERSE_FOLDER), "fail-sql.txt");
+        try {
+            String sourceLog = LogView.getFullLogNoSeparator(sourcePath);
+            String sinkLog = LogView.getFullLogNoSeparator(sinkPath);
+            if (!sourceLog.equals("") && !sinkLog.equals("")) {
+                IncrementalMigrationStatus incrementalMigrationStatus = new IncrementalMigrationStatus();
+                JSONObject sourceObject = JSONObject.parseObject(sourceLog);
+                JSONObject sinkObject = JSONObject.parseObject(sinkLog);
+                incrementalMigrationStatus.setCount(sinkObject.getInteger(Parameter.IncrementalStatus.REPLAYED_COUNT)
+                        + sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
+                incrementalMigrationStatus.setSourceSpeed(sourceObject.getInteger(Parameter.IncrementalStatus.SPEED));
+                incrementalMigrationStatus.setSinkSpeed(sinkObject.getInteger(Parameter.IncrementalStatus.SPEED));
+                incrementalMigrationStatus.setRest(sinkObject.getInteger(Parameter.IncrementalStatus.OVER_ALL_PIPE));
+                incrementalMigrationStatus.setFailCount(sinkObject.getInteger(Parameter.IncrementalStatus.FAIL));
+                incrementalMigrationStatus.setSuccessCount(sinkObject.getInteger(Parameter.IncrementalStatus.SUCCESS));
+                incrementalMigrationStatus.setReplayedCount(sinkObject.getInteger(
+                        Parameter.IncrementalStatus.REPLAYED_COUNT));
+                String failSqlPath;
+                if (incrementalOrReverse) {
+                    incrementalMigrationStatus.setSkippedCount(sinkObject.getInteger(Parameter.IncrementalStatus.SKIP)
+                            + sinkObject.getInteger(Parameter.IncrementalStatus.SKIPPED_EXCLUDE_EVENT_COUNT));
+                    String incrementFolder = PortalControl.toolsConfigParametersTable.get(Status.INCREMENTAL_FOLDER);
+                    failSqlPath = PathUtils.combainPath(true, incrementFolder, "fail-sql.txt");
+                } else {
+                    incrementalMigrationStatus.setSkippedCount(sourceObject.getInteger(
+                            Parameter.IncrementalStatus.SKIPPED_EXCLUDE_COUNT));
+                    String reverseFolder = PortalControl.toolsConfigParametersTable.get(Status.REVERSE_FOLDER);
+                    failSqlPath = PathUtils.combainPath(true, reverseFolder, "fail-sql.txt");
+                }
+                int status = Status.Incremental.RUNNING;
+                if (PortalControl.status == Status.ERROR || !LogView.getFullLog(failSqlPath).equals("")) {
+                    status = Status.Incremental.ERROR;
+                    String msg = "Please read " + failSqlPath + " to get fail sqls.";
+                    incrementalMigrationStatus.setMsg(msg);
+                }
+                incrementalMigrationStatus.setStatus(status);
+                LogView.writeFile(JSON.toJSONString(incrementalMigrationStatus), incrementalPath, false);
+            }
+        } catch (Exception ignored) {
         }
-        int status = Status.Incremental.RUNNING;
-        if (PortalControl.status == Status.ERROR || !LogView.getFullLog(failSqlPath).equals("")) {
-            status = Status.Incremental.ERROR;
-            String msg = "Please read " + failSqlPath + " to get fail sqls.";
-            incrementalMigrationStatus.setMsg(msg);
-        }
-        incrementalMigrationStatus.setStatus(status);
-        LogView.writeFile(JSON.toJSONString(incrementalMigrationStatus), incrementalPath, false);
     }
 
 
