@@ -1733,6 +1733,18 @@ public class Tools {
     }
 
     /**
+     * Prepare confluent.
+     */
+    public static void prepareConfluent() {
+        String workDirectory = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
+        String cleanFileName = "clean.sh";
+        RuntimeExecTools.runShell(cleanFileName, workDirectory);
+        String buildFileName = "build.sh";
+        RuntimeExecTools.runShell(buildFileName, workDirectory);
+    }
+
+
+    /**
      * Start kafka.
      */
     public static void startKafka() {
@@ -1748,7 +1760,7 @@ public class Tools {
         String kafkaPort = Tools.getSinglePropertiesParameter(Parameter.Port.KAFKA, configPath);
         String kafkaOrder = executeKafkaFile + " --list --bootstrap-server " + kafkaPort;
         Task.startTaskMethod(Method.Name.KAFKA, 10000, kafkaOrder, "Broker may not be available.");
-        Task.startTaskMethod(Method.Name.REGISTRY, 5000, "", "");
+        Task.startTaskMethod(Method.Name.REGISTRY, 3000, "", "");
         ArrayList<String> stringArrayList = new ArrayList<>();
         stringArrayList.add(Method.Run.ZOOKEEPER);
         stringArrayList.add(Method.Run.KAFKA);
@@ -1777,9 +1789,48 @@ public class Tools {
         String executeKafkaPath = PathUtils.combainPath(true, path + "bin", "kafka-server-stop");
         String kafkaOrder = executeKafkaPath + " " + hashtable.get(Debezium.Kafka.CONFIG_PATH);
         kafka.stopTask(kafkaOrder);
+        waitForKillKafka();
         RunningTaskThread zookeeper = new RunningTaskThread(Method.Name.ZOOKEEPER);
         String executeZookeeperPath = PathUtils.combainPath(true, path + "bin", "zookeeper-server-stop");
         String zookeeperOrder = executeZookeeperPath + " " + hashtable.get(Debezium.Zookeeper.CONFIG_PATH);
         zookeeper.stopTask(zookeeperOrder);
+    }
+
+    /**
+     * Wait for kill kafka.
+     */
+    public static void waitForKillKafka() {
+        int waitTime = 5000;
+        while (true) {
+            long pid = Tools.getCommandPid(Task.getTaskProcessMap().get(Method.Run.KAFKA));
+            if (pid == -1) {
+                break;
+            } else if (waitTime < 0) {
+                killKafka(pid);
+                break;
+            } else {
+                Tools.sleepThread(1000, "stop kafka");
+                waitTime -= 1000;
+            }
+        }
+    }
+
+    /**
+     * Kill kafka.
+     *
+     * @param pid the pid
+     */
+    public static void killKafka(long pid) {
+        try {
+            LOGGER.warn("Force kill on process kafka.");
+            RuntimeExecTools.executeOrder("kill -9 " + pid, 1000, PortalControl.portalErrorPath);
+            String tmpPath = PortalControl.portalControlPath + "tmp";
+            String tmpZookeeperPath = PathUtils.combainPath(false, tmpPath, "zookeeper");
+            RuntimeExecTools.executeOrder("rm -rf " + tmpZookeeperPath, 1000, PortalControl.portalErrorPath);
+            String tmpKafkaPath = PathUtils.combainPath(false, tmpPath, "kafka-logs");
+            RuntimeExecTools.executeOrder("rm -rf " + tmpKafkaPath, 1000, PortalControl.portalErrorPath);
+        } catch (PortalException e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 }

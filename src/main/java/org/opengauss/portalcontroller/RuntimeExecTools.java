@@ -335,4 +335,22 @@ public class RuntimeExecTools {
             Tools.shutDownPortal(e.toString());
         }
     }
+
+    /**
+     * Run shell.
+     *
+     * @param name          the name
+     * @param workDirectory the work directory
+     */
+    public static void runShell(String name, String workDirectory) {
+        if (new File(workDirectory + name).exists()) {
+            String errorFilePath = PortalControl.portalErrorPath;
+            try {
+                String command = "sh " + workDirectory + name;
+                RuntimeExecTools.executeOrder(command, 3000, workDirectory, errorFilePath, true, new ArrayList<>());
+            } catch (PortalException e) {
+                LOGGER.error(e.getMessage());
+            }
+        }
+    }
 }
