@@ -16,6 +16,7 @@
 package org.opengauss.portalcontroller;
 
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.LoggerFactory;
 
@@ -184,7 +185,12 @@ public class RunningTaskThread {
         try {
             String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
             if (order.equals("")) {
-                String killOrder = "kill -15 " + pid;
+                String killOrder;
+                if (PortalControl.status >= Status.RUNNING_INCREMENTAL_MIGRATION && methodName.contains("Check")) {
+                    killOrder = "kill -9 " + pid;
+                } else {
+                    killOrder = "kill -15 " + pid;
+                }
                 RuntimeExecTools.executeOrder(killOrder, 3000, errorPath);
             } else {
                 killProcessByOrder(order, errorPath);
