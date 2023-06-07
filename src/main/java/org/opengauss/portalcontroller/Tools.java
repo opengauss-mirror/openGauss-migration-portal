@@ -491,6 +491,7 @@ public class Tools {
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         }
+        pps.clear();
         return value;
     }
 
@@ -1596,22 +1597,28 @@ public class Tools {
      */
     public static boolean checkReverseMigrationRunnable() {
         boolean isReverseRunnable = false;
-        PgConnection connection = JdbcTools.getPgConnection();
-        if (JdbcTools.selectVersion(connection)) {
-            Hashtable<String, String> parameterTable = new Hashtable<>();
-            parameterTable.put("wal_level", "logical");
-            parameterTable.put("ssl", "on");
-            int parameter = 0;
-            for (String key : parameterTable.keySet()) {
-                if (JdbcTools.selectGlobalVariables(connection, key, parameterTable.get(key))) {
-                    parameter++;
-                } else {
-                    break;
+        try (PgConnection connection = JdbcTools.getPgConnection()) {
+            if (JdbcTools.selectVersion(connection)) {
+                Hashtable<String, String> parameterTable = new Hashtable<>();
+                parameterTable.put("wal_level", "logical");
+                parameterTable.put("ssl", "on");
+                int parameter = 0;
+                for (String key : parameterTable.keySet()) {
+                    if (JdbcTools.selectGlobalVariables(connection, key, parameterTable.get(key))) {
+                        parameter++;
+                    } else {
+                        break;
+                    }
+                }
+                if (parameter == parameterTable.size()) {
+                    isReverseRunnable = true;
                 }
             }
-            if (parameter == parameterTable.size()) {
-                isReverseRunnable = true;
-            }
+        } catch (SQLException e) {
+            PortalException portalException = new PortalException("IO exception",
+                    "checking reverse migration is runnable", e.getMessage());
+            PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+            LOGGER.error(portalException.toString());
         }
         return isReverseRunnable;
     }
