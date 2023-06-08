@@ -103,9 +103,7 @@ public class CheckTaskFullDatacheck implements CheckTask {
                 }
                 break;
             }
-            if (!Tools.outputDatacheckStatus(Parameter.CHECK_FULL)) {
-                break;
-            }
+            Tools.outputDatacheckStatus(Parameter.CHECK_FULL);
             Tools.sleepThread(LogParseConstants.PERIOD_WATCH_LOG, "running full migration datacheck");
         }
     }
