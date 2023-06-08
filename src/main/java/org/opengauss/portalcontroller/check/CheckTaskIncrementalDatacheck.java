@@ -104,9 +104,7 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
     public void checkEnd() {
         while (!Plan.stopPlan && !Plan.stopIncrementalMigration) {
             LOGGER.info("Incremental migration is running...");
-            if (!Tools.outputDatacheckStatus(Parameter.CHECK_INCREMENTAL)) {
-                break;
-            }
+            Tools.outputDatacheckStatus(Parameter.CHECK_INCREMENTAL);
             Tools.sleepThread(1000, "running incremental migraiton datacheck");
         }
         List<String> taskThreadList = List.of(Method.Run.CHECK, Method.Run.CHECK_SINK, Method.Run.CHECK_SOURCE, Method.Run.CONNECT_SINK, Method.Run.CONNECT_SOURCE);

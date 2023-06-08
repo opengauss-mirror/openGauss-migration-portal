@@ -149,6 +149,14 @@ public final class Plan {
     }
 
     /**
+     * Check full datacheck running.
+     */
+    public static void checkFullDatacheckRunning() {
+        isFullDatacheckRunning = false;
+        LOGGER.info("Full datacheck is finished.");
+    }
+
+    /**
      * Gets running task threads list.
      *
      * @return the running task threads list
@@ -299,11 +307,14 @@ public final class Plan {
             if (cleanFullDataCheck) {
                 int length = runningTaskThreadsList.size();
                 for (int i = length - 1; i >= 0; i--) {
-                    if (runningTaskThreadsList.get(i).getMethodName().contains("Check")) {
+                    String methodName = runningTaskThreadsList.get(i).getMethodName();
+                    LOGGER.info("Running task thread {} is in list.", methodName);
+                    if (methodName.contains("Check")) {
                         runningTaskThreadsList.remove(i);
+                        LOGGER.info("Remove task thread {} in list.", methodName);
                     }
                 }
-                Plan.isFullDatacheckRunning = false;
+                Plan.checkFullDatacheckRunning();
             }
         }
         return flag;

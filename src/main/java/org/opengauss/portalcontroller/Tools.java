@@ -21,7 +21,6 @@ import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.ExceptionType;
 import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
@@ -1540,7 +1539,7 @@ public class Tools {
      * @param datacheckType the datacheck type
      * @return the boolean
      */
-    public static boolean outputDatacheckStatus(String datacheckType) {
+    public static void outputDatacheckStatus(String datacheckType) {
         String checkSourceLogPath = PortalControl.toolsConfigParametersTable.get(Check.Source.LOG_PATH);
         boolean flag1 = Tools.outputStatus(checkSourceLogPath);
         String checkSinkLogPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.LOG_PATH);
@@ -1549,7 +1548,6 @@ public class Tools {
         boolean flag3 = Tools.outputStatus(checkLogPath);
         boolean flag = flag1 && flag2 && flag3;
         Tools.outputInformation(flag, datacheckType + " is running.", datacheckType + " has error.");
-        return flag;
     }
 
     /**
@@ -1565,10 +1563,6 @@ public class Tools {
             if (!errorStr.equals("")) {
                 LOGGER.error(errorStr);
                 LOGGER.error("Error occurred in " + logPath + ".You can stop plan or ignore the information.");
-                if (!ExceptionType.IGNORED_EXCEPTION_LIST.stream().map(errorStr::contains).anyMatch(Boolean::booleanValue)) {
-                    PortalControl.status = Status.ERROR;
-                    PortalControl.errorMsg = errorStr;
-                }
                 flag = false;
             }
         }

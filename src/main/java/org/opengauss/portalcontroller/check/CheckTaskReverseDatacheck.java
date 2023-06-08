@@ -83,9 +83,7 @@ public class CheckTaskReverseDatacheck implements CheckTask {
     public void checkEnd() {
         while (!Plan.stopPlan && !Plan.stopReverseMigration) {
             LOGGER.info("Reverse migration is running...");
-            if (!Tools.outputDatacheckStatus(Parameter.CHECK_REVERSE)) {
-                break;
-            }
+            Tools.outputDatacheckStatus(Parameter.CHECK_REVERSE);
             Tools.sleepThread(1000, "running reverse migraiton datacheck");
         }
         if (Plan.stopReverseMigration) {
