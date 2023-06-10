@@ -22,13 +22,6 @@
         <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%-36.36c{1.}] - %msg%n"/>
     </Properties>
     <Appenders>
-        <Console name="console_out_appender" target="SYSTEM_OUT">
-            <Filters>
-                <ThresholdFilter level="${LOG_LEVEL}" onMatch="ACCEPT" onMismatch="DENY"/>
-            </Filters>
-            <PatternLayout pattern="${LOG_PATTERN}"/>
-        </Console>
-
         <RollingFile name="source_appender" immediateFlush="true" fileName="${LOG_HOME}/source.log"
                      filePattern="${LOG_HOME}/history/source - %d{yyyy-MM-dd}.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
@@ -43,7 +36,6 @@
 
     <Loggers>
         <root level="${LOG_LEVEL}">
-            <appender-ref ref="console_out_appender"/>
             <appender-ref ref="source_appender"/>
         </root>
 

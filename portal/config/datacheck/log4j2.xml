@@ -24,12 +24,6 @@
     </Properties>
 
     <Appenders>
-        <Console name="console_out_appender" target="SYSTEM_OUT">
-            <Filters>
-                <ThresholdFilter level="${LOG_LEVEL}" onMatch="ACCEPT" onMismatch="DENY"/>
-            </Filters>
-            <PatternLayout pattern="${LOG_PATTERN}"/>
-        </Console>
         <RollingFile name="check_appender" immediateFlush="true" fileName="${LOG_HOME}/check.log"
                      filePattern="${LOG_HOME}/history/check - %d{yyyy-MM-dd}.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
@@ -44,7 +38,6 @@
 
     <Loggers>
         <root level="${LOG_LEVEL}">
-            <appender-ref ref="console_out_appender"/>
             <appender-ref ref="check_appender"/>
         </root>
         <logger name="org.apache.kafka" level="ERROR"/>
