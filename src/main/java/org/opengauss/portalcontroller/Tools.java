@@ -646,12 +646,10 @@ public class Tools {
             }
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "reading last line in file " + path, e.getMessage());
-            portalException.setRequestInformation("Get success sign failed.");
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "reading last line in file " + path, e.getMessage());
-            portalException.setRequestInformation("Get success sign failed.");
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         }
@@ -1255,8 +1253,12 @@ public class Tools {
      * @param statusPath   the status path
      */
     public static void changeDatacheckSpeedStatus(String progressPath, String statusPath) {
-        String progressStr = LogView.getFullLog(progressPath);
-        LogView.writeFile(progressStr, statusPath, false);
+        if (new File(progressPath).exists()) {
+            String progressStr = Tools.lastLine(progressPath);
+            LogView.writeFile(progressStr, statusPath, false);
+        } else {
+            LOGGER.info("Get datacheck progess failed.Use old progress.");
+        }
     }
 
     /**
@@ -1537,7 +1539,6 @@ public class Tools {
      * Output datacheck status boolean.
      *
      * @param datacheckType the datacheck type
-     * @return the boolean
      */
     public static void outputDatacheckStatus(String datacheckType) {
         String checkSourceLogPath = PortalControl.toolsConfigParametersTable.get(Check.Source.LOG_PATH);

@@ -22,12 +22,6 @@
     </Properties>
 
     <Appenders>
-        <Console name="console_out_appender" target="SYSTEM_OUT">
-            <Filters>
-                <ThresholdFilter level="${LOG_LEVEL}" onMatch="ACCEPT" onMismatch="DENY"/>
-            </Filters>
-            <PatternLayout pattern="${LOG_PATTERN}"/>
-        </Console>
         <RollingFile name="sink_appender" immediateFlush="true" fileName="${LOG_HOME}/sink.log"
                      filePattern="${LOG_HOME}/history/sink - %d{yyyy-MM-dd}.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
@@ -43,7 +37,6 @@
 
     <Loggers>
         <root level="${LOG_LEVEL}">
-            <appender-ref ref="console_out_appender"/>
             <appender-ref ref="sink_appender"/>
         </root>
 
