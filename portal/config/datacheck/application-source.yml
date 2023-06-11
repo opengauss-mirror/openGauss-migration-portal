@@ -1,17 +1,19 @@
 server:
   port: 9001
 logging:
-  config: #absolute_path/log4j2source.xml
+  config: config/log4j2source.xml
 
 spring:
   check:
     server-uri: http://127.0.0.1:9000
     core-pool-size: 2
     maximum-pool-size: 10
+    maximum-topic-size: 30
+    maximum-table-slice-size: 100000
   extract:
     schema: test
     databaseType: MS
-    query-dop: 8 # openGauss database Parallel Query session config
+    query-dop: 8 # jdbc Parallel Query  config
     debezium-enable: false
     debezium-topic: data_check_avro_inc_topic_w1 # debezium topic
     debezium-serializer: AvroSerializer # StringSerializer or AvroSerializer
