@@ -829,6 +829,7 @@ public class Tools {
                 ResultSet rs = JdbcTools.getPgConnection().execSQLQuery(sql)
         ) {
             String uuid = JdbcTools.getCurrentUuid(mysqlConnection);
+            LOGGER.info("Current uuid: {}",uuid);
             if (rs.next()) {
                 String tBinlogName = rs.getString("t_binlog_name");
                 String iBinlogPosition = rs.getString("i_binlog_position");
@@ -861,6 +862,7 @@ public class Tools {
             if (uuid.equals(mysqlUuid) && (tGtidSet.contains("-"))) {
                 int offsetIndex = tGtidSet.lastIndexOf("-") + 1;
                 int offset = Integer.parseInt(tGtidSet.substring(offsetIndex));
+                LOGGER.info("Offset: {}",offset);
                 offset--;
                 tGtidSet = tGtidSet.substring(0, offsetIndex) + offset;
             }

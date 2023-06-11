@@ -68,16 +68,43 @@ public class JdbcTools {
      * @throws SQLException the sql exception
      */
     public static String getCurrentUuid(Connection connection) throws SQLException {
-        String uuid = "";
-        String selectUuidSql = "show global variables like 'server_uuid';";
-        try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(selectUuidSql)) {
-            if (rs.next()) {
-                uuid = rs.getString("Value");
-            }
-        } catch (SQLException e) {
-            throw e;
+        String uuid;
+        String selectReadOnlySql = "show variables like 'read_only';";
+        String readOnlyColumnName = "Value";
+        String checkMaster = selectStringValue(connection, selectReadOnlySql, readOnlyColumnName);
+        if (checkMaster.equals("OFF")) {
+            String masterSelectSql = "show global variables like 'server_uuid';";
+            String masterColumnName = "Value";
+            uuid = selectStringValue(connection, masterSelectSql, masterColumnName);
+        } else {
+            String slaveSelectSql = "show slave status;";
+            String slaveColumnName = "Master_UUID";
+            uuid = selectStringValue(connection, slaveSelectSql, slaveColumnName);
         }
         return uuid;
+    }
+
+    /**
+     * Select string value string.
+     *
+     * @param connection the connection
+     * @param selectSql  the select sql
+     * @param key        the key
+     * @return the string
+     * @throws SQLException the sql exception
+     */
+    public static String selectStringValue(Connection connection, String selectSql, String key) throws SQLException {
+        String value = "";
+        if (connection != null) {
+            try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(selectSql)) {
+                if (rs.next()) {
+                    value = rs.getString(key);
+                }
+            } catch (SQLException e) {
+                throw e;
+            }
+        }
+        return value;
     }
 
     /**
@@ -106,31 +133,27 @@ public class JdbcTools {
      * Select global variables boolean.
      *
      * @param connection   the connection
-     * @param key          the key
+     * @param columnName   the key
      * @param defaultValue the default value
      * @return the boolean
      */
-    public static boolean selectGlobalVariables(PgConnection connection, String key, String defaultValue) {
+    public static boolean selectGlobalVariables(PgConnection connection, String columnName, String defaultValue) {
         boolean flag = false;
-        if (connection != null) {
-            String sql = "show " + key + ";";
-            try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(sql)) {
-                if (rs.next()) {
-                    String value = rs.getString(key);
-                    if (value.equals(defaultValue)) {
-                        flag = true;
-                    } else {
-                        String reason = "If you want to use reverse migration,please alter system set " + key + " to " + defaultValue + " and restart openGauss to make it work.";
-                        PortalControl.refuseReverseMigrationReason = reason;
-                        LOGGER.error(reason);
-                    }
-                }
-            } catch (SQLException e) {
-                PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
-                portalException.setRequestInformation("Select global variable " + key + " failed.");
-                PortalControl.refuseReverseMigrationReason = portalException.getMessage();
-                LOGGER.error(portalException.toString());
+        String sql = "show " + columnName + ";";
+        try {
+            String value = selectStringValue(connection, sql, columnName);
+            if (value.equals(defaultValue)) {
+                flag = true;
+            } else {
+                String reason = "If you want to use reverse migration,please alter system set " + columnName + " to " + defaultValue + " and restart openGauss to make it work.";
+                PortalControl.refuseReverseMigrationReason = reason;
+                LOGGER.error(reason);
             }
+        } catch (SQLException e) {
+            PortalException portalException = new PortalException("SQL exception", "select global variable", e.getMessage());
+            portalException.setRequestInformation("Select global variable " + columnName + " failed.");
+            PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+            LOGGER.error(portalException.toString());
         }
         return flag;
     }
@@ -144,21 +167,21 @@ public class JdbcTools {
     public static boolean selectVersion(PgConnection connection) {
         boolean flag = false;
         if (connection != null) {
-            try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery("select version()")) {
-                if (rs.next()) {
-                    String value = rs.getString("version");
-                    String openGauss = "openGauss";
-                    int startIndex = value.indexOf(openGauss) + openGauss.length();
-                    int endIndex = value.indexOf("build");
-                    String version = value.substring(startIndex, endIndex).trim();
-                    int versionNum = Integer.parseInt(version.replaceAll("\\.", ""));
-                    if (versionNum >= 300) {
-                        flag = true;
-                    } else {
-                        String reason = "Please upgrade openGauss to 3.0.0 or higher to use reverse migration.";
-                        PortalControl.refuseReverseMigrationReason = reason;
-                        LOGGER.error(reason);
-                    }
+            String selectVersionSql = "select version()";
+            String versionColumnName = "version";
+            try {
+                String value = selectStringValue(connection, selectVersionSql, versionColumnName);
+                String openGauss = "openGauss";
+                int startIndex = value.indexOf(openGauss) + openGauss.length();
+                int endIndex = value.indexOf("build");
+                String version = value.substring(startIndex, endIndex).trim();
+                int versionNum = Integer.parseInt(version.replaceAll("\\.", ""));
+                if (versionNum >= 300) {
+                    flag = true;
+                } else {
+                    String reason = "Please upgrade openGauss to 3.0.0 or higher to use reverse migration.";
+                    PortalControl.refuseReverseMigrationReason = reason;
+                    LOGGER.error(reason);
                 }
             } catch (SQLException e) {
                 PortalException portalException = new PortalException("SQL exception", "select openGauss version", e.getMessage());
