@@ -10,7 +10,7 @@
   ~
   ~ THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
   ~ EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-  ~ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+  ~ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.l
   ~ See the Mulan PSL v2 for more details.
   -->
 
@@ -19,17 +19,54 @@
         <!--Property LOG_HOME must be absolute path dir -->
         <Property name="LOG_HOME">/tmp/datacheck/logs</Property>
         <Property name="LOG_LEVEL">INFO</Property>
+        <Property name="LOG_NAME">source</Property>
+        <Property name="LOG_BUSINESS_NAME">business</Property>
         <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%-36.36c{1.}] - %msg%n"/>
+        <property name="LOG_BUSINESS_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread][%-16.16c{1.}] - %msg%n"/>
     </Properties>
     <Appenders>
-        <RollingFile name="source_appender" immediateFlush="true" fileName="${LOG_HOME}/source.log"
-                     filePattern="${LOG_HOME}/history/source - %d{yyyy-MM-dd}.log.gz">
+        <RollingFile name="source_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_NAME}.log"
+                     filePattern="${LOG_HOME}/history/${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20MB"/>
             </Policies>
             <Filters>
-                <ThresholdFilter level="${LOG_LEVEL}" onMatch="ACCEPT" onMismatch="DENY"/>
+                <ThresholdFilter level="error" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        <RollingFile name="business_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_BUSINESS_NAME}-${LOG_NAME}.log"
+                     filePattern="${LOG_HOME}/history/${LOG_BUSINESS_NAME}-${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="${LOG_BUSINESS_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <Filters>
+                <ThresholdFilter level="error" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        <RollingFile name="source_debug_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_NAME}-debug.log"
+                     filePattern="${LOG_HOME}/history/${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <Filters>
+                <ThresholdFilter level="info" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="warn" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        <RollingFile name="source_error_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_NAME}-error.log"
+                     filePattern="${LOG_HOME}/history/${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <Filters>
+                <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY"/>
             </Filters>
         </RollingFile>
     </Appenders>
@@ -37,14 +74,19 @@
     <Loggers>
         <root level="${LOG_LEVEL}">
             <appender-ref ref="source_appender"/>
+            <appender-ref ref="source_debug_appender"/>
+            <appender-ref ref="source_error_appender"/>
         </root>
-
+        <logger name="extract_business" level="INFO">
+            <appender-ref ref="business_appender"/>
+        </logger>
         <logger name="org.apache.kafka" level="ERROR"/>
         <logger name="org.springframework" level="INFO"/>
         <logger name="_org.springframework.web" level="ERROR"/>
         <logger name="org.hibernate.validator" level="ERROR"/>
         <logger name="org.jboss.netty" level="ERROR"/>
         <logger name="org.apache.http" level="ERROR"/>
+        <logger name="oshi.util.platform" level="ERROR"/>
     </Loggers>
 
 </Configuration>
