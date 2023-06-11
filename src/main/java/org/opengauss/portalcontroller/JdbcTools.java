@@ -120,7 +120,8 @@ public class JdbcTools {
         String opengaussDatabaseName = hashtable.get(Opengauss.DATABASE_NAME);
         String opengaussUserName = hashtable.get(Opengauss.USER);
         String opengaussUserPassword = hashtable.get(Opengauss.PASSWORD);
-        String opengaussUrl = "jdbc:opengauss://" + opengaussDatabaseHost + ":" + opengaussDatabasePort + "/" + opengaussDatabaseName;
+        String opengaussUrl = "jdbc:opengauss://" + opengaussDatabaseHost + ":" +
+                opengaussDatabasePort + "/" + opengaussDatabaseName;
         try {
             conn = (PgConnection) DriverManager.getConnection(opengaussUrl, opengaussUserName, opengaussUserPassword);
         } catch (SQLException e) {
@@ -145,7 +146,9 @@ public class JdbcTools {
             if (value.equals(defaultValue)) {
                 flag = true;
             } else {
-                String reason = "If you want to use reverse migration,please alter system set " + columnName + " to " + defaultValue + " and restart openGauss to make it work.";
+                String reason = "If you want to use reverse migration," +
+                        "please alter system set " + columnName + " to " + defaultValue + " " +
+                        "and restart openGauss to make it work.";
                 PortalControl.refuseReverseMigrationReason = reason;
                 LOGGER.error(reason);
             }
