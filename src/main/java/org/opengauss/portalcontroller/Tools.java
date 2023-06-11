@@ -1726,6 +1726,8 @@ public class Tools {
         kafkaConfigTable.put("zookeeper.session.timeout.ms", "30000");
         kafkaConfigTable.put("delete.topic.enable", "true");
         kafkaConfigTable.put("group.initial.rebalance.delay.ms", "0");
+        kafkaConfigTable.put("num.network.threads", "8");
+        kafkaConfigTable.put("num.io.threads", "16");
         Tools.changePropertiesParameters(kafkaConfigTable, hashtable.get(Debezium.Kafka.CONFIG_PATH));
     }
 
