@@ -355,10 +355,9 @@ public final class Plan {
             RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.CONNECTOR_PATH), false);
             RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH), false);
             RuntimeExecTools.copyFile(connectorStandaloneConfigPath, hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH), false);
-            String dataCheckLogPath = PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "datacheck");
-            Tools.changeFile("/tmp/datacheck/logs", dataCheckLogPath, hashtable.get(Check.LOG_PATTERN_PATH));
-            Tools.changeFile("/tmp/datacheck/logs", dataCheckLogPath, hashtable.get(Check.Source.LOG_PATTERN_PATH));
-            Tools.changeFile("/tmp/datacheck/logs", dataCheckLogPath, hashtable.get(Check.Sink.LOG_PATTERN_PATH));
+            Tools.changeDatacheckLogPath(Check.LOG_PATTERN_PATH);
+            Tools.changeDatacheckLogPath(Check.Source.LOG_PATTERN_PATH);
+            Tools.changeDatacheckLogPath(Check.Sink.LOG_PATTERN_PATH);
             Tools.changeCommandLineParameters();
         } catch (PortalException e) {
             e.setRequestInformation("Create workspace failed");
