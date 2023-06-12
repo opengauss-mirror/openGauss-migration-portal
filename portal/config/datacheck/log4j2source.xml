@@ -17,7 +17,7 @@
 <Configuration status="INFO" monitorInterval="600">
     <Properties>
         <!--Property LOG_HOME must be absolute path dir -->
-        <Property name="LOG_HOME">/tmp/datacheck/logs</Property>
+        <Property name="LOG_HOME">logs</Property>
         <Property name="LOG_LEVEL">INFO</Property>
         <Property name="LOG_NAME">source</Property>
         <Property name="LOG_BUSINESS_NAME">business</Property>

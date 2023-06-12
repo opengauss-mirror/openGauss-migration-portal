@@ -1832,4 +1832,26 @@ public class Tools {
             LOGGER.error(e.getMessage());
         }
     }
+
+    /**
+     * Change datacheck log path.
+     *
+     * @param logPatternFile the log pattern file
+     */
+    public static void changeDatacheckLogPath(String logPatternFile) {
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        String path = hashtable.get(logPatternFile);
+        String log = LogView.getFullLog(path);
+        String logHome = "<Property name=\"LOG_HOME\">";
+        String datacheck = "datacheck";
+        String logs = "logs";
+        for (String str : log.split(System.lineSeparator())) {
+            if (str.contains(logHome)) {
+                String workspacePath = WorkspacePath.getInstance(PortalControl.portalControlPath, Plan.workspaceId)
+                        .getWorkspaceLogPath();
+                String dataCheckLogPath = PathUtils.combainPath(true, workspacePath, datacheck);
+                Tools.changeFile(logs, dataCheckLogPath, path);
+            }
+        }
+    }
 }
