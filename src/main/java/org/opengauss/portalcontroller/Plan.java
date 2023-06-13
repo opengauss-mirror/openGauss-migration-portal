@@ -374,7 +374,8 @@ public final class Plan {
             CheckTaskMysqlFullMigration checkTaskMysqlFullMigration = new CheckTaskMysqlFullMigration();
             checkTaskMysqlFullMigration.cleanData(workspaceId);
         }
-        if (PortalControl.taskList.contains(Command.Start.Mysql.REVERSE)) {
+        if (PortalControl.taskList.contains(Command.Start.Mysql.REVERSE)
+                && PortalControl.toolsMigrationParametersTable.get(Check.DROP_LOGICAL_SLOT).equals("true")) {
             try (PgConnection conn = JdbcTools.getPgConnection()) {
                 JdbcTools.changeAllTable(conn);
                 JdbcTools.dropLogicalReplicationSlot(conn);

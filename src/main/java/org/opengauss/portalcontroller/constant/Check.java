@@ -19,6 +19,7 @@ public interface Check {
     String INCREMENTAL_EXTRACT_SOURCE_JVM = "incremental.check.extract.source.jvm";
     String INCREMENTAL_EXTRACT_SINK_JVM = "incremental.check.extract.sink.jvm";
     String INCREMENTAL_CHECK_JVM = "incremental.check.jvm";
+    String DROP_LOGICAL_SLOT = "drop.logical.slot.on.stop";
 
     interface Parameters {
         String SCHEMA = "spring.extract.schema";
