@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 import static org.opengauss.portalcontroller.Plan.runningTaskList;
@@ -119,9 +120,12 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             String chameleonConfigPath = PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH);
             RuntimeExecTools.rename(chameleonConfigOldPath, chameleonConfigPath);
             Tools.createFile(PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "pid"), false);
-            Tools.changeSingleYmlParameter("pid_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "pid"), chameleonConfigPath);
-            Tools.changeSingleYmlParameter("sources.mysql.out_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "tmp"), chameleonConfigPath);
-            Tools.changeSingleYmlParameter("dump_json", "yes", chameleonConfigPath);
+            HashMap<String, Object> hashMap = new HashMap<>();
+            hashMap.put("pid_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "pid"));
+            hashMap.put("sources.mysql.csv_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "tmp"));
+            hashMap.put("sources.mysql.out_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "tmp"));
+            hashMap.put("dump_json", "yes");
+            Tools.changeYmlParameters(hashMap, chameleonConfigPath);
             Tools.changeFullMigrationParameters(PortalControl.toolsMigrationParametersTable);
         } catch (PortalException e) {
             e.setRequestInformation("Create folder failed");
