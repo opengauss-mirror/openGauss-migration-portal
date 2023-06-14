@@ -19,13 +19,36 @@
         <!--Property LOG_HOME must be absolute path dir -->
         <Property name="LOG_HOME">logs</Property>
         <Property name="LOG_LEVEL">INFO</Property>
-        <Property name="LOG_NAME">check</Property>
+        <Property name="LOG_NAME">${sys:logName}</Property>
+        <Property name="LOG_KAFKA">kafka</Property>
+        <Property name="LOG_BUSINESS">business</Property>
         <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%-36.36c{1.}] - %msg%n"/>
+        <property name="LOG_BUSINESS_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread] - %msg%n"/>
     </Properties>
     <Appenders>
         <RollingFile name="check_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_NAME}.log"
                      filePattern="${LOG_HOME}/history/${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <Filters>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        <RollingFile name="kafka_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_KAFKA}-${LOG_NAME}.log"
+                     filePattern="${LOG_HOME}/history/${LOG_KAFKA}-${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="${LOG_BUSINESS_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <Filters>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        <RollingFile name="business_appender" immediateFlush="true" fileName="${LOG_HOME}/${LOG_BUSINESS}-${LOG_NAME}.log"
+                     filePattern="${LOG_HOME}/history/${LOG_BUSINESS}-${LOG_NAME} - %d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="${LOG_BUSINESS_PATTERN}"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20MB"/>
             </Policies>
@@ -40,8 +63,6 @@
                 <SizeBasedTriggeringPolicy size="20MB"/>
             </Policies>
             <Filters>
-                <ThresholdFilter level="info" onMatch="DENY" onMismatch="NEUTRAL"/>
-                <ThresholdFilter level="warn" onMatch="DENY" onMismatch="NEUTRAL"/>
                 <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
             </Filters>
         </RollingFile>
@@ -65,13 +86,18 @@
         </root>
         <logger name="org.apache.kafka" level="ERROR"/>
         <logger name="org.opengauss.datachecker.check.service.EndpointManagerService" level="ERROR"/>
-
+        <logger name="check_business" level="${LOG_LEVEL}">
+            <appender-ref ref="business_appender"/>
+        </logger>
+        <logger name="kafka_business" level="${LOG_LEVEL}">
+            <appender-ref ref="kafka_appender"/>
+        </logger>
         <logger name="org.springframework" level="INFO"/>
         <logger name="_org.springframework.web" level="ERROR"/>
         <logger name="org.hibernate.validator" level="ERROR"/>
         <logger name="org.jboss.netty" level="ERROR"/>
         <logger name="org.apache.http" level="ERROR"/>
-        <logger name="oshi.util.platform" level="ERROR"/>
+        <logger name="oshi.util" level="ERROR"/>
     </Loggers>
 
 </Configuration>
