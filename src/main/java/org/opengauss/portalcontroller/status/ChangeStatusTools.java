@@ -42,6 +42,8 @@ import java.util.Iterator;
 public class ChangeStatusTools {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeStatusTools.class);
 
+    private static int lastStatus = 0;
+
     /**
      * Gets chameleon table status.
      *
@@ -222,12 +224,22 @@ public class ChangeStatusTools {
      */
     public static void writePortalStatus() {
         PortalStatusWriter portalStatusWriter;
+        ArrayList<PortalStatusWriter> list = ThreadStatusController.portalStatusWriterArrayList;
         if (PortalControl.status == Status.ERROR) {
-            portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(), PortalControl.errorMsg);
-        } else {
+            portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(),
+                    PortalControl.errorMsg);
+            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+        } else if (PortalControl.status > lastStatus) {
+            portalStatusWriter = new PortalStatusWriter(lastStatus, System.currentTimeMillis());
+            lastStatus++;
+            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+        } else if (PortalControl.status == lastStatus
+                && list.get(list.size() - 1).getStatus() != PortalControl.status) {
             portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
+            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+        } else {
+            LOGGER.debug("No portal status to update.");
         }
-        ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
         String str = JSON.toJSONString(ThreadStatusController.portalStatusWriterArrayList);
         LogView.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
     }
@@ -251,11 +263,12 @@ public class ChangeStatusTools {
      */
     public static void outputChameleonObjectStatus(String name) {
         name = name.substring(0, 1).toUpperCase() + name.substring(1);
-        LOGGER.info(name + ":");
+        LOGGER.info("{}:", name);
         String path = PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH);
         ArrayList<ObjectStatus> tableStatusArrayList = getChameleonObjectStatus(name, path);
         for (ObjectStatus objectStatus : tableStatusArrayList) {
-            LOGGER.info("Name: " + objectStatus.getName() + ", status: " + Status.Object.HASHTABLE.get(objectStatus.getStatus()));
+            LOGGER.info("Name: {}, status: {}", objectStatus.getName(),
+                    Status.Object.HASHTABLE.get(objectStatus.getStatus()));
         }
     }
 
@@ -278,22 +291,23 @@ public class ChangeStatusTools {
     public static void outputIncrementalStatus(String path) {
         String tempStr = LogView.getFullLogNoSeparator(path);
         if (!tempStr.equals("")) {
-            JSONObject root = JSONObject.parseObject(tempStr);
-            int status = root.getInteger("status");
-            int count = root.getInteger("count");
-            int sourceSpeed = root.getInteger("sourceSpeed");
-            int sinkSpeed = root.getInteger("sinkSpeed");
-            int rest = root.getInteger("rest");
-            String msg = root.getString("msg");
+            JSONObject jsonObject = JSONObject.parseObject(tempStr);
+            int status = jsonObject.getInteger("status");
+            int count = jsonObject.getInteger("count");
+            int sourceSpeed = jsonObject.getInteger("sourceSpeed");
+            int sinkSpeed = jsonObject.getInteger("sinkSpeed");
+            String msg = jsonObject.getString("msg");
             if (status == Status.Incremental.RUNNING && PortalControl.status == Status.RUNNING_INCREMENTAL_MIGRATION) {
                 LOGGER.info("Incremental migration status: running");
-            } else if (status == Status.Incremental.RUNNING && PortalControl.status == Status.INCREMENTAL_MIGRATION_FINISHED) {
+            } else if (status == Status.Incremental.RUNNING
+                    && PortalControl.status == Status.INCREMENTAL_MIGRATION_FINISHED) {
                 LOGGER.info("Incremental migration status: finished");
             } else {
                 PortalControl.status = Status.ERROR;
                 PortalControl.errorMsg = msg;
                 LOGGER.info("Incremental migration status: error, message: " + msg);
             }
+            int rest = jsonObject.getInteger("rest");
             LOGGER.info("Count: " + count + ", sourceSpeed: " + sourceSpeed + ", sinkSpeed: " + sinkSpeed + ", rest: " + rest);
         }
     }
