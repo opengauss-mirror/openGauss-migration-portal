@@ -192,6 +192,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         for (String taskThread : taskThreadList) {
             Task.stopTaskMethod(taskThread);
         }
+        PortalControl.status = Status.INCREMENTAL_MIGRATION_STOPPED;
         LOGGER.info("Incremental migration stopped.");
     }
 }
