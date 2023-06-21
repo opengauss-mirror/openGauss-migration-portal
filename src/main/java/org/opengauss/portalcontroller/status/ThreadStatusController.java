@@ -73,6 +73,11 @@ public class ThreadStatusController extends Thread {
      */
     public static ArrayList<PortalStatusWriter> portalStatusWriterArrayList = new ArrayList<>();
 
+    static {
+        PortalStatusWriter psw = new PortalStatusWriter(Status.START_FULL_MIGRATION, System.currentTimeMillis());
+        portalStatusWriterArrayList.add(psw);
+    }
+
     @Override
     public void run() {
         while (!exit) {

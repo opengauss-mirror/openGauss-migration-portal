@@ -71,19 +71,24 @@ public interface Status {
     int INCREMENTAL_MIGRATION_FINISHED = 9;
 
     /**
+     * The constant INCREMENTAL_MIGRATION_STOPPED.
+     */
+    int INCREMENTAL_MIGRATION_STOPPED = 10;
+
+    /**
      * The constant START_REVERSE_MIGRATION.
      */
-    int START_REVERSE_MIGRATION = 10;
+    int START_REVERSE_MIGRATION = 11;
 
     /**
      * The constant RUNNING_REVERSE_MIGRATION.
      */
-    int RUNNING_REVERSE_MIGRATION = 11;
+    int RUNNING_REVERSE_MIGRATION = 12;
 
     /**
      * The constant REVERSE_MIGRATION_FINISHED.
      */
-    int REVERSE_MIGRATION_FINISHED = 12;
+    int REVERSE_MIGRATION_FINISHED = 13;
 
     /**
      * The constant ERROR.
@@ -149,6 +154,7 @@ public interface Status {
             put(START_INCREMENTAL_MIGRATION, Information.START_INCREMENTAL_MIGRATION);
             put(RUNNING_INCREMENTAL_MIGRATION, Information.RUNNING_INCREMENTAL_MIGRATION);
             put(INCREMENTAL_MIGRATION_FINISHED, Information.INCREMENTAL_MIGRATION_FINISHED);
+            put(INCREMENTAL_MIGRATION_STOPPED, Information.INCREMENTAL_MIGRATION_STOPPED);
             put(START_REVERSE_MIGRATION, Information.START_REVERSE_MIGRATION);
             put(RUNNING_REVERSE_MIGRATION, Information.RUNNING_REVERSE_MIGRATION);
             put(REVERSE_MIGRATION_FINISHED, Information.REVERSE_MIGRATION_FINISHED);
@@ -204,6 +210,11 @@ public interface Status {
          * The constant INCREMENTAL_MIGRATION_FINISHED.
          */
         String INCREMENTAL_MIGRATION_FINISHED = "incremental migration finished";
+
+        /**
+         * The constant INCREMENTAL_MIGRATION_STOPPED.
+         */
+        String INCREMENTAL_MIGRATION_STOPPED = "incremental migration stopped";
 
         /**
          * The constant START_REVERSE_MIGRATION.

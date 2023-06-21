@@ -42,7 +42,7 @@ import java.util.Iterator;
 public class ChangeStatusTools {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeStatusTools.class);
 
-    private static int lastStatus = 0;
+    private static int lastStatus = 1;
 
     /**
      * Gets chameleon table status.
@@ -73,7 +73,13 @@ public class ChangeStatusTools {
                 String name = table.getJSONObject(index).getString("name");
                 double percent = table.getJSONObject(index).getDouble("percent");
                 int status = table.getJSONObject(index).getInteger("status");
-                TableStatus tableStatus = new TableStatus(name, status, percent);
+                TableStatus tableStatus;
+                if (status == Status.Object.ERROR) {
+                    String errorMsg = table.getJSONObject(index).getString("error");
+                    tableStatus = new TableStatus(name, status, percent, errorMsg);
+                } else {
+                    tableStatus = new TableStatus(name, status, percent);
+                }
                 tableStatusList.add(tableStatus);
                 index++;
                 iterator.next();
