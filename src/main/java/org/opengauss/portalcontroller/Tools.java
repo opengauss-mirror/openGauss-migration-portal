@@ -1598,7 +1598,6 @@ public class Tools {
             if (JdbcTools.selectVersion(connection)) {
                 Hashtable<String, String> parameterTable = new Hashtable<>();
                 parameterTable.put("wal_level", "logical");
-                parameterTable.put("ssl", "on");
                 int parameter = 0;
                 for (String key : parameterTable.keySet()) {
                     if (JdbcTools.selectGlobalVariables(connection, key, parameterTable.get(key))) {
