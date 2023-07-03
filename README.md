@@ -7,13 +7,8 @@ gs_rep_portal是一个用Java编写的，在linux系统上运行的，集成了�
 ## 注意事项
 
 - portal在执行增量迁移、反向迁移、增量校验时需要使用curl工具。
-
 - 同一个迁移计划的增量迁移和反向迁移不会同时开启，如果一个计划中包含了增量迁移和反向迁移，那么需要用户手动停止增量迁移，启动反向迁移。当用户启动反向迁移之后，无法再启动增量迁移。
-
-- 用户在停止增量迁移之后到启动反向迁移之前，禁止向openGauss进行作业，否则会导致这之间的数据丢失。
-
 - portal使用的workspace.id只能为小写字母与数字的组合。
-
 - portal在启动多个计划时，需要保证MySQL数据库实例各不相同，openGauss端数据库各不相同，且同一个MySQL数据库实例和openGauss端数据库的增量迁移和反向迁移不能同时开启。
 
  ## 默认文件结构
@@ -49,19 +44,17 @@ portal/
 		chameleon/
 			chameleon-5.0.0-py3-none-any.whl
 		datacheck/
-			openGauss-datachecker-performance-5.0.0.tar.gz
+			gs_datacheck-5.0.0.tar.gz
 		debezium/
 			confluent-community-5.5.1-2.12.zip
-			debezium-connector-mysql-1.8.1.Final-plugin.tar.gz
-			debezium-connector-opengauss-1.8.1.Final-plugin.tar.gz
-			kafka_2.13-3.2.3.tgz
+			replicate-mysql2openGauss-5.0.0.tar.gz
+			replicate-openGauss2mysql-5.0.0.tar.gz
 	tmp/
 	tools/
 		chameleon/
 		datacheck/
 		debezium/
 			confluent-5.5.1/
-			kafka_2.13-3.2.3/
 			plugin/
 				debezium-connector-mysql/
 				debezium-connector-opengauss/
@@ -102,12 +95,12 @@ maven版本：3.8.1以上
 
 下载链接：
 
-https://opengauss.obs.cn-south-1.myhuaweicloud.com/tools/portal/PortalControl-5.0.0.tar.gz
+https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/PortalControl-5.0.0.tar.gz
 
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/tools/portal/PortalControl-5.0.0.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/PortalControl-5.0.0.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
@@ -142,50 +135,51 @@ sh gs_rep_portal.sh help &
 
 迁移功能与对应的迁移工具如下表所示：
 
-| 迁移功能                           | 使用工具                                       |
-| ---------------------------------- | ---------------------------------------------- |
-| 全量迁移                           | chameleon                                      |
-| 增量迁移                           | kafka、confluent、debezium-connector-mysql     |
-| 反向迁移                           | kafka、confluent、debezium-connector-opengauss |
-| 数据校验（包括全量校验和增量校验） | kafka、confluent、datacheck                    |
+| 迁移功能                           | 使用工具                                |
+| ---------------------------------- | --------------------------------------- |
+| 全量迁移                           | chameleon                               |
+| 增量迁移                           | confluent、debezium-connector-mysql     |
+| 反向迁移                           | confluent、debezium-connector-opengauss |
+| 数据校验（包括全量校验和增量校验） | confluent、datacheck                    |
 
 各工具推荐版本：
 
-| 工具                         | 版本       |
-| ---------------------------- | ---------- |
-| chameleon                    | 5.0.0      |
-| kafka                        | 2.13-3.2.3 |
-| confluent                    | 5.5.1      |
-| datacheck                    | 5.0.0      |
-| debezium-connector-mysql     | 1.8.1      |
-| debezium-connector-opengauss | 1.8.1      |
+| 工具                         | 版本  |
+| ---------------------------- | ----- |
+| chameleon                    | 5.0.0 |
+| confluent                    | 5.5.1 |
+| datacheck                    | 5.0.0 |
+| debezium-connector-mysql     | 1.8.1 |
+| debezium-connector-opengauss | 1.8.1 |
 
 在/ops/portal/config目录的toolspath.properties文件中修改工具安装路径，其中文件夹要以/结尾：
 
 | 参数名称                     | 参数说明                                                     |
 | ---------------------------- | ------------------------------------------------------------ |
-| chameleon.venv.path          | 变色龙虚拟环境所在位置                                       |
+| chameleon.venv.path          | 变色龙虚拟环境所在路径                                       |
+| chameleon.path               | 变色龙工作目录                                               |
+| chameleon.pkg.url            | 变色龙的安装包下载链接                                       |
 | chameleon.pkg.path           | 变色龙的安装包所在路径                                       |
 | chameleon.pkg.name           | 变色龙的安装包名                                             |
-| chameleon.pkg.url            | 变色龙的安装包下载链接                                       |
-| debezium.path                | debezium+kafka所在路径（默认kafka、confluent、connector都安装在该路径下） |
-| kafka.path                   | kafka所在路径                                                |
+| debezium.path                | debezium+confluent所在路径（默认confluent、connector都安装在该路径下） |
 | confluent.path               | confluent所在路径                                            |
 | connector.path               | connector所在路径                                            |
-| debezium.pkg.path            | debezium+kafka安装包所在路径（默认kafka、confluent、connector安装包都在该路径下） |
-| kafka.pkg.name               | kafka安装包名                                                |
-| kafka.pkg.url                | kafka安装包下载链接                                          |
-| confluent.pkg.name           | confluent安装包名                                            |
+| connector.mysql.path         | mysql connector所在路径                                      |
+| connector.opengauss.path     | opengauss connector所在路径                                  |
 | confluent.pkg.url            | confluent安装包下载链接                                      |
-| connector.mysql.pkg.name     | mysql connector安装包名                                      |
 | connector.mysql.pkg.url      | mysql connector安装包下载链接                                |
-| connector.opengauss.pkg.name | opengauss connector安装包名                                  |
 | connector.opengauss.pkg.url  | opengauss connector安装包下载链接                            |
+| debezium.pkg.path            | debezium+confluent安装包所在路径                             |
+| confluent.pkg.name           | confluent安装包名                                            |
+| connector.mysql.pkg.name     | mysql connector安装包名                                      |
+| connector.opengauss.pkg.name | opengauss connector安装包名                                  |
+| datacheck.pkg.url            | datacheck安装包下载链接                                      |
 | datacheck.install.path       | datacheck安装路径                                            |
 | datacheck.path               | datacheck所在路径                                            |
 | datacheck.pkg.path           | datacheck安装包所在路径                                      |
 | datacheck.pkg.name           | datacheck安装包名                                            |
-| datacheck.pkg.url            | datacheck安装包下载链接                                      |
+| datacheck.extract.jar.name   | datacheck抽取jar包名                                         |
+| datacheck.check.jar.name     | datacheck校验jar包名                                         |
 
 工具的安装支持离线安装和在线安装：
 
@@ -208,6 +202,18 @@ sh gs_rep_portal.sh install_mysql_all_migration_tools 1 &
    ```
 
 在命令行运行这条命令可以安装所有迁移功能用到的迁移工具。
+
+#### 准备动作
+
+如果portal在安装时安装了全量迁移工具以外的其他工具，那么portal启动confluent（内置kafka）作为运行其他工具时的准备动作。安装之后将自动运行准备动作指令。
+
+结束准备动作时的命令：
+
+sh gs_rep_portal.sh stop_kafka a
+
+启动准备动作时的命令：
+
+sh gs_rep_portal.sh start_kafka a
 
 ### 安装指令
 
@@ -253,7 +259,6 @@ sh gs_rep_portal.sh install_mysql_all_migration_tools 1 &
 
 - zookeeper默认端口2181、kafka默认端口9092、schema-registry默认端口8081不会自动分配，其余工具均会自动分配端口。用户如果需要修改工具的端口，请不要修改IP。如果需要修改kafka的端口，要注意将kafka的文件中的参数listeners的值修改为PLAINTEXT://localhost:要配置的端口。
 - 下表使用${config}代表/ops/portal/config目录，即公共空间配置的参数。如果想修改某个workspace的参数，比如workspace.id=2的计划的参数，请将/ops/portal/config替换为/ops/portal/workspace/2/config。
-- 下表使用${kafka.path}代表/ops/portal/config目录的toolspath.properties文件里面kafka.path的值。
 - 下表使用${confluent.path}代表/ops/portal/config目录的toolspath.properties文件里面confluent.path的值。
 - 每次创建新的任务时，/ops/portal/config/debezium目录的connect-avro-standalone.properties文件会被自动复制成四份并修改端口。
 
@@ -268,11 +273,11 @@ sh gs_rep_portal.sh install_mysql_all_migration_tools 1 &
 	</tr>
 	<tr>
 		<td>zookeeper</td>    
-		<td>${kafka.path}/config/zookeeper.properties</td>  
+		<td>${confluent.path}/etc/kafka/zookeeper.properties</td>  
 	</tr>
 	<tr>
 		<td>kafka</td>    
-		<td>${kafka.path}/config/server.properties</td>
+		<td>${confluent.path}/etc/kafka/server.properties</td>
 	</tr>
 	<tr>
 		<td>schema-registry</td>    
