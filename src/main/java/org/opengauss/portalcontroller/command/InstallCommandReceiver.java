@@ -16,7 +16,9 @@ public class InstallCommandReceiver extends CommandReceiver {
             installMigrationTools.runInstallOrder(order);
         }
         Tools.sleepThread(1000, "unzip package");
-        Tools.prepareConfluent();
-        Tools.startKafka();
+        if (!Tools.containString(order, Command.FULL)) {
+            Tools.prepareConfluent();
+            Tools.startKafka();
+        }
     }
 }

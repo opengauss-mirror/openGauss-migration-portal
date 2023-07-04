@@ -39,6 +39,11 @@ public interface Command {
     String MYSQL = "mysql";
 
     /**
+     * The constant MYSQL.
+     */
+    String FULL = "full";
+
+    /**
      * The constant ALL.
      */
     String ALL = "all";
@@ -336,7 +341,7 @@ public interface Command {
     /**
      * The interface Run.
      */
-    interface Run{
+    interface Run {
         /**
          * The constant INCREMENTAL_MIGRATION.
          */
