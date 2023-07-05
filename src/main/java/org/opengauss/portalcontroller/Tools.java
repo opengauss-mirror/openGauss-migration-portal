@@ -1441,6 +1441,10 @@ public class Tools {
                 hashtable.put(keyString, valueString);
             }
             pps.clear();
+            for (String key : hashtable.keySet()) {
+                String valueString = hashtable.get(key);
+                hashtable.replace(key, changeValue(valueString, hashtable));
+            }
             Tools.changePropertiesParameters(hashtable, path);
         }
     }
@@ -1860,5 +1864,23 @@ public class Tools {
                 Tools.changeFile(logs, dataCheckLogPath, path);
             }
         }
+    }
+
+    /**
+     * Change value string.
+     *
+     * @param oldString the old string
+     * @param hashtable the hashtable
+     * @return the string
+     */
+    public static String changeValue(String oldString, Hashtable<String, String> hashtable) {
+        String newString = oldString;
+        while (newString.contains("$")) {
+            String variable = newString.substring(newString.indexOf("$"), newString.indexOf("}") + 1);
+            String variableName = newString.substring(newString.indexOf("{") + 1, newString.indexOf("}"));
+            String value = hashtable.get(variableName);
+            newString = newString.replace(variable, value);
+        }
+        return newString;
     }
 }

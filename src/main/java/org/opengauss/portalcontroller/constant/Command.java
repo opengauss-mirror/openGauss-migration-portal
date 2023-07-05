@@ -39,6 +39,11 @@ public interface Command {
     String MYSQL = "mysql";
 
     /**
+     * The constant MYSQL.
+     */
+    String FULL = "full";
+
+    /**
      * The constant ALL.
      */
     String ALL = "all";
