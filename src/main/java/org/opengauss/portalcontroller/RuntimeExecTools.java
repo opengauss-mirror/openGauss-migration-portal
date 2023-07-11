@@ -261,7 +261,8 @@ public class RuntimeExecTools {
         String command;
         try {
             if (!new File(packagePath).exists()) {
-                throw new PortalException("Portal exception", "unzip package", "No package to install.", "No package to install,please check the location of package");
+                throw new PortalException("Portal exception", "unzip package", "No package to install.",
+                        "No package to install,please check the location of package {}", packagePath);
             }
             if (packagePath.endsWith(".zip")) {
                 command = "unzip -q -o " + packagePath + " -d " + directory;
@@ -346,11 +347,12 @@ public class RuntimeExecTools {
         if (new File(workDirectory + name).exists()) {
             String errorFilePath = PortalControl.portalErrorPath;
             try {
-                String command = "sh " + workDirectory + name;
+                String command = "sh " + name;
                 RuntimeExecTools.executeOrder(command, 3000, workDirectory, errorFilePath, true, new ArrayList<>());
             } catch (PortalException e) {
                 LOGGER.error(e.getMessage());
             }
         }
+        Tools.sleepThread(1000, "run shell");
     }
 }
