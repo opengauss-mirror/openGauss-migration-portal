@@ -93,20 +93,24 @@ maven版本：3.8.1以上
 
 ### 安装包安装：
 
-下载链接：
+各系统版本和架构对应的下载链接如下：
 
-https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/PortalControl-5.0.0.tar.gz
+| 系统名称           | 系统架构   | 下载链接                                                                                                             |
+|:---------------|--------|------------------------------------------------------------------------------------------------------------------|
+| centos7.6      | x86_64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7.6/PortalControl-5.0.0-x86_64.tar.gz      |
+| openEuler20.03 | x86_64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.0.0-x86_64.tar.gz |
+| openEuler20.03 | arm    | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.0.0-arm.tar.gz    |
 
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/PortalControl-5.0.0.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7.6/PortalControl-5.0.0-x86_64.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
 
    ```
-tar -zxvf PortalControl-5.0.0.tar.gz
+tar -zxvf PortalControl-5.0.0-x86_64.tar.gz
    ```
 
 ## 启动方式
@@ -469,13 +473,13 @@ sh gs_rep_portal.sh uninstall_mysql_all_migration_tools 1 &
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/tools/portal/PortalControl-5.0.0.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7.6/PortalControl-5.0.0-x86_64.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
 
    ```
-tar -zxvf PortalControl-5.0.0.tar.gz
+tar -zxvf PortalControl-5.0.0-x86_64.tar.gz
    ```
 
 3.在/ops/portal/config目录的toolspath.properties文件中修改安装路径，然后启动命令安装
