@@ -174,17 +174,21 @@ public class JdbcTools {
             String versionColumnName = "version";
             try {
                 String value = selectStringValue(connection, selectVersionSql, versionColumnName);
-                String openGauss = "openGauss";
-                int startIndex = value.indexOf(openGauss) + openGauss.length();
-                int endIndex = value.indexOf("build");
-                String version = value.substring(startIndex, endIndex).trim();
-                int versionNum = Integer.parseInt(version.replaceAll("\\.", ""));
-                if (versionNum >= 300) {
-                    flag = true;
+                if (value.contains("openGauss") && value.contains("build")) {
+                    String openGauss = "openGauss";
+                    int startIndex = value.indexOf(openGauss) + openGauss.length();
+                    int endIndex = value.indexOf("build");
+                    String version = value.substring(startIndex, endIndex).trim();
+                    int versionNum = Integer.parseInt(version.replaceAll("\\.", ""));
+                    if (versionNum >= 300) {
+                        flag = true;
+                    } else {
+                        String reason = "Please upgrade openGauss to 3.0.0 or higher to use reverse migration.";
+                        PortalControl.refuseReverseMigrationReason = reason;
+                        LOGGER.error(reason);
+                    }
                 } else {
-                    String reason = "Please upgrade openGauss to 3.0.0 or higher to use reverse migration.";
-                    PortalControl.refuseReverseMigrationReason = reason;
-                    LOGGER.error(reason);
+                    flag = true;
                 }
             } catch (SQLException e) {
                 PortalException portalException = new PortalException("SQL exception", "select openGauss version", e.getMessage());
