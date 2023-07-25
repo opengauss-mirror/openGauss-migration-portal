@@ -44,6 +44,11 @@ public interface Parameter {
     String PKG_NAME = "pkgName";
 
     /**
+     * The constant PKG_UNZIP_SPACE.
+     */
+    String PKG_UNZIP_SPACE = "pkgUnzipSpace";
+
+    /**
      * The constant INSTALL_PATH.
      */
     String INSTALL_PATH = "installPath";
@@ -87,6 +92,21 @@ public interface Parameter {
      * The constant INPUT_ORDER_PATH.
      */
     String INPUT_ORDER_PATH = "input.order.path";
+
+    /**
+     * The constant TOOLS_VERSION.
+     */
+    String TOOL_VERSION = "tools.version";
+
+    /**
+     * The constant TOOLS_VERSION.
+     */
+    String SYSTEM_NAME = "system.name";
+
+    /**
+     * The constant TOOLS_VERSION.
+     */
+    String SYSTEM_ARCH = "system.arch";
 
     /**
      * The interface Incremental status.

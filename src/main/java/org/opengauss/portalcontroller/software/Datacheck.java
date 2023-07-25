@@ -43,6 +43,7 @@ public class Datacheck implements Software {
         hashtable.put(Parameter.PKG_PATH, Check.PKG_PATH);
         hashtable.put(Parameter.PKG_URL, Check.PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Check.PKG_NAME);
+        hashtable.put(Parameter.PKG_UNZIP_SPACE, Check.PKG_UNZIP_SPACE);
         return hashtable;
     }
 }

@@ -50,6 +50,7 @@ public class Confluent implements Software {
         hashtable.put(Parameter.PKG_PATH, Debezium.PKG_PATH);
         hashtable.put(Parameter.PKG_URL, Debezium.Confluent.PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Debezium.Confluent.PKG_NAME);
+        hashtable.put(Parameter.PKG_UNZIP_SPACE, Debezium.Confluent.PKG_UNZIP_SPACE);
         return hashtable;
     }
 }

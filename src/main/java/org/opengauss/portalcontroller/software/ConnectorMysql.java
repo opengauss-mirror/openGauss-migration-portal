@@ -42,6 +42,7 @@ public class ConnectorMysql implements Software {
         hashtable.put(Parameter.PKG_PATH, Debezium.PKG_PATH);
         hashtable.put(Parameter.PKG_URL, Debezium.Connector.MYSQL_PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Debezium.Connector.MYSQL_PKG_NAME);
+        hashtable.put(Parameter.PKG_UNZIP_SPACE, Debezium.Connector.PKG_UNZIP_SPACE);
         return hashtable;
     }
 }

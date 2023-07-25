@@ -88,10 +88,11 @@ public class InstallMigrationTools {
         String pkgName = initParameterHashtable.get(Parameter.PKG_NAME);
         String pkgUrl = initParameterHashtable.get(Parameter.PKG_URL);
         String pkgPath = initParameterHashtable.get(Parameter.PKG_PATH);
+        String pkgSpace = initParameterHashtable.get(Parameter.PKG_UNZIP_SPACE);
         if (download) {
             RuntimeExecTools.download(pkgUrl, pkgPath);
         }
-        Tools.installPackage(criticalFileList, pkgPath, pkgName, PortalControl.toolsConfigParametersTable.get(installPath));
+        Tools.installPackage(criticalFileList, pkgPath, pkgName, pkgSpace, PortalControl.toolsConfigParametersTable.get(installPath));
     }
 
     /**

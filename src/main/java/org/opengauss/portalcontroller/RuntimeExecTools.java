@@ -65,6 +65,31 @@ public class RuntimeExecTools {
     }
 
     /**
+     * Execute order string.
+     *
+     * @param command the command
+     * @param time    the time
+     * @return the string
+     * @throws PortalException the portal exception
+     */
+    public static String executeOrder(String command, int time) throws PortalException {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        String[] commands = command.split(" ");
+        processBuilder.command(commands);
+        String result = "";
+        try {
+            Process process = processBuilder.start();
+            process.waitFor(time, TimeUnit.MILLISECONDS);
+            result = getInputStreamString(process.getInputStream());
+        } catch (IOException e) {
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
+        } catch (InterruptedException e) {
+            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
+        }
+        return result;
+    }
+
+    /**
      * Execute order.
      *
      * @param command            the command
@@ -113,7 +138,6 @@ public class RuntimeExecTools {
         } catch (InterruptedException e) {
             throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
         }
-
     }
 
     /**
@@ -254,30 +278,29 @@ public class RuntimeExecTools {
      * Unzip file.
      *
      * @param packagePath the package path
+     * @param pkgSize     the pkg size
      * @param directory   the directory
      * @throws PortalException the portal exception
      */
-    public static void unzipFile(String packagePath, String directory) throws PortalException {
+    public static void unzipFile(String packagePath, String pkgSize, String directory) throws PortalException {
         String command;
-        try {
-            if (!new File(packagePath).exists()) {
-                throw new PortalException("Portal exception", "unzip package", "No package to install.",
-                        "No package to install,please check the location of package {}", packagePath);
-            }
-            if (packagePath.endsWith(".zip")) {
-                command = "unzip -q -o " + packagePath + " -d " + directory;
-                executeOrder(command, 900000, PortalControl.portalErrorPath);
-            } else if (packagePath.endsWith(".tar.gz") || packagePath.endsWith(".tgz")) {
-                command = "tar -zxf " + packagePath + " -C " + directory;
-                executeOrder(command, 900000, PortalControl.portalErrorPath);
-            } else {
-                throw new PortalException("Portal exception", "unzip package", "Invalid package type", "Invalid package type.Please check if the package is ends with .zip or .tar.gz or .tgz");
-            }
-            LOGGER.info("Unzip file " + packagePath + " to " + directory + " finished.");
-        } catch (PortalException e) {
-            e.setRequestInformation("Unzip package failed.");
-            throw e;
+        if (!new File(packagePath).exists()) {
+            throw new PortalException("Portal exception", "unzip package", "No package to install",
+                    "No package to install,please check the location of package " + packagePath);
+        } else {
+            checkDiskSpace(directory, pkgSize, packagePath);
         }
+        if (packagePath.endsWith(".zip")) {
+            command = "unzip -q -o " + packagePath + " -d " + directory;
+            executeOrder(command, 900000, PortalControl.portalErrorPath);
+        } else if (packagePath.endsWith(".tar.gz") || packagePath.endsWith(".tgz")) {
+            command = "tar -zxf " + packagePath + " -C " + directory;
+            executeOrder(command, 900000, PortalControl.portalErrorPath);
+        } else {
+            throw new PortalException("Portal exception", "unzip package", "Invalid package type",
+                    "Invalid package type,please check if the package is ends with .zip or .tar.gz or .tgz");
+        }
+        LOGGER.info("Unzip file " + packagePath + " to " + directory + " finished.");
     }
 
     /**
@@ -354,5 +377,28 @@ public class RuntimeExecTools {
             }
         }
         Tools.sleepThread(1000, "run shell");
+    }
+
+    /**
+     * Check disk space.
+     *
+     * @param directory   the directory
+     * @param pkgSize     the pkg size
+     * @param packagePath the package path
+     * @throws PortalException the portal exception
+     */
+    public static void checkDiskSpace(String directory, String pkgSize, String packagePath) throws PortalException {
+        String sizeText = executeOrder("df -m " + directory, 1000);
+        sizeText = sizeText.substring(sizeText.indexOf(System.lineSeparator()) + 1).replaceAll(" +", " ");
+        String[] texts = sizeText.split(" ");
+        String diskSize = texts[3];
+        Tools.sleepThread(1000, "remove size file");
+        int size = Integer.parseInt(pkgSize.replaceAll("MB", ""));
+        if (Integer.parseInt(diskSize) < size) {
+            String standardExceptionMessage = "No space left on device,install the package " + packagePath
+                    + " need at least " + pkgSize + " left on device";
+            throw new PortalException("Portal exception", "unzip package", "No space left on device.",
+                    standardExceptionMessage);
+        }
     }
 }
