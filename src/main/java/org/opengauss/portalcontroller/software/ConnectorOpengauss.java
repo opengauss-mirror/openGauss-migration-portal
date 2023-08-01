@@ -42,6 +42,7 @@ public class ConnectorOpengauss implements Software {
         hashtable.put(Parameter.PKG_PATH, Debezium.PKG_PATH);
         hashtable.put(Parameter.PKG_URL, Debezium.Connector.OPENGAUSS_PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Debezium.Connector.OPENGAUSS_PKG_NAME);
+        hashtable.put(Parameter.PKG_UNZIP_SPACE, Debezium.Connector.PKG_UNZIP_SPACE);
         return hashtable;
     }
 }

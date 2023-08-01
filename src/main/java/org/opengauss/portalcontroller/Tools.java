@@ -927,7 +927,6 @@ public class Tools {
      * Write input order int.
      *
      * @param command the command
-     * @return the int
      */
     public static void writeInputOrder(String command) {
         String inputOrderPath = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
@@ -969,7 +968,6 @@ public class Tools {
      *
      * @param path   the path
      * @param isFile the is file
-     * @return the boolean
      * @throws PortalException the portal exception
      */
     public static void createFile(String path, boolean isFile) throws PortalException {
@@ -1014,13 +1012,15 @@ public class Tools {
      * @param filePathList     the file path list
      * @param pkgPathParameter the pkg path parameter
      * @param pkgNameParameter the pkg name parameter
+     * @param pkgSpace         the pkg space
      * @param installPath      the install path
      * @throws PortalException the portal exception
      */
-    public static void installPackage(ArrayList<String> filePathList, String pkgPathParameter, String pkgNameParameter, String installPath) throws PortalException {
+    public static void installPackage(ArrayList<String> filePathList, String pkgPathParameter, String pkgNameParameter, String pkgSpace,
+                                      String installPath) throws PortalException {
         String packagePath = Tools.getPackagePath(pkgPathParameter, pkgNameParameter);
         Tools.createFile(installPath, false);
-        RuntimeExecTools.unzipFile(packagePath, installPath);
+        RuntimeExecTools.unzipFile(packagePath, pkgSpace, installPath);
         for (String path : filePathList) {
             File file = new File(path);
             if (!file.exists()) {
@@ -1336,7 +1336,6 @@ public class Tools {
         } else {
             oldMap.put(key, objectArrayList);
         }
-
         return oldMap;
     }
 
@@ -1376,15 +1375,12 @@ public class Tools {
      * @return the string
      */
     public static String jointChameleonOrders(Hashtable<String, String> chameleonParameterTable, String order) {
-        String result;
         String chameleonFile = PortalControl.toolsConfigParametersTable.get(Chameleon.RUNNABLE_FILE_PATH);
         StringBuilder chameleonOrder = new StringBuilder(chameleonFile + " " + order + " ");
         for (String key : chameleonParameterTable.keySet()) {
             chameleonOrder.append(key).append(" ").append(chameleonParameterTable.get(key)).append(" ");
         }
-        chameleonOrder.substring(0, chameleonOrder.length() - 1);
-        result = chameleonOrder.toString();
-        return result;
+        return chameleonOrder.substring(0, chameleonOrder.length() - 1);
     }
 
     /**
@@ -1881,5 +1877,85 @@ public class Tools {
             newString = newString.replace(variable, value);
         }
         return newString;
+    }
+
+    /**
+     * Check system info.
+     *
+     * @throws PortalException the portal exception
+     */
+    public static void checkSystemInfo() throws PortalException {
+        Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
+        checkSystemArch(hashtable.get(Parameter.SYSTEM_ARCH));
+        checkSystemName(hashtable.get(Parameter.SYSTEM_NAME));
+    }
+
+    /**
+     * Gets system name.
+     *
+     * @param parameterSystemName the parameter system name
+     * @throws PortalException the portal exception
+     */
+    public static void checkSystemName(String parameterSystemName) throws PortalException {
+        String filePath = PathUtils.combainPath(true, "", "etc", "os-release");
+        String fullStr = LogView.getFullLog(filePath);
+        String id = "";
+        String versionId = "";
+        for (String str : fullStr.split(System.lineSeparator())) {
+            if (str.startsWith("ID=")) {
+                id = str.substring(str.indexOf("\"") + 1, str.lastIndexOf("\""));
+            }
+            if (str.startsWith("VERSION_ID=")) {
+                versionId = str.substring(str.indexOf("\"") + 1, str.lastIndexOf("\""));
+            }
+        }
+        String systemName = id + versionId;
+        if (!systemName.equals(parameterSystemName)) {
+            throw new PortalException("Portal exception", "unzip package",
+                    "The parameter " + Parameter.SYSTEM_NAME + " doesn't match your system",
+                    "The parameter " + Parameter.SYSTEM_NAME
+                            + " doesn't match your system,please check the value of parameter "
+                            + Parameter.SYSTEM_NAME);
+        }
+    }
+
+    /**
+     * Gets system name.
+     *
+     * @param parameterSystemArch the parameter system arch
+     * @throws PortalException the portal exception
+     */
+    public static void checkSystemArch(String parameterSystemArch) throws PortalException {
+        String versionStr = RuntimeExecTools.executeOrder("uname -a", 1000);
+        String[] versionParts = versionStr.split(" ");
+        String systemArch = versionParts[versionParts.length - 2];
+        if (!systemArch.equals(parameterSystemArch)) {
+            throw new PortalException("Portal exception", "unzip package",
+                    "The parameter " + Parameter.SYSTEM_ARCH + " doesn't match your system",
+                    "The parameter " + Parameter.SYSTEM_ARCH
+                            + " doesn't match your system,please check the value of parameter "
+                            + Parameter.SYSTEM_ARCH);
+        }
+    }
+
+    /**
+     * Check and wait.
+     *
+     * @param time           the time
+     * @param isTaskFinished the is task finished
+     * @param information    the information
+     */
+    public static void checkAndWait(int time, boolean isTaskFinished, String information) {
+        int maxTime = time;
+        while (maxTime > 0) {
+            Tools.sleepThread(1000, "waiting for process running");
+            if (isTaskFinished) {
+                break;
+            }
+            maxTime--;
+        }
+        if (maxTime <= 0) {
+            LOGGER.error("{} timed out.", information);
+        }
     }
 }

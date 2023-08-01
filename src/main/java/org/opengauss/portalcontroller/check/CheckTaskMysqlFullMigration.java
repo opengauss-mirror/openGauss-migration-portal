@@ -45,21 +45,78 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String chameleonInstallPath = hashtable.get(Chameleon.INSTALL_PATH);
-        Tools.createFile(chameleonInstallPath, false);
+        String chameleonVenvPath = hashtable.get(Chameleon.VENV_PATH);
         String chameleonPkgPath = hashtable.get(Chameleon.PKG_PATH) + hashtable.get(Chameleon.PKG_NAME);
-        RuntimeExecTools.unzipFile(chameleonPkgPath, chameleonInstallPath);
-        String buildChameleonName = "build.sh";
-        RuntimeExecTools.runShell(buildChameleonName, hashtable.get(Chameleon.VENV_PATH));
-        String chameleonTestLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath + "logs", "test_chameleon.log");
-        String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
-        RuntimeExecTools.executeOrder(chameleonVersionOrder, 3000, PortalControl.portalControlPath, chameleonTestLogPath, true, new ArrayList<>());
+        String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath
+                + "logs", "install_chameleon.log");
+        Tools.createFile(chameleonInstallPath, false);
+        try {
+            Tools.checkSystemInfo();
+            String chameleonPkgSpace = "200MB";
+            RuntimeExecTools.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);
+            String buildChameleonName = "build.sh";
+            RuntimeExecTools.runShell(buildChameleonName, chameleonVenvPath);
+            String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
+            checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
+        } catch (PortalException ex) {
+            LOGGER.error(ex.toString());
+            RuntimeExecTools.removeFile(chameleonVenvPath, PortalControl.portalErrorPath);
+            chameleonPkgPath = chameleonVenvPath
+                    + "chameleon-" + hashtable.get(Parameter.TOOL_VERSION) + "-py3-none-any.whl";
+            LOGGER.warn("Try to install {}.", chameleonPkgPath);
+            Tools.createFile(chameleonVenvPath, false);
+            String chameleonPkgSpace = "50MB";
+            RuntimeExecTools.checkDiskSpace(chameleonVenvPath, chameleonPkgSpace, chameleonPkgPath);
+            String createVenvCommand = "python3 -m venv " + chameleonVenvPath + "venv";
+            String installExeucteFile = PathUtils.combainPath(true, chameleonVenvPath + "venv", "bin",
+                    "pip3");
+            String installCommand = installExeucteFile + " install " + chameleonPkgPath;
+            try {
+                RuntimeExecTools.executeOrder(createVenvCommand, 3000, PortalControl.portalErrorPath);
+                LOGGER.info("Installing chameleon ...");
+                RuntimeExecTools.executeOrder(installCommand, 3000, PortalControl.portalControlPath,
+                        chameleonInstallLogPath, true, new ArrayList<>());
+            } catch (PortalException e) {
+                e.setRequestInformation("Install package chameleon failed");
+                throw e;
+            }
+            boolean isInstallProcessQuit = Tools.getCommandPid(installCommand) == -1;
+            Tools.checkAndWait(900, isInstallProcessQuit, "Installation of chameleon");
+            String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
+            checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
+        }
+    }
+
+    /**
+     * Check chameleon version.
+     *
+     * @param order                   the order
+     * @param chameleonInstallLogPath the chameleon install log path
+     * @throws PortalException the portal exception
+     */
+    public void checkChameleonVersion(String order, String chameleonInstallLogPath) throws PortalException {
+        String chameleonTestLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath + "logs",
+                "test_chameleon.log");
+        try {
+            RuntimeExecTools.executeOrder(order, 3000, PortalControl.portalControlPath,
+                    chameleonTestLogPath, true, new ArrayList<>());
+        } catch (PortalException portalException) {
+            String logStr = Tools.outputFileString(chameleonInstallLogPath);
+            if (logStr.equals("")) {
+                portalException.setRequestInformation("Please check pip download source.");
+            } else {
+                portalException.setRequestInformation(logStr);
+            }
+            throw portalException;
+        }
         String log = LogView.getFullLog(chameleonTestLogPath).trim();
-        RuntimeExecTools.removeFile(chameleonTestLogPath, PortalControl.portalErrorPath);
         if (log.startsWith("chameleon")) {
             LOGGER.info("Install chameleon success.");
         } else {
-            throw new PortalException("Portal exception", "installing chameleon", "Install chameleon failed.Information:" + log);
+            throw new PortalException("Portal exception", "installing chameleon",
+                    "Install chameleon failed.Information:" + log);
         }
+        RuntimeExecTools.removeFile(chameleonTestLogPath, PortalControl.portalErrorPath);
     }
 
     /**
@@ -205,7 +262,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
     public void uninstall() {
         String errorPath = PortalControl.portalErrorPath;
         ArrayList<String> filePaths = new ArrayList<>();
-        filePaths.add(PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH) + "venv");
+        filePaths.add(PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH));
         filePaths.add(PortalControl.toolsConfigParametersTable.get(Chameleon.PATH).replaceFirst("~", System.getProperty("user.home")));
         filePaths.add(PathUtils.combainPath(false, PortalControl.portalControlPath + "tmp", "chameleon"));
         InstallMigrationTools.removeSingleMigrationToolFiles(filePaths, errorPath);
