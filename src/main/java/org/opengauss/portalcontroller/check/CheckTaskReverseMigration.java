@@ -65,6 +65,7 @@ public class CheckTaskReverseMigration implements CheckTask {
         Tools.changePropertiesParameters(hashtable1, sourceConfigPath);
         Hashtable<String, String> hashtable2 = new Hashtable<>();
         hashtable2.put("topics", "opengauss_server_" + workspaceId + "_topic");
+        hashtable2.put("record.breakpoint.kafka.topic", "opengauss_bp_" + workspaceId + "_topic");
         hashtable2.put("sink.process.file.path", hashtable.get(Status.REVERSE_FOLDER));
         hashtable2.put("create.count.info.path", hashtable.get(Status.REVERSE_FOLDER));
         hashtable2.put("fail.sql.path", hashtable.get(Status.REVERSE_FOLDER));

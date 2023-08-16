@@ -38,8 +38,9 @@ pg_conn:
 
 sources:
   mysql:
-    readers: 8
-    writers: 8
+    readers: 4
+    writers: 4
+    retry: 3
     db_conn:
       host: "localhost"
       port: "3306"
@@ -67,7 +68,7 @@ sources:
     copy_mode: 'file'
     out_dir: /tmp
     csv_dir: /tmp
-    contain_columns: Yes
+    contain_columns: No
     column_split: ','
     sleep_loop: 1
     on_error_replay: continue
