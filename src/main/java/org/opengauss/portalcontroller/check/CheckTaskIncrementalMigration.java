@@ -66,6 +66,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         Hashtable<String, String> hashtable2 = new Hashtable<>();
         hashtable2.put("name", "mysql-sink-" + workspaceId);
         hashtable2.put("topics", "mysql_server_" + workspaceId + "_topic");
+        hashtable2.put("record.breakpoint.kafka.topic", "mysql_bp_" + workspaceId + "_topic");
         try {
             Tools.createFile(incrementalFolder, false);
         } catch (PortalException e) {

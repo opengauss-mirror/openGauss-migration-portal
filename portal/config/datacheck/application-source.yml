@@ -38,3 +38,4 @@ spring:
         initialSize: 5 # initialization connection pool size
         minIdle: 10 # minimum number of connections
         maxActive: 20 # maximum number of connections
+        validationQuery: SELECT 1
