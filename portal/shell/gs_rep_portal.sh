@@ -1,10 +1,17 @@
 #!/bin/bash
 APP_NAME=portalControl-1.0-SNAPSHOT-exec.jar
 ORDER=$1
-SIGN="-Dworkspace.id=$2"
-NAME=$2
+SIGN="-Dworkspace.id=1"
+ID=1
 PORTAL_PATH="$PWD/"
 SKIP=true
+
+if [ ! -z $2 ]
+  then
+           ID=$2
+           SIGN="-Dworkspace.id=$2"
+fi
+
 #使用说明，用来提示输入参数
 usage() {
 echo "Usage: sh 脚本名.sh order workspace.id"
@@ -15,7 +22,7 @@ exit 1
 
 #检查程序是否在运行
 is_exist() {
-pid=`ps -ef|grep $SIGN |grep $APP_NAME |grep -v grep|awk '{print $NAME}' `
+pid=`ps -ef|grep $SIGN |grep $APP_NAME |grep -v grep|awk '{print $ID}' `
 #如果不存在返回1，存在返回0
 if [ -z "${pid}" ]; then
 return 1
@@ -28,9 +35,9 @@ fi
 start(){
 is_exist
 if [ $? -eq "0" ]; then
-echo "Migration plan $NAME is already running. pid=${pid} ."
+echo "Migration plan $ID is already running. pid=${pid} ."
 else
-java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${NAME} -Dorder=${ORDER} -jar $APP_NAME &
+java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${ID} -Dorder=${ORDER} -jar $APP_NAME &
 wait
 fi
 }

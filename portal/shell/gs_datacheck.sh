@@ -18,10 +18,16 @@ START_ORDER=start_mysql_${TYPE}_datacheck
 STOP_ORDER=stop_plan
 INSTALL_ORDER=install_mysql_datacheck_tools
 UNINSTALL_ORDER=uninstall_mysql_${TYPE}_tools
-SIGN="-Dworkspace.id=$3"
-NAME=$3
+SIGN="-Dworkspace.id=1"
+ID=1
 PORTAL_PATH="$PWD/"
 SKIP=true
+
+if [ ! -z $3 ]
+  then
+           ID=$3
+           SIGN="-Dworkspace.id=$3"
+fi
 
 #使用说明，用来提示输入参数
 usage() {
@@ -32,7 +38,7 @@ exit 1
 
 #检查程序是否在运行
 is_exist() {
-pid=`ps -ef|grep $SIGN |grep $APP_NAME |grep -v grep|awk '{print $3}' `
+pid=`ps -ef|grep $SIGN |grep $APP_NAME |grep -v grep|awk '{print $ID}' `
 #如果不存在返回1，存在返回0
 if [ -z "${pid}" ]; then
 return 1
@@ -43,7 +49,7 @@ fi
 
 #安装方法
 install(){
-java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${NAME} -Dorder=${INSTALL_ORDER} -jar $APP_NAME &
+java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${ID} -Dorder=${INSTALL_ORDER} -jar $APP_NAME &
 wait
 }
 
@@ -53,20 +59,20 @@ is_exist
 if [ $? -eq "0" ]; then
 echo "Migration plan $3 is already running. pid=${pid} ."
 else
-java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${NAME} -Dorder=${START_ORDER} -jar $APP_NAME &
+java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${ID} -Dorder=${START_ORDER} -jar $APP_NAME &
 wait
 fi
 }
 
 #停止方法
 stop(){
-java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${NAME} -Dorder=${STOP_ORDER} -jar $APP_NAME &
+java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${ID} -Dorder=${STOP_ORDER} -jar $APP_NAME &
 wait
 }
 
 #卸载方法
 uninstall(){
-java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${NAME} -Dorder=${UNINSTALL_ORDER} -jar $APP_NAME &
+java -Dpath=${PORTAL_PATH} -Dskip=${SKIP} -Dworkspace.id=${ID} -Dorder=${UNINSTALL_ORDER} -jar $APP_NAME &
 wait
 }
 
