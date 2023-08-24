@@ -95,11 +95,13 @@ maven版本：3.8.1以上
 
 各系统版本和架构对应的下载链接如下：
 
-| 系统名称           | 系统架构    | 下载链接                                                                                                             |
-|:---------------|---------|------------------------------------------------------------------------------------------------------------------|
-| centos7        | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-5.0.0-x86_64.tar.gz      |
-| openEuler20.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.0.0-x86_64.tar.gz |
-| openEuler20.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.0.0-aarch64.tar.gz    |
+| 系统名称       | 系统架构 | 下载链接                                                     |
+| :------------- | -------- | ------------------------------------------------------------ |
+| centos7        | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-5.0.0-x86_64.tar.gz |
+| openEuler20.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.0.0-x86_64.tar.gz |
+| openEuler20.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.0.0-aarch64.tar.gz |
+| openEuler22.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-5.0.0-x86_64.tar.gz |
+| openEuler22.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-5.0.0-aarch64.tar.gz |
 
 1.下载gs_rep_portal安装包
 
