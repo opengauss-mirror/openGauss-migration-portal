@@ -21,9 +21,11 @@ import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.concurrent.TimeUnit;
 
 import static org.opengauss.portalcontroller.Plan.runningTaskList;
 
@@ -48,42 +50,32 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         String chameleonVenvPath = hashtable.get(Chameleon.VENV_PATH);
         String chameleonPkgPath = hashtable.get(Chameleon.PKG_PATH) + hashtable.get(Chameleon.PKG_NAME);
         String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath
-                + "logs", "install_chameleon.log");
+                + "tools", "chameleon", "chameleon-5.0.0", "install_chameleon.log");
         Tools.createFile(chameleonInstallPath, false);
-        try {
-            Tools.checkSystemInfo();
-            String chameleonPkgSpace = "200MB";
-            RuntimeExecTools.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);
-            String buildChameleonName = "build.sh";
-            RuntimeExecTools.runShell(buildChameleonName, chameleonVenvPath);
-            String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
-            checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
-        } catch (PortalException ex) {
-            LOGGER.error(ex.toString());
-            RuntimeExecTools.removeFile(chameleonVenvPath, PortalControl.portalErrorPath);
-            chameleonPkgPath = chameleonVenvPath
-                    + "chameleon-" + hashtable.get(Parameter.TOOL_VERSION) + "-py3-none-any.whl";
-            LOGGER.warn("Try to install {}.", chameleonPkgPath);
-            Tools.createFile(chameleonVenvPath, false);
-            String chameleonPkgSpace = "50MB";
-            RuntimeExecTools.checkDiskSpace(chameleonVenvPath, chameleonPkgSpace, chameleonPkgPath);
-            String createVenvCommand = "python3 -m venv " + chameleonVenvPath + "venv";
-            String installExeucteFile = PathUtils.combainPath(true, chameleonVenvPath + "venv", "bin",
-                    "pip3");
-            String installCommand = installExeucteFile + " install " + chameleonPkgPath;
+        String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
+        if (firstCheckChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath)) {
+            LOGGER.info("first check chameleon success...");
+            return;
+        }
+        LOGGER.error("first check chameleon failed, start install...");
+        String chameleonPkgSpace = "200MB";
+        RuntimeExecTools.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);
+        String buildChameleonName = "install.sh";
+        RuntimeExecTools.runShell(buildChameleonName, chameleonVenvPath);
+        checkFileExist(hashtable.get(Chameleon.RUNNABLE_FILE_PATH), 10);
+        checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
+    }
+
+    private static void checkFileExist(String filePath, int timeout) {
+        int timeOutCount = 0;
+        while (!(new File(filePath).exists()) && timeOutCount < timeout) {
             try {
-                RuntimeExecTools.executeOrder(createVenvCommand, 3000, PortalControl.portalErrorPath);
-                LOGGER.info("Installing chameleon ...");
-                RuntimeExecTools.executeOrder(installCommand, 3000, PortalControl.portalControlPath,
-                        chameleonInstallLogPath, true, new ArrayList<>());
-            } catch (PortalException e) {
-                e.setRequestInformation("Install package chameleon failed");
-                throw e;
+                TimeUnit.SECONDS.sleep(1);
+                LOGGER.info("sleep : {} s", timeOutCount);
+            } catch (InterruptedException e) {
+                LOGGER.error("sleep exception:", e);
             }
-            boolean isInstallProcessQuit = Tools.getCommandPid(installCommand) == -1;
-            Tools.checkAndWait(900, isInstallProcessQuit, "Installation of chameleon");
-            String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
-            checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
+            timeOutCount++;
         }
     }
 
@@ -117,6 +109,22 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
                     "Install chameleon failed.Information:" + log);
         }
         RuntimeExecTools.removeFile(chameleonTestLogPath, PortalControl.portalErrorPath);
+    }
+
+    /**
+     *first Check chameleon version.
+     *
+     * @param order                   the order
+     * @param chameleonInstallLogPath the chameleon install log path
+     * @throws PortalException the portal exception
+     */
+    public boolean firstCheckChameleonVersion(String order, String chameleonInstallLogPath) {
+        try {
+            checkChameleonVersion(order, chameleonInstallLogPath);
+        } catch (PortalException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
