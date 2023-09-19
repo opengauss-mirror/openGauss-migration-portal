@@ -1595,20 +1595,18 @@ public class Tools {
     public static boolean checkReverseMigrationRunnable() {
         boolean isReverseRunnable = false;
         try (PgConnection connection = JdbcTools.getPgConnection()) {
-            if (JdbcTools.selectVersion(connection)) {
-                Hashtable<String, String> parameterTable = new Hashtable<>();
-                parameterTable.put("wal_level", "logical");
-                int parameter = 0;
-                for (String key : parameterTable.keySet()) {
-                    if (JdbcTools.selectGlobalVariables(connection, key, parameterTable.get(key))) {
-                        parameter++;
-                    } else {
-                        break;
-                    }
+            Hashtable<String, String> parameterTable = new Hashtable<>();
+            parameterTable.put("wal_level", "logical");
+            int parameter = 0;
+            for (String key : parameterTable.keySet()) {
+                if (JdbcTools.selectGlobalVariables(connection, key, parameterTable.get(key))) {
+                    parameter++;
+                } else {
+                    break;
                 }
-                if (parameter == parameterTable.size()) {
-                    isReverseRunnable = true;
-                }
+            }
+            if (parameter == parameterTable.size()) {
+                isReverseRunnable = true;
             }
         } catch (SQLException e) {
             PortalException portalException = new PortalException("IO exception",
@@ -1766,6 +1764,18 @@ public class Tools {
         String kafkaOrder = executeKafkaFile + " --list --bootstrap-server " + kafkaPort;
         Task.startTaskMethod(Method.Name.KAFKA, 10000, kafkaOrder, "Broker may not be available.");
         Task.startTaskMethod(Method.Name.REGISTRY, 3000, "", "");
+        if (!checkKafkaProcess()) {
+            return;
+        }
+        LOGGER.info("Start kafka success.");
+    }
+
+    /**
+     * check kafka process status
+     *
+     * @return boolean
+     */
+    public static boolean checkKafkaProcess() {
         ArrayList<String> stringArrayList = new ArrayList<>();
         stringArrayList.add(Method.Run.ZOOKEEPER);
         stringArrayList.add(Method.Run.KAFKA);
@@ -1773,10 +1783,10 @@ public class Tools {
         for (String methodName : stringArrayList) {
             if (Tools.getCommandPid(Task.getTaskProcessMap().get(methodName)) == -1) {
                 LOGGER.error("Start kafka failed.");
-                return;
+                return false;
             }
         }
-        LOGGER.info("Start kafka success.");
+        return true;
     }
 
     /**

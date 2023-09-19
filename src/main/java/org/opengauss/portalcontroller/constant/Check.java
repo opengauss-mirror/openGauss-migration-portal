@@ -373,4 +373,34 @@ public interface Check {
          */
         String REVERSE = "reverse.migration.datacheck.result";
     }
+
+    /**
+     * CheckPortalStatus constance
+     */
+    interface CheckPortalStatus {
+        /**
+         * status ok
+         */
+        String CHECK_STATUS_OK = "ok";
+
+        /**
+         * chameleon is not ready...
+         */
+        String CHECK_STATUS_CHAMELEON_ERR = "chameleon is not ready...";
+
+        /**
+         * kafka process is not ready
+         */
+        String CHECK_STATUS_KAFKA_ERR = "kafka process is not ready";
+
+        /**
+         * file is not exist...
+         */
+        String CHECK_STATUS_FILE_NOT_EXIST_ERR = "file is not exist...";
+
+        /**
+         * prefix check portal status:
+         */
+        String CHECK_STATUS_PREFIX = "check portal status:";
+    }
 }
