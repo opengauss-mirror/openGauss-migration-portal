@@ -47,20 +47,20 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String chameleonInstallPath = hashtable.get(Chameleon.INSTALL_PATH);
-        String chameleonVenvPath = hashtable.get(Chameleon.VENV_PATH);
-        String chameleonPkgPath = hashtable.get(Chameleon.PKG_PATH) + hashtable.get(Chameleon.PKG_NAME);
         String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath
                 + "tools", "chameleon", "chameleon-5.0.0", "install_chameleon.log");
         Tools.createFile(chameleonInstallPath, false);
         String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
-        if (firstCheckChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath)) {
-            LOGGER.info("first check chameleon success...");
+        if (checkChameleonStatus(chameleonVersionOrder, chameleonInstallLogPath)) {
+            LOGGER.info("check chameleon success...");
             return;
         }
         LOGGER.error("first check chameleon failed, start install...");
         String chameleonPkgSpace = "200MB";
+        String chameleonPkgPath = hashtable.get(Chameleon.PKG_PATH) + hashtable.get(Chameleon.PKG_NAME);
         RuntimeExecTools.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);
         String buildChameleonName = "install.sh";
+        String chameleonVenvPath = hashtable.get(Chameleon.VENV_PATH);
         RuntimeExecTools.runShell(buildChameleonName, chameleonVenvPath);
         checkFileExist(hashtable.get(Chameleon.RUNNABLE_FILE_PATH), 60);
         checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
@@ -71,7 +71,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         while (!(new File(filePath).exists()) && timeOutCount < timeout) {
             try {
                 TimeUnit.SECONDS.sleep(1);
-                LOGGER.info("sleep : {} s", timeOutCount);
+                LOGGER.info("check file exist sleep : {} s", timeOutCount);
             } catch (InterruptedException e) {
                 LOGGER.error("sleep exception:", e);
             }
@@ -112,13 +112,14 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
     }
 
     /**
-     *first Check chameleon version.
+     * first Check chameleon version.
      *
      * @param order                   the order
      * @param chameleonInstallLogPath the chameleon install log path
+     * @return boolean
      * @throws PortalException the portal exception
      */
-    public boolean firstCheckChameleonVersion(String order, String chameleonInstallLogPath) {
+    public boolean checkChameleonStatus(String order, String chameleonInstallLogPath) {
         try {
             checkChameleonVersion(order, chameleonInstallLogPath);
         } catch (PortalException e) {
