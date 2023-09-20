@@ -62,7 +62,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         RuntimeExecTools.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);
         String buildChameleonName = "install.sh";
         RuntimeExecTools.runShell(buildChameleonName, chameleonVenvPath);
-        checkFileExist(hashtable.get(Chameleon.RUNNABLE_FILE_PATH), 10);
+        checkFileExist(hashtable.get(Chameleon.RUNNABLE_FILE_PATH), 60);
         checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
     }
 
