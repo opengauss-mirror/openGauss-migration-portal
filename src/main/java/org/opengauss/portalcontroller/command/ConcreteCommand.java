@@ -30,6 +30,9 @@ public class ConcreteCommand {
         if (Tools.containString(order, Command.Type.SHOW)) return new ShowCommandReceiver();
         if (Tools.containString(order, Command.Type.RUN)) return new RunCommandReceiver();
         if (Tools.containString(order, Command.Type.STOP)) return new StopCommandReceiver();
+        if (Tools.containString(order, Command.Type.STATUS)) {
+            return new CheckPortalStatusCommandReceiver();
+        }
         return new CommandReceiver();
     }
 }
