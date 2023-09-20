@@ -391,5 +391,20 @@ public interface Command {
          * The constant HELP.
          */
         String HELP = "help";
+
+        /**
+         * The constant HELP.
+         */
+        String STATUS = "status";
+    }
+
+    /**
+     * check portal status command
+     */
+    interface CheckPortalStatus {
+        /**
+         * check portal status
+         */
+        String CHECK_POTAL_STATUS = "check portal status";
     }
 }

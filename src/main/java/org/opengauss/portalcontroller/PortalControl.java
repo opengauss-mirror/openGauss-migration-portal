@@ -465,6 +465,7 @@ public class PortalControl {
         validOrderList.add(Command.Stop.KAFKA);
         validOrderList.add(Command.Run.INCREMENTAL_MIGRATION);
         validOrderList.add(Command.Run.REVERSE_MIGRATION);
+        validOrderList.add(Command.CheckPortalStatus.CHECK_POTAL_STATUS);
     }
 
     /**
