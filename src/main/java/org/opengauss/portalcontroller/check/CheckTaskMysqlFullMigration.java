@@ -47,8 +47,9 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String chameleonInstallPath = hashtable.get(Chameleon.INSTALL_PATH);
+        String chameleonVersion = "chameleon-" + hashtable.get(Parameter.TOOL_VERSION);
         String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath
-                + "tools", "chameleon", "chameleon-5.0.0", "install_chameleon.log");
+                + "tools", "chameleon", chameleonVersion, "install_chameleon.log");
         Tools.createFile(chameleonInstallPath, false);
         String chameleonVersionOrder = hashtable.get(Chameleon.RUNNABLE_FILE_PATH) + " --version";
         if (checkChameleonStatus(chameleonVersionOrder, chameleonInstallLogPath)) {
