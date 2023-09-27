@@ -63,7 +63,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         String buildChameleonName = "install.sh";
         String chameleonVenvPath = hashtable.get(Chameleon.VENV_PATH);
         RuntimeExecTools.runShell(buildChameleonName, chameleonVenvPath);
-        checkFileExist(hashtable.get(Chameleon.RUNNABLE_FILE_PATH), 60);
+        checkFileExist(hashtable.get(Chameleon.RUNNABLE_FILE_PATH), 300);
         checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
     }
 
@@ -118,7 +118,7 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
      * @param order                   the order
      * @param chameleonInstallLogPath the chameleon install log path
      * @return boolean
-     * @throws PortalException the portal exception
+     *
      */
     public boolean checkChameleonStatus(String order, String chameleonInstallLogPath) {
         try {
