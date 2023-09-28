@@ -131,17 +131,17 @@ public interface Check {
         /**
          * The constant URL.
          */
-        String URL = "spring.datasource.druid.dataSourceOne.url";
+        String URL = "spring.datasource.url";
 
         /**
          * The constant USER_NAME.
          */
-        String USER_NAME = "spring.datasource.druid.dataSourceOne.username";
+        String USER_NAME = "spring.datasource.username";
 
         /**
          * The constant PASSWORD.
          */
-        String PASSWORD = "spring.datasource.druid.dataSourceOne.password";
+        String PASSWORD = "spring.datasource.password";
 
         /**
          * The constant QUERY_DOP.
@@ -151,17 +151,17 @@ public interface Check {
         /**
          * The constant MIN_IDLE.
          */
-        String MIN_IDLE = "spring.datasource.druid.dataSourceOne.minIdle";
+        String MIN_IDLE = "spring.datasource.druid.min-idle";
 
         /**
          * The constant MAX_ACTIVE.
          */
-        String MAX_ACTIVE = "spring.datasource.druid.dataSourceOne.maxActive";
+        String MAX_ACTIVE = "spring.datasource.druid.max-active";
 
         /**
          * The constant INITIAL_SIZE.
          */
-        String INITIAL_SIZE = "spring.datasource.druid.dataSourceOne.initialSize";
+        String INITIAL_SIZE = "spring.datasource.druid.initial-size";
 
         /**
          * The constant TIME_PERIOD.

@@ -725,7 +725,7 @@ public class Tools {
         datacheckSourceMap.put(Check.Parameters.PASSWORD, mysqlUserPassword);
         datacheckSourceMap.put("spring.check.server-uri", "http://127.0.0.1:" + servicePort);
         datacheckSourceMap.put("server.port", sourcePort);
-        datacheckSourceMap.put("logging.config", hashtable.get(Check.Source.LOG_PATTERN_PATH));
+        datacheckSourceMap.put("logging.config", hashtable.get(Check.LOG_PATTERN_PATH));
         Tools.changeYmlParameters(datacheckSourceMap, datacheckSourcePath);
         HashMap<String, Object> datacheckSinkMap = new HashMap<>();
         datacheckSinkMap.put(Check.Parameters.SCHEMA, opengaussDatabaseSchema);
@@ -735,7 +735,7 @@ public class Tools {
         datacheckSinkMap.put(Check.Parameters.PASSWORD, opengaussUserPassword);
         datacheckSinkMap.put("spring.check.server-uri", "http://127.0.0.1:" + servicePort);
         datacheckSinkMap.put("server.port", sinkPort);
-        datacheckSinkMap.put("logging.config", hashtable.get(Check.Sink.LOG_PATTERN_PATH));
+        datacheckSinkMap.put("logging.config", hashtable.get(Check.LOG_PATTERN_PATH));
         Tools.changeYmlParameters(datacheckSinkMap, datacheckSinkPath);
         HashMap<String, Object> datacheckServiceMap = new HashMap<>();
         datacheckServiceMap.put("data.check.source-uri", "http://127.0.0.1:" + sourcePort);

@@ -7,7 +7,7 @@ spring:
     bootstrap-servers: localhost:9092
   check:
     core-pool-size: 1
-    maximum-pool-size: 5
+    maximum-pool-size: 4
 data:
   check:
     data-path: ./check_result
