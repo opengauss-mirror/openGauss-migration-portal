@@ -18,7 +18,7 @@
     <Properties>
         <!--Property LOG_HOME must be absolute path dir -->
         <Property name="LOG_HOME">logs</Property>
-        <Property name="LOG_LEVEL">DEBUG</Property>
+        <Property name="LOG_LEVEL">INFO</Property>
         <Property name="LOG_NAME">${sys:logName}</Property>
         <Property name="LOG_DEBUGGER">debugger</Property>
         <Property name="LOG_KAFKA">kafka</Property>
