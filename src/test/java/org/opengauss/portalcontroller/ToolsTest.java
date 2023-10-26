@@ -173,4 +173,25 @@ public class ToolsTest {
         String str = "2022-12-19 20:01:51 MainProcess INFO: start_proc_replica finished.";
         assert str.equals(lastLine);
     }
+
+    @Test
+    public void changValueTest() {
+        Hashtable<String, String> hashtable = new Hashtable<>();
+        hashtable.put("test", "****");
+        String oldStr1 = "@@@${test}${test222}";
+        String oldStr2 = "${test}@@@${test}";
+        String oldStr3 = "${${test}@@@${test}${";
+        String oldStr4 = "";
+        String oldStr5 = "Huawei12#$${}";
+        String newStr1 = Tools.changeValue(oldStr1, hashtable);
+        String newStr2 = Tools.changeValue(oldStr2, hashtable);
+        String newStr3 = Tools.changeValue(oldStr3, hashtable);
+        String newStr4 = Tools.changeValue(oldStr4, hashtable);
+        String newStr5 = Tools.changeValue(oldStr5, hashtable);
+        assert "@@@****${test222}".equals(newStr1);
+        assert "****@@@****".equals(newStr2);
+        assert "${****@@@****${".equals(newStr3);
+        assert "".equals(newStr4);
+        assert "Huawei12#$${}".equals(newStr5);
+    }
 }

@@ -16,6 +16,7 @@
 package org.opengauss.portalcontroller;
 
 import com.alibaba.fastjson.JSON;
+import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -1782,7 +1783,7 @@ public class Tools {
         stringArrayList.add(Method.Run.REGISTRY);
         for (String methodName : stringArrayList) {
             if (Tools.getCommandPid(Task.getTaskProcessMap().get(methodName)) == -1) {
-                LOGGER.error("Start kafka failed.");
+                LOGGER.error("Start methond={} failed.", methodName);
                 return false;
             }
         }
@@ -1879,12 +1880,25 @@ public class Tools {
      * @return the string
      */
     public static String changeValue(String oldString, Hashtable<String, String> hashtable) {
+        if (Strings.isBlank(oldString)) {
+            return oldString;
+        }
+        String[] split = oldString.split("\\$\\{");
+        List<String> replaceStrList = new ArrayList<>();
+        for (int i = 1; i < split.length; i++) {
+            String splitStr = split[i];
+            if (splitStr.contains("}")) {
+                String variableName = splitStr.substring(0, splitStr.indexOf("}"));
+                replaceStrList.add(variableName);
+            }
+        }
         String newString = oldString;
-        while (newString.contains("$")) {
-            String variable = newString.substring(newString.indexOf("$"), newString.indexOf("}") + 1);
-            String variableName = newString.substring(newString.indexOf("{") + 1, newString.indexOf("}"));
-            String value = hashtable.get(variableName);
-            newString = newString.replace(variable, value);
+        for (String variable : replaceStrList) {
+            String value = hashtable.get(variable);
+            if (value == null) {
+                continue;
+            }
+            newString = newString.replace("${" + variable + "}", value);
         }
         return newString;
     }
