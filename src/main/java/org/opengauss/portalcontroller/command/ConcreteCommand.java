@@ -33,6 +33,9 @@ public class ConcreteCommand {
         if (Tools.containString(order, Command.Type.STATUS)) {
             return new CheckPortalStatusCommandReceiver();
         }
+        if (Tools.containString(order, Command.Type.LOAD)) {
+            return new LoadToolsConfigCommandReceiver();
+        }
         return new CommandReceiver();
     }
 }

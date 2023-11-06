@@ -15,7 +15,9 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -25,9 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +49,7 @@ public class LogView {
      * @return the error msg
      */
     public static String getErrorMsg(String logPath) {
-        return getLog(logPath, List.of("Exception:", "Error:"));
+        return getLog(logPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR));
     }
 
     /**
@@ -180,38 +180,13 @@ public class LogView {
     /**
      * Check start sign flag boolean.
      *
-     * @param logPath   the log path
-     * @param startSign the start sign
-     * @param timestamp the timestamp
+     * @param startSign   the start sign
+     * @param logListener  the LogFileListener
      * @return the boolean
-     * @throws PortalException the portal exception
      */
-    public static boolean checkStartSignFlag(String logPath, String startSign, long timestamp) throws PortalException {
-        boolean flag = false;
-        String successStr = getTailLog(logPath, List.of(startSign), MAX_CHECK_LOG_SUCCESS_FLAG_LENGTH);
-        if (successStr.equals("")) {
-            return false;
-        }
-        String[] successStrArray = successStr.split(System.lineSeparator());
-        for (String singleSuccessStr : successStrArray) {
-            String[] strParts = singleSuccessStr.split(" ");
-            try {
-                String timeStr = strParts[0] + " " + strParts[1].substring(0, strParts[1].lastIndexOf("."));
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                Date date = sdf.parse(timeStr);
-                long currentTimeStamp = date.getTime();
-                if (currentTimeStamp >= timestamp) {
-                    flag = true;
-                }
-            } catch (ParseException | StringIndexOutOfBoundsException e) {
-                LOGGER.warn(e.getMessage());
-                LOGGER.warn("Please check LOG_PATTERN of log4j2.xml , log4j2source.xml and log4j2sink.xml");
-                LOGGER.warn("The value should start with %d{yyyy-MM-dd HH:mm:ss.SSS}");
-                throw new PortalException("String index out of bounds exception", "reading log in file " + logPath, e.getMessage());
-            }
-
-        }
-        return flag;
+    public static boolean checkStartSignFlag(String startSign, LogFileListener logListener) {
+        HashMap<String, String> logMap = logListener.getLogMap();
+        return logMap.containsKey(startSign);
     }
 
     /**

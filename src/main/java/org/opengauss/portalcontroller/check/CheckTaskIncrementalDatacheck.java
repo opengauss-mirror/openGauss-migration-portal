@@ -15,13 +15,19 @@
 
 package org.opengauss.portalcontroller.check;
 
-import org.opengauss.portalcontroller.*;
+import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.PathUtils;
+import org.opengauss.portalcontroller.Plan;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.Task;
+import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Software;
@@ -40,6 +46,7 @@ import static org.opengauss.portalcontroller.Plan.runningTaskList;
 public class CheckTaskIncrementalDatacheck implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskIncrementalDatacheck.class);
     private String workspaceId = "";
+    private DataCheckLogFileCheck fileCheck = new DataCheckLogFileCheck();
 
     /**
      * Gets workspace id.
@@ -91,20 +98,22 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sourceTopic, hashtable.get(Check.Source.CONFIG_PATH));
         String sinkTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", hashtable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
         Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sinkTopic, hashtable.get(Check.Sink.CONFIG_PATH));
+        Tools.changeDataCheckKafakParams();
+        Tools.deleteDataCheckParamsFromEnv();
     }
 
     @Override
     public void start(String workspaceId) {
-        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in");
+        fileCheck.startCheck();
+        Task.startDataCheck(fileCheck.getCheckResultListener());
         checkEnd();
     }
 
     public void checkEnd() {
         while (!Plan.stopPlan && !Plan.stopIncrementalMigration) {
             LOGGER.info("Incremental migration is running...");
-            Tools.outputDatacheckStatus(Parameter.CHECK_INCREMENTAL);
+            Tools.outputInformation(fileCheck.getErrResult(),
+                    Parameter.CHECK_FULL + " is running.", Parameter.CHECK_FULL + " has error.");
             Tools.sleepThread(1000, "running incremental migraiton datacheck");
         }
         List<String> taskThreadList = List.of(Method.Run.CHECK, Method.Run.CHECK_SINK, Method.Run.CHECK_SOURCE, Method.Run.CONNECT_SINK, Method.Run.CONNECT_SOURCE);
@@ -112,6 +121,7 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
             CheckTaskIncrementalMigration.beforeStop(taskThreadList);
             LOGGER.info("Incremental migration datacheck stopped.");
         }
+        fileCheck.stopListener();
     }
 
     public void uninstall() {

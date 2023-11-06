@@ -162,6 +162,7 @@ public class InstallMigrationTools {
      */
     public boolean runInstallOrder(String order) {
         try {
+            Tools.changeConfluentDirFromSysParam();
             getCheckTask(order).installAllPackages(getInstallWay(order));
         } catch (PortalException e) {
             LOGGER.error(e.toString());

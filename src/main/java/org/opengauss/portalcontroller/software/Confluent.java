@@ -46,7 +46,7 @@ public class Confluent implements Software {
     public Hashtable<String, String> initParameterHashtable() {
         Hashtable<String, String> hashtable = new Hashtable<>();
         hashtable.put(Parameter.PATH, Debezium.Confluent.PATH);
-        hashtable.put(Parameter.INSTALL_PATH, Debezium.PATH);
+        hashtable.put(Parameter.INSTALL_PATH, Debezium.Confluent.INSTALL_PATH);
         hashtable.put(Parameter.PKG_PATH, Debezium.PKG_PATH);
         hashtable.put(Parameter.PKG_URL, Debezium.Confluent.PKG_URL);
         hashtable.put(Parameter.PKG_NAME, Debezium.Confluent.PKG_NAME);

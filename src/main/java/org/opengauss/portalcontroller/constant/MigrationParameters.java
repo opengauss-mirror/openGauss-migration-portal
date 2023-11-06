@@ -19,4 +19,20 @@ public interface MigrationParameters {
         String CHECK = "datacheck";
         List<String> ALL = List.of(FULL, INCREMENTAL, REVERSE, CHECK);
     }
+
+    /**
+     * log constant
+     *
+     * @author: www
+     * @date: 2023/11/28 12:03
+     * @description: msg
+     * @since: 1.1
+     * @version: 1.1
+     */
+    interface Log {
+        /**
+         *  GLOBAL_LOG_LEVEL
+         */
+        String GLOBAL_LOG_LEVEL = "global.log.level";
+    }
 }

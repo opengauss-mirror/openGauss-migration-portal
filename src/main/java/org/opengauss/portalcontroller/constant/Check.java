@@ -15,6 +15,8 @@
 
 package org.opengauss.portalcontroller.constant;
 
+import java.util.List;
+
 /**
  * The interface Check.
  *
@@ -118,6 +120,16 @@ public interface Check {
      * The constant DROP_LOGICAL_SLOT.
      */
     String DROP_LOGICAL_SLOT = "drop.logical.slot.on.stop";
+
+    /**
+     * The constant tools.black.list.config.key.
+     */
+    String TOOLS_BLACK_LIST_CONFIG_KEY = "tools.black.list.config.key";
+
+    /**
+     * The constant underline.replace.space.keys.
+     */
+    String UNDERLINE_REPLACE_SPACE_KEYS = "underline.replace.space.keys";
 
     /**
      * The interface Parameters.
@@ -402,5 +414,62 @@ public interface Check {
          * prefix check portal status:
          */
         String CHECK_STATUS_PREFIX = "check portal status:";
+    }
+
+    /**
+     * check log keyword
+     */
+    interface CheckLog {
+        /**
+         * error string
+         */
+        String ERR = "Error:";
+
+        /**
+         * Exception String
+         */
+        String EXCEPTION = "Exception:";
+
+        /**
+         * START_SOURCE_LOG
+         */
+        String START_SOURCE_LOG = "\"endpoint\":\"SOURCE\",\"event\":\"start\"";
+
+        /**
+         * START_SINK_LOG
+         */
+        String START_SINK_LOG = "\"endpoint\":\"SINK\",\"event\":\"start\"";
+
+        /**
+         * start check app string
+         */
+        String START_CHECK_LOG = "\"endpoint\":\"CHECK\",\"event\":\"start\"";
+
+        /**
+         * finish_source_log
+         */
+        String FINISH_SOURCE_LOG = "\"endpoint\":\"SOURCE\",\"event\":\"stop\"";
+
+        /**
+         * finish_sink_log
+         */
+        String FINISH_SINK_LOG = "\"endpoint\":\"SINK\",\"event\":\"stop\"";
+
+        /**
+         * finisht_check_log
+         */
+        String FINISHT_CHECK_LOG = "\"endpoint\":\"CHECK\",\"event\":\"stop\"";
+
+        /**
+         * data_check_start_info
+         */
+        List<String> DATA_CHECK_START_INFO_LIST = List.of(Check.CheckLog.START_SINK_LOG,
+                Check.CheckLog.START_SOURCE_LOG, Check.CheckLog.START_CHECK_LOG);
+
+        /**
+         * data_check_stop_info
+         */
+        List<String> DATA_CHECK_STOP_INFO_LIST = List.of(Check.CheckLog.FINISH_SINK_LOG,
+                Check.CheckLog.FINISH_SOURCE_LOG, Check.CheckLog.FINISHT_CHECK_LOG);
     }
 }
