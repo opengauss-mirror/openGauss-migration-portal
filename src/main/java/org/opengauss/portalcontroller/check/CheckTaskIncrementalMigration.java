@@ -23,6 +23,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.software.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ import java.util.List;
  */
 public class CheckTaskIncrementalMigration implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskIncrementalMigration.class);
+    private LogFileListener incrementalLogFileListener = new LogFileListener();
 
     public void installAllPackages(boolean download) throws PortalException {
         ArrayList<Software> softwareArrayList = new ArrayList<>();
@@ -101,7 +103,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         int sourcePort = StartPort.REST_MYSQL_SOURCE + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sourcePort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSourcePath);
-        Task.startTaskMethod(Method.Name.CONNECT_SOURCE, 5000, "");
+        Task.startTaskMethod(Method.Name.CONNECT_SOURCE, 5000, "", incrementalLogFileListener);
     }
 
     @Override
@@ -115,7 +117,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         int sinkPort = StartPort.REST_MYSQL_SINK + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sinkPort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSinkFilePath);
-        Task.startTaskMethod(Method.Name.CONNECT_SINK, 5000, "");
+        Task.startTaskMethod(Method.Name.CONNECT_SINK, 5000, "", incrementalLogFileListener);
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_INCREMENTAL_MIGRATION;
         }

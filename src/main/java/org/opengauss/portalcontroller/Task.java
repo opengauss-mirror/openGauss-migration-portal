@@ -29,6 +29,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -223,11 +224,12 @@ public class Task {
     /**
      * Start task method.
      *
-     * @param name      the name
-     * @param sleepTime the sleep time
-     * @param startSign the start sign
+     * @param name              the name
+     * @param sleepTime         the sleep time
+     * @param startSign         the start sign
+     * @param logListener       the LogFileListener
      */
-    public static void startTaskMethod(String name, int sleepTime, String startSign) {
+    public static void startTaskMethod(String name, int sleepTime, String startSign, LogFileListener logListener) {
         if (Plan.stopPlan) {
             return;
         }
@@ -239,7 +241,7 @@ public class Task {
         long pid = runningTaskThread.getPid();
         if (pid == -1) {
             runningTaskThread.startTask();
-            runTaskMethodWithSign(runningInformation, logPath, sleepTime, startSign);
+            runTaskMethodWithSign(runningInformation, logPath, sleepTime, startSign, logListener);
             pid = Tools.getCommandPid(processName);
             runningTaskThread.setPid(pid);
             runningTaskThreadList.add(runningTaskThread);
@@ -257,19 +259,21 @@ public class Task {
     /**
      * Run task method with sign.
      *
-     * @param information the information
-     * @param logPath     the log path
-     * @param sleepTime   the sleep time
-     * @param startSign   the start sign
+     * @param information       the information
+     * @param logPath           the log path
+     * @param sleepTime         the sleep time
+     * @param startSign         the start sign
+     * @param logListener       logListener
      */
-    public static void runTaskMethodWithSign(String information, String logPath, int sleepTime, String startSign) {
+    public static void runTaskMethodWithSign(String information, String logPath, int sleepTime,
+                                             String startSign, LogFileListener logListener) {
         if (!startSign.equals("")) {
             long timestamp = System.currentTimeMillis();
             while (sleepTime > 0) {
                 Tools.sleepThread(1000, information);
                 sleepTime -= 1000;
                 try {
-                    if (LogView.checkStartSignFlag(logPath, startSign, timestamp)) {
+                    if (LogView.checkStartSignFlag(logPath, startSign, timestamp, logListener)) {
                         break;
                     }
                 } catch (PortalException e) {

@@ -18,6 +18,7 @@ package org.opengauss.portalcontroller.check;
 import org.opengauss.portalcontroller.*;
 import org.opengauss.portalcontroller.constant.*;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Software;
@@ -33,6 +34,9 @@ import java.util.Hashtable;
 public class CheckTaskFullDatacheck implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskFullDatacheck.class);
     private String workspaceId = "";
+
+    private DataCheckLogFileCheck fileCheck = new DataCheckLogFileCheck();
+
 
     /**
      * Gets workspace id.
@@ -82,12 +86,17 @@ public class CheckTaskFullDatacheck implements CheckTask {
 
     @Override
     public void start(String workspaceId) {
+        fileCheck.startCheck();
+        DataCheckLogFileCheck.setDataCheckFinish(false);
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.START_FULL_MIGRATION_CHECK;
         }
-        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in");
+        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in",
+                fileCheck.getSourceLogListener());
+        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in",
+                fileCheck.getSinkLogListener());
+        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in",
+                fileCheck.getAppLogListener());
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_FULL_MIGRATION_CHECK;
         }
@@ -100,10 +109,12 @@ public class CheckTaskFullDatacheck implements CheckTask {
                 if (PortalControl.status != Status.ERROR) {
                     LOGGER.info("Full migration datacheck is finished.");
                     PortalControl.status = Status.FULL_MIGRATION_CHECK_FINISHED;
+                    fileCheck.stopListener();
                 }
                 break;
             }
-            Tools.outputDatacheckStatus(Parameter.CHECK_FULL);
+            Tools.outputInformation(fileCheck.getErrResult(),
+                    Parameter.CHECK_FULL + " is running.", Parameter.CHECK_FULL + " has error.");
             Tools.sleepThread(LogParseConstants.PERIOD_WATCH_LOG, "running full migration datacheck");
         }
     }
