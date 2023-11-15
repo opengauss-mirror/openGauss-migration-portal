@@ -28,7 +28,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 /**
  * The type Jdbc tools.
@@ -42,7 +44,7 @@ public class JdbcTools {
      * @return the mysql connection
      * @throws PortalException the portal exception
      */
-    public static Connection getMysqlConnection() throws PortalException {
+    public static Connection getMysqlConnection() {
         String ip = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_HOST);
         String port = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_PORT);
         String databaseName = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
@@ -50,12 +52,12 @@ public class JdbcTools {
         String user = PortalControl.toolsMigrationParametersTable.get(Mysql.USER);
         String password = PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD);
         String driver = "com.mysql.cj.jdbc.Driver";
-        Connection connection;
+        Connection connection = null;
         try {
             Class.forName(driver);
             connection = DriverManager.getConnection(url, user, password);
         } catch (SQLException | ClassNotFoundException e) {
-            throw new PortalException("SQL exception", "get mysql connection", e.getMessage());
+            LOGGER.error(e.getMessage());
         }
         return connection;
     }
@@ -105,6 +107,31 @@ public class JdbcTools {
             }
         }
         return value;
+    }
+
+    /**
+     * Select string value string.
+     *
+     * @param connection the connection
+     * @param selectSql  the select sql
+     * @param columnKeys        the key
+     * @return Map<String, String>
+     */
+    public static Map<String, String> selectMapValue(Connection connection, String selectSql, String[] columnKeys) {
+        Map<String, String> resultMap = new HashMap<>();
+        if (connection != null) {
+            try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(selectSql)) {
+                int columnCount = rs.getMetaData().getColumnCount();
+                if (rs.next()) {
+                    for (int i = 0; i < columnCount; i++) {
+                        resultMap.put(columnKeys[i], rs.getString(columnKeys[i]));
+                    }
+                }
+            } catch (SQLException e) {
+                LOGGER.error("execute {} failed", selectSql);
+            }
+        }
+        return resultMap;
     }
 
     /**
@@ -326,6 +353,21 @@ public class JdbcTools {
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage());
             }
+        }
+    }
+
+    /**
+     * close connection
+     *
+     * @param connection connection
+     */
+    public static void closeConnection(Connection connection) {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            LOGGER.error("close connection fail.");
         }
     }
 }

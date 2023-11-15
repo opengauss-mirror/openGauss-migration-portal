@@ -41,6 +41,7 @@ import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.status.CheckColumnRule;
 import org.opengauss.portalcontroller.status.CheckRule;
 import org.opengauss.portalcontroller.status.RuleParameter;
+import org.opengauss.portalcontroller.verify.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -2545,5 +2546,33 @@ public class Tools {
                 PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH));
         Tools.deleteParams(ToolsConfigEnum.DATA_CHECK_APPLICATION_SOURCE.getConfigName(),
                 PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH));
+    }
+
+    /**
+     * write map to file
+     *
+     * @param resultMap map
+     */
+    public static void writeJsonToFile(Map<String, Object> resultMap) {
+        String filePath = PortalControl.portalWorkSpacePath + Constants.CHECK_RESULT_FILE;
+        File file = new File(filePath);
+        RandomAccessFile randomAccessFile = null;
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            randomAccessFile = new RandomAccessFile(file, "rw");
+            randomAccessFile.write(JSONObject.toJSONString(resultMap).getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            LOGGER.error("writeJsonToFile create file failed.");
+        } finally {
+            try {
+                if (randomAccessFile != null) {
+                    randomAccessFile.close();
+                }
+            } catch (IOException e) {
+                LOGGER.error("close {} failed.", filePath);
+            }
+        }
     }
 }

@@ -36,6 +36,9 @@ public class ConcreteCommand {
         if (Tools.containString(order, Command.Type.LOAD)) {
             return new LoadToolsConfigCommandReceiver();
         }
+        if (Tools.containString(order, Command.Type.VERIFY)) {
+            return new VerifyCommandReceiver();
+        }
         return new CommandReceiver();
     }
 }

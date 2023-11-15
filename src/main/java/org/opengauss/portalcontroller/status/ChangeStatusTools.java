@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import org.opengauss.portalcontroller.JdbcTools;
 import org.opengauss.portalcontroller.LogView;
 import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.Plan;
@@ -29,11 +30,16 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.verify.DiskSpaceVerifyChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -248,6 +254,35 @@ public class ChangeStatusTools {
         }
         String str = JSON.toJSONString(ThreadStatusController.portalStatusWriterArrayList);
         LogView.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
+    }
+
+    /**
+     * Write portal status.
+     */
+    public static void reduceDiskSpace() {
+        LOGGER.info("isReduced:{},Plan.stopPlan:{},PortalControl.status:{}", ThreadStatusController.isReduced(),
+            Plan.stopPlan, PortalControl.status);
+        if (Plan.stopPlan || PortalControl.status >= Status.FULL_MIGRATION_CHECK_FINISHED) {
+            if (ThreadStatusController.isReduced()) {
+                return;
+            }
+            Connection mysqlConnection = null;
+            try {
+                mysqlConnection = JdbcTools.getMysqlConnection();
+                DiskSpaceVerifyChain.readAndWrite(
+                    DiskSpaceVerifyChain.getMaxTableSpace(mysqlConnection, false).multiply(BigDecimal.valueOf(-1)),
+                    new HashMap<>(), true);
+                ThreadStatusController.setIsReduced(true);
+            } finally {
+                try {
+                    if (mysqlConnection != null) {
+                        mysqlConnection.close();
+                    }
+                } catch (SQLException e) {
+                    LOGGER.error("close PgConnection fail.");
+                }
+            }
+        }
     }
 
     /**
