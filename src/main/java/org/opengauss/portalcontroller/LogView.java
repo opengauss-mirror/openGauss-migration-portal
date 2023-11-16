@@ -15,7 +15,9 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -28,6 +30,7 @@ import java.nio.file.StandardOpenOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +52,7 @@ public class LogView {
      * @return the error msg
      */
     public static String getErrorMsg(String logPath) {
-        return getLog(logPath, List.of("Exception:", "Error:"));
+        return getLog(logPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR));
     }
 
     /**
@@ -180,19 +183,21 @@ public class LogView {
     /**
      * Check start sign flag boolean.
      *
-     * @param logPath   the log path
-     * @param startSign the start sign
-     * @param timestamp the timestamp
+     * @param logPath     the log path
+     * @param startSign   the start sign
+     * @param timestamp   the timestamp
+     * @param logListener  the LogFileListener
      * @return the boolean
      * @throws PortalException the portal exception
      */
-    public static boolean checkStartSignFlag(String logPath, String startSign, long timestamp) throws PortalException {
+    public static boolean checkStartSignFlag(String logPath, String startSign, long timestamp,
+                                             LogFileListener logListener) throws PortalException {
         boolean flag = false;
-        String successStr = getTailLog(logPath, List.of(startSign), MAX_CHECK_LOG_SUCCESS_FLAG_LENGTH);
-        if (successStr.equals("")) {
+        HashMap<String, String> logMap = logListener.getLogMap();
+        if (!logMap.containsKey(startSign)) {
             return false;
         }
-        String[] successStrArray = successStr.split(System.lineSeparator());
+        String[] successStrArray = logMap.get(startSign).split(System.lineSeparator());
         for (String singleSuccessStr : successStrArray) {
             String[] strParts = singleSuccessStr.split(" ");
             try {

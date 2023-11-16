@@ -31,6 +31,7 @@ import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.status.CheckColumnRule;
 import org.opengauss.portalcontroller.status.CheckRule;
 import org.opengauss.portalcontroller.status.RuleParameter;
@@ -72,6 +73,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tools
@@ -1652,10 +1654,16 @@ public class Tools {
      *
      * @return the boolean
      */
+
     public static boolean isFullDatacheckSuccess() {
         boolean runningFullDatacheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
-        String checkPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
-        return runningFullDatacheck && LogView.checkCheckSuccessLogFlag(checkPath);
+        try {
+            TimeUnit.SECONDS.sleep(6);
+        } catch (InterruptedException e) {
+            LOGGER.error("InterruptedException:", e);
+        }
+        LOGGER.error("isFullDatacheckSuccess finish flag = {}", DataCheckLogFileCheck.isDataCheckFinish());
+        return runningFullDatacheck && DataCheckLogFileCheck.isDataCheckFinish();
     }
 
     /**

@@ -25,6 +25,7 @@
         <snakeyaml.version>2.0</snakeyaml.version>
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
         <slf4j.log.version>1.7.30</slf4j.log.version>
+        <common.io.version>2.4</common.io.version>
     </properties>
 
     <build>
@@ -112,6 +113,16 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql-connector-java}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${common.io.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 

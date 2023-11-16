@@ -23,6 +23,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.software.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,8 @@ import static org.opengauss.portalcontroller.Plan.runningTaskList;
  */
 public class CheckTaskReverseDatacheck implements CheckTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskReverseDatacheck.class);
+
+    private DataCheckLogFileCheck fileCheck;
 
     @Override
     public void installAllPackages(boolean download) throws PortalException {
@@ -72,18 +75,24 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         changeParameters(workspaceId);
     }
 
+
     @Override
     public void start(String workspaceId) {
-        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in");
-        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in");
+        fileCheck.startCheck();
+        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in",
+                fileCheck.getSourceLogListener());
+        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in",
+                fileCheck.getSourceLogListener());
+        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in",
+                fileCheck.getSourceLogListener());
         checkEnd();
     }
 
     public void checkEnd() {
         while (!Plan.stopPlan && !Plan.stopReverseMigration) {
             LOGGER.info("Reverse migration is running...");
-            Tools.outputDatacheckStatus(Parameter.CHECK_REVERSE);
+            Tools.outputInformation(fileCheck.getErrResult(),
+                    Parameter.CHECK_FULL + " is running.", Parameter.CHECK_FULL + " has error.");
             Tools.sleepThread(1000, "running reverse migraiton datacheck");
         }
         if (Plan.stopReverseMigration) {
@@ -98,6 +107,7 @@ public class CheckTaskReverseDatacheck implements CheckTask {
             Task.stopTaskMethod(Method.Run.REVERSE_CONNECT_SINK);
             Task.stopTaskMethod(Method.Run.REVERSE_CONNECT_SOURCE);
             LOGGER.info("Reverse migration stopped.");
+            fileCheck.stopListener();
         }
     }
 

@@ -403,4 +403,34 @@ public interface Check {
          */
         String CHECK_STATUS_PREFIX = "check portal status:";
     }
+
+    /**
+     * check log keyword
+     */
+    interface CheckLog {
+        /**
+         * error string
+         */
+        String ERR = "Error:";
+
+        /**
+         * Exception String
+         */
+        String EXCEPTION = "Exception:";
+
+        /**
+         * extract start string
+         */
+        String START_EXTRACT_LOG = "Started ExtractApplication in";
+
+        /**
+         * start check app string
+         */
+        String START_APP_LOG = "Started CheckApplication in";
+
+        /**
+         * check task end string
+         */
+        String FINISH_LOG = "\"status\":3";
+    }
 }

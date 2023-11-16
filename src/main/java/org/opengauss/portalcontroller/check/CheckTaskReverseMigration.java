@@ -22,6 +22,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.software.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,8 @@ import java.util.Hashtable;
 public class CheckTaskReverseMigration implements CheckTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckTaskReverseMigration.class);
+
+    private LogFileListener reverseLogFileListener = new LogFileListener();
 
     @Override
     public void installAllPackages(boolean download) throws PortalException {
@@ -98,12 +101,12 @@ public class CheckTaskReverseMigration implements CheckTask {
         int port = Tools.getAvailablePorts(sourcePort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH));
         Tools.changeConnectXmlFile(workspaceId + "_reverse_source", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
-        Task.startTaskMethod(Method.Name.REVERSE_CONNECT_SOURCE, 8000, "");
+        Task.startTaskMethod(Method.Name.REVERSE_CONNECT_SOURCE, 8000, "", reverseLogFileListener);
         int sinkPort = StartPort.REST_OPENGAUSS_SINK + PortalControl.portId * 10;
         int port2 = Tools.getAvailablePorts(sinkPort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port2), hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH));
         Tools.changeConnectXmlFile(workspaceId + "_reverse_sink", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
-        Task.startTaskMethod(Method.Name.REVERSE_CONNECT_SINK, 8000, "");
+        Task.startTaskMethod(Method.Name.REVERSE_CONNECT_SINK, 8000, "", reverseLogFileListener);
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_REVERSE_MIGRATION;
         }
