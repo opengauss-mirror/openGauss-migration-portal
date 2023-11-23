@@ -237,11 +237,10 @@ public class Task {
         RunningTaskThread runningTaskThread = new RunningTaskThread(name);
         String processName = runningTaskThread.getProcessName();
         List<RunningTaskThread> runningTaskThreadList = Plan.getRunningTaskThreadsList();
-        String logPath = runningTaskThread.getLogPath();
         long pid = runningTaskThread.getPid();
         if (pid == -1) {
             runningTaskThread.startTask();
-            runTaskMethodWithSign(runningInformation, logPath, sleepTime, startSign, logListener);
+            runTaskMethodWithSign(runningInformation, sleepTime, startSign, logListener);
             pid = Tools.getCommandPid(processName);
             runningTaskThread.setPid(pid);
             runningTaskThreadList.add(runningTaskThread);
@@ -260,24 +259,17 @@ public class Task {
      * Run task method with sign.
      *
      * @param information       the information
-     * @param logPath           the log path
      * @param sleepTime         the sleep time
      * @param startSign         the start sign
      * @param logListener       logListener
      */
-    public static void runTaskMethodWithSign(String information, String logPath, int sleepTime,
+    public static void runTaskMethodWithSign(String information, int sleepTime,
                                              String startSign, LogFileListener logListener) {
         if (!startSign.equals("")) {
-            long timestamp = System.currentTimeMillis();
             while (sleepTime > 0) {
                 Tools.sleepThread(1000, information);
                 sleepTime -= 1000;
-                try {
-                    if (LogView.checkStartSignFlag(logPath, startSign, timestamp, logListener)) {
-                        break;
-                    }
-                } catch (PortalException e) {
-                    LOGGER.error(e.toString());
+                if (LogView.checkStartSignFlag(startSign, logListener)) {
                     break;
                 }
             }
@@ -710,6 +702,25 @@ public class Task {
                 }
             }
         }
+    }
+
+    /**
+     * 启动datacheck
+     *
+     * @author: www
+     * @date: 2023/11/24 14:13
+     * @description: 启动datacheck
+     * @since: 1.1
+     * @version: 1.1
+     * @param logFileListener DataCheckLogFileCheck
+     */
+    public static void startDataCheck(LogFileListener logFileListener) {
+        startTaskMethod(Method.Name.CHECK_SOURCE, 15000, Check.CheckLog.START_SOURCE_LOG,
+                logFileListener);
+        startTaskMethod(Method.Name.CHECK_SINK, 15000, Check.CheckLog.START_SINK_LOG,
+                logFileListener);
+        startTaskMethod(Method.Name.CHECK, 15000, Check.CheckLog.START_CHECK_LOG,
+                logFileListener);
     }
 
 }

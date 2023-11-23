@@ -19,12 +19,15 @@ import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executors;
+
+import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_START_INFO_LIST;
+import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_STOP_INFO_LIST;
 
 /**
  * DataCheckLogFileCheck
@@ -42,7 +45,7 @@ public class DataCheckLogFileCheck {
     @Setter
     private static boolean isDataCheckFinish = false;
 
-    ExecutorService threadPool = new ThreadPoolExecutor(3,
+    ThreadPoolExecutor threadPool = new ThreadPoolExecutor(4,
             5,
             8,
             TimeUnit.SECONDS,
@@ -72,14 +75,17 @@ public class DataCheckLogFileCheck {
         String checkSinkLogPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.LOG_PATH);
         String checkLogPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
         String checkResultFile = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT)
-                + "progress.log";
+                + "process.pid";
         sinkLogListener = new LogFileListener(checkSinkLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR, Check.CheckLog.START_EXTRACT_LOG));
+                Check.CheckLog.ERR));
         sourceLogListener = new LogFileListener(checkSourceLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR, Check.CheckLog.START_EXTRACT_LOG));
-        appLogListener = new LogFileListener(checkLogPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR,
-                Check.CheckLog.START_APP_LOG));
-        checkResultListener = new LogFileListener(checkResultFile, List.of(Check.CheckLog.FINISH_LOG));
+                Check.CheckLog.ERR));
+        appLogListener = new LogFileListener(checkLogPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR));
+        List<String> checkList = new ArrayList<>();
+        checkList.addAll(DATA_CHECK_START_INFO_LIST);
+        checkList.addAll(DATA_CHECK_STOP_INFO_LIST);
+        checkResultListener = new LogFileListener(checkResultFile, checkList);
+        threadPool.allowCoreThreadTimeOut(true);
         threadPool.execute(sinkLogListener);
         threadPool.execute(sourceLogListener);
         threadPool.execute(appLogListener);
@@ -122,9 +128,9 @@ public class DataCheckLogFileCheck {
             log.error("InterruptedException: ", e);
         }
         sinkLogListener.stop();
-        sinkLogListener.stop();
+        sourceLogListener.stop();
         appLogListener.stop();
         checkResultListener.stop();
-        threadPool.shutdown();
+        threadPool.shutdownNow();
     }
 }

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
-import org.opengauss.portalcontroller.constant.Check;
+import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 
 import java.io.File;
@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_STOP_INFO_LIST;
 
 /**
  * some msg
@@ -58,11 +60,15 @@ public class LogFileListener implements Runnable {
     @Override
     public void run() {
         while (!new File(filePath).exists()) {
+            if (Plan.stopPlan) {
+                return;
+            }
             log.info("check file {}...", filePath);
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 log.error("InterruptedException:", e);
+                return;
             }
         }
         initLogFileListener();
@@ -81,6 +87,10 @@ public class LogFileListener implements Runnable {
         tailer = Tailer.create(new File(filePath), new TailerListenerAdapter() {
             @Override
             public void handle(String line) {
+                if (Plan.stopPlan) {
+                    stop();
+                    return;
+                }
                 if (checkStrList.isEmpty()) {
                     return;
                 }
@@ -106,7 +116,7 @@ public class LogFileListener implements Runnable {
      */
     public void stop() {
         log.info("logmap is {}", logMap);
-        if (logMap.containsKey(Check.CheckLog.FINISH_LOG)) {
+        if (logMap.keySet().containsAll(DATA_CHECK_STOP_INFO_LIST)) {
             log.info("change data check finish flag {}", DataCheckLogFileCheck.isDataCheckFinish());
             DataCheckLogFileCheck.setDataCheckFinish(true);
         }
