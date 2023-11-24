@@ -15,6 +15,8 @@
 
 package org.opengauss.portalcontroller.constant;
 
+import java.util.List;
+
 /**
  * The interface Check.
  *
@@ -419,18 +421,45 @@ public interface Check {
         String EXCEPTION = "Exception:";
 
         /**
-         * extract start string
+         * START_SOURCE_LOG
          */
-        String START_EXTRACT_LOG = "Started ExtractApplication in";
+        String START_SOURCE_LOG = "\"endpoint\":\"SOURCE\",\"event\":\"start\"";
+
+        /**
+         * START_SINK_LOG
+         */
+        String START_SINK_LOG = "\"endpoint\":\"SINK\",\"event\":\"start\"";
 
         /**
          * start check app string
          */
-        String START_APP_LOG = "Started CheckApplication in";
+        String START_CHECK_LOG = "\"endpoint\":\"CHECK\",\"event\":\"start\"";
 
         /**
-         * check task end string
+         * finish_source_log
          */
-        String FINISH_LOG = "\"status\":3";
+        String FINISH_SOURCE_LOG = "\"endpoint\":\"SOURCE\",\"event\":\"stop\"";
+
+        /**
+         * finish_sink_log
+         */
+        String FINISH_SINK_LOG = "\"endpoint\":\"SINK\",\"event\":\"stop\"";
+
+        /**
+         * finisht_check_log
+         */
+        String FINISHT_CHECK_LOG = "\"endpoint\":\"CHECK\",\"event\":\"stop\"";
+
+        /**
+         * data_check_start_info
+         */
+        List<String> DATA_CHECK_START_INFO_LIST = List.of(Check.CheckLog.START_SINK_LOG,
+                Check.CheckLog.START_SOURCE_LOG, Check.CheckLog.START_CHECK_LOG);
+
+        /**
+         * data_check_stop_info
+         */
+        List<String> DATA_CHECK_STOP_INFO_LIST = List.of(Check.CheckLog.FINISH_SINK_LOG,
+                Check.CheckLog.FINISH_SOURCE_LOG, Check.CheckLog.FINISHT_CHECK_LOG);
     }
 }

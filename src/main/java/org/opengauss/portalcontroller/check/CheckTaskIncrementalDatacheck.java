@@ -98,12 +98,7 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
     @Override
     public void start(String workspaceId) {
         fileCheck.startCheck();
-        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in",
-                fileCheck.getSourceLogListener());
-        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in",
-                fileCheck.getSourceLogListener());
-        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in",
-                fileCheck.getSourceLogListener());
+        Task.startDataCheck(fileCheck.getCheckResultListener());
         checkEnd();
     }
 

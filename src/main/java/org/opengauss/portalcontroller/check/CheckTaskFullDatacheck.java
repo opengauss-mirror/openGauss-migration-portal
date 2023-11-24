@@ -91,12 +91,7 @@ public class CheckTaskFullDatacheck implements CheckTask {
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.START_FULL_MIGRATION_CHECK;
         }
-        Task.startTaskMethod(Method.Name.CHECK_SOURCE, 15000, "Started ExtractApplication in",
-                fileCheck.getSourceLogListener());
-        Task.startTaskMethod(Method.Name.CHECK_SINK, 15000, "Started ExtractApplication in",
-                fileCheck.getSinkLogListener());
-        Task.startTaskMethod(Method.Name.CHECK, 15000, "Started CheckApplication in",
-                fileCheck.getAppLogListener());
+        Task.startDataCheck(fileCheck.getCheckResultListener());
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_FULL_MIGRATION_CHECK;
         }
