@@ -258,7 +258,7 @@ public class RuntimeExecTools {
     }
 
     /**
-     * 拷贝文件到新目录下 如果新目录下已有则不覆盖文件
+     * Copy files to a new directory If the files are already in the new directory, the files will not be overwritten
      *
      * @param filePath  the file path
      * @param directory the directory

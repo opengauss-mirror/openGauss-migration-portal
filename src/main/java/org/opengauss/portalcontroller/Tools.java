@@ -176,9 +176,9 @@ public class Tools {
             Yaml yaml = new Yaml(dumperOptions);
             LinkedHashMap<String, Object> bigMap = yaml.load(fis);
             fis.close();
-            Map map = bigMap;
             for (String deleteKey : deleteKeys) {
                 String[] keys = deleteKey.split("\\.");
+                Map map = bigMap;
                 for (int i = 0; i < keys.length; ++i) {
                     String s = keys[i];
                     if (map.get(s) == null) {
@@ -1740,7 +1740,6 @@ public class Tools {
      *
      * @return the boolean
      */
-
     public static boolean isFullDatacheckSuccess() {
         boolean runningFullDatacheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
         try {
@@ -2037,12 +2036,18 @@ public class Tools {
     public static void initMigrationParamsFromProps() {
         Hashtable<String, String> migrationConfig = new Hashtable<>();
         Properties properties = System.getProperties();
-        LOGGER.error("prperties = {}", properties.toString());
+        LOGGER.info("properties = {}", properties.toString());
         properties.keySet().forEach(key -> {
             String keyStr = String.valueOf(key);
             if (keyStr.startsWith(NEW_PARAM_PREFIX)) {
                 String migrationValue = System.getProperty(keyStr);
-                migrationConfig.put(keyStr, migrationValue);
+                if (Integer.parseInt(String.valueOf(keyStr.charAt(NEW_PARAM_PREFIX.length()))) == ToolsConfigEnum
+                        .PORTAL_MIGRATION.getType()) {
+                    migrationConfig.put(keyStr.substring(NEW_PARAM_PREFIX.length() + KEY_SUB_INDEX),
+                            migrationValue);
+                } else {
+                    migrationConfig.put(keyStr, migrationValue);
+                }
             }
         });
         String migrationConfigPath = PathUtils.combainPath(true, portalControlPath + "config",
