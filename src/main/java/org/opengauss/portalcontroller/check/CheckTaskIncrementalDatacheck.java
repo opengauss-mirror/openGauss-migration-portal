@@ -15,7 +15,12 @@
 
 package org.opengauss.portalcontroller.check;
 
-import org.opengauss.portalcontroller.*;
+import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.PathUtils;
+import org.opengauss.portalcontroller.Plan;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.Task;
+import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -93,6 +98,8 @@ public class CheckTaskIncrementalDatacheck implements CheckTask {
         Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sourceTopic, hashtable.get(Check.Source.CONFIG_PATH));
         String sinkTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", hashtable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
         Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sinkTopic, hashtable.get(Check.Sink.CONFIG_PATH));
+        Tools.changeDataCheckKafakParams();
+        Tools.deleteDataCheckParamsFromEnv();
     }
 
     @Override

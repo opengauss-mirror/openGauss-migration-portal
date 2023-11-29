@@ -16,13 +16,16 @@
 package org.opengauss.portalcontroller;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.logging.log4j.util.Strings;
+import org.jdom2.Document;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
+import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
@@ -30,6 +33,9 @@ import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.constant.TaskParamType;
+import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.status.CheckColumnRule;
@@ -72,8 +78,21 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static org.opengauss.portalcontroller.PortalControl.migrationConfigPath;
+import static org.opengauss.portalcontroller.PortalControl.portalControlPath;
+import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
+import static org.opengauss.portalcontroller.PortalControl.toolsConfigPath;
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
+import static org.opengauss.portalcontroller.constant.Check.TOOLS_BLACK_LIST_CONFIG_KEY;
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.KEY_SUB_INDEX;
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_PARAM_PREFIX;
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.VALUE_TYPE_END_INDEX;
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.VALUE_TYPE_START_INDEX;
 
 /**
  * Tools
@@ -115,6 +134,67 @@ public class Tools {
             yaml.dump(bigMap, new FileWriter(file));
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing single yml parameter " + key, e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        }
+    }
+
+    /**
+     * Deletes the property configuration of the properties configuration file
+     *
+     * @param deleteKeys deleteKeys
+     * @param path path
+     */
+    public static void deletePropParameters(List<String> deleteKeys, String path) {
+        try {
+            Properties pps = new Properties();
+            pps.load(new FileInputStream(path));
+            for (String deleteKey : deleteKeys) {
+                pps.remove(deleteKey);
+            }
+            pps.store(new FileWriter(path), "");
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "delete yml parameters",
+                    e.getMessage());
+            LOGGER.error(portalException.toString());
+            Tools.shutDownPortal(portalException.toString());
+        }
+    }
+
+    /**
+     * Delete The Attribute Configuration Of The YML File
+     *
+     * @param deleteKeys deleteKeys
+     * @param path path
+     */
+    public static void deleteYmlParameters(List<String> deleteKeys, String path) {
+        try {
+            File file = new File(path);
+            FileInputStream fis = new FileInputStream(file);
+            DumperOptions dumperOptions = new DumperOptions();
+            dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            Yaml yaml = new Yaml(dumperOptions);
+            LinkedHashMap<String, Object> bigMap = yaml.load(fis);
+            fis.close();
+            for (String deleteKey : deleteKeys) {
+                String[] keys = deleteKey.split("\\.");
+                Map map = bigMap;
+                for (int i = 0; i < keys.length; ++i) {
+                    String s = keys[i];
+                    if (map.get(s) == null) {
+                        break;
+                    }
+                    if (map.get(s) instanceof Map) {
+                        map = (Map) map.get(s);
+                        continue;
+                    }
+                    map.remove(s);
+                }
+            }
+            yaml.dump(bigMap, new FileWriter(file));
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "delete yml parameters",
+                    e.getMessage());
             LOGGER.error(portalException.toString());
             Tools.shutDownPortal(portalException.toString());
         }
@@ -1027,7 +1107,8 @@ public class Tools {
         for (String path : filePathList) {
             File file = new File(path);
             if (!file.exists()) {
-                throw new PortalException("Portal exception", "installing package " + packagePath, "Install package " + packagePath + " failed");
+                throw new PortalException("Portal exception", "installing package " + packagePath,
+                        "Install package " + packagePath + " to " + path + " failed");
             }
         }
         Tools.outputResult(true, "Install package " + packagePath);
@@ -1228,6 +1309,10 @@ public class Tools {
      * @param path              the path
      */
     public static void changeConnectXmlFile(String workspaceIdString, String path) {
+        if (Strings.isBlank(path)) {
+            LOGGER.error("path is null or empty...");
+            return;
+        }
         try {
             StringBuilder result = new StringBuilder();
             String temp;
@@ -1448,7 +1533,6 @@ public class Tools {
         }
     }
 
-
     /**
      * Output result.
      *
@@ -1535,10 +1619,11 @@ public class Tools {
             channel.close();
             fileInputStream.close();
             randomAccessFile.close();
-        } catch (Exception e) {
+        } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
             LOGGER.error("Error massage: Get lock failed.");
         }
+
         return portId;
     }
 
@@ -1655,7 +1740,6 @@ public class Tools {
      *
      * @return the boolean
      */
-
     public static boolean isFullDatacheckSuccess() {
         boolean runningFullDatacheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
         try {
@@ -1728,6 +1812,75 @@ public class Tools {
     }
 
     /**
+     * Passing in the tool configuration file type and profile address to modify
+     * the modified value passed in from Datakit
+     *
+     * @param configEnum  configEnum
+     * @param path  path
+     */
+    public static void changeToolsYmlParameters(ToolsConfigEnum configEnum, String path) {
+        Hashtable<String, String> oldParams = getPropertiesParameters(PathUtils.combainPath(true,
+                portalControlPath + "config",
+                "migrationConfig.properties"));
+        Map<String, Object> toolsParams = toolsMigrationParametersTable.entrySet().stream()
+                .filter(migrationParamEntry ->
+                        migrationParamEntry.getKey().startsWith(configEnum.getType().toString()))
+                .filter(migrationParamEntry ->
+                        !oldParams.get(migrationParamEntry.getKey())
+                                .equals(migrationParamEntry.getValue()))
+                .collect(Collectors.toMap(entry -> entry.getKey().substring(KEY_SUB_INDEX),
+                        entry -> getParamValueByType(entry.getValue(),
+                                Integer.parseInt(entry.getKey().substring(VALUE_TYPE_START_INDEX,
+                                        VALUE_TYPE_END_INDEX)))));
+        Map<String, Object> newParamMap = oldParams.entrySet().stream()
+                .filter(migrationParamEntry ->
+                        migrationParamEntry.getKey().startsWith(NEW_PARAM_PREFIX))
+                .filter(migrationParamEntry -> migrationParamEntry.getKey()
+                        .startsWith(NEW_PARAM_PREFIX + configEnum.getType().toString()))
+                .collect(Collectors.toMap(entry -> entry.getKey()
+                                .substring(NEW_PARAM_PREFIX.length() + KEY_SUB_INDEX),
+                        entry -> getParamValueByType(entry.getValue(),
+                                Integer.parseInt(entry.getKey().substring(NEW_PARAM_PREFIX.length()
+                                        + VALUE_TYPE_START_INDEX, NEW_PARAM_PREFIX.length() + VALUE_TYPE_END_INDEX)))));
+        if (!newParamMap.isEmpty()) {
+            toolsParams.putAll(newParamMap);
+        }
+        LOGGER.info("changeToolsYmlParameters need change toolsParams:{}", toolsParams);
+        changeYmlParameters((HashMap<String, Object>) toolsParams, path);
+    }
+
+    /**
+     * Modify the configuration file property information of the tool properties
+     *
+     * @param configEnum configEnum
+     * @param path path
+     */
+    public static void changeToolsPropsParameters(ToolsConfigEnum configEnum, String path) {
+        Hashtable<String, String> oldParams = getPropertiesParameters(PathUtils.combainPath(true,
+                portalControlPath + "config",
+                "migrationConfig.properties"));
+        Map<String, String> toolsParams = toolsMigrationParametersTable.entrySet().stream()
+                .filter(migrationParamEntry -> migrationParamEntry.getKey()
+                        .startsWith(configEnum.getType().toString()))
+                .filter(migrationParamEntry ->
+                        !oldParams.get(migrationParamEntry.getKey()).equals(migrationParamEntry.getValue()))
+                .collect(Collectors.toMap(entry -> entry.getKey().substring(KEY_SUB_INDEX), Map.Entry::getValue));
+        Map<String, String> newParamMap = oldParams.entrySet().stream()
+                .filter(migrationParamEntry -> migrationParamEntry.getKey()
+                        .startsWith(NEW_PARAM_PREFIX + configEnum.getType().toString()))
+                .filter(migrationParamEntry ->
+                        migrationParamEntry.getKey().startsWith(NEW_PARAM_PREFIX))
+                .collect(Collectors.toMap(entry -> entry.getKey().substring(NEW_PARAM_PREFIX.length()
+                                + KEY_SUB_INDEX),
+                        Map.Entry::getValue));
+        if (!newParamMap.isEmpty()) {
+            toolsParams.putAll(newParamMap);
+        }
+        LOGGER.info("changeToolsPropsParameters need change toolsParams:{}", toolsParams);
+        changePropertiesParameters(new Hashtable<>(toolsParams), path);
+    }
+
+    /**
      * Change kafka parameters.
      */
     public static void changeKafkaParameters() {
@@ -1746,6 +1899,172 @@ public class Tools {
     }
 
     /**
+     * confluent params kafka zk register IP port
+     *
+     */
+    public static void changeConfluentParameters() {
+        // connect-avro-standalone.properties 文件修改
+        MigrationConfluentInstanceConfig portalConfig = MigrationConfluentInstanceConfig.getInstanceFromPortalConfig();
+        Hashtable<String, String> connectAvroStandalonePropChangeParam = new Hashtable<>();
+        String schemaRegistryPrefix = "http://";
+        connectAvroStandalonePropChangeParam.put("bootstrap.servers", portalConfig.getKafkaIpPort());
+        connectAvroStandalonePropChangeParam.put("key.converter.schema.registry.url",
+                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+        connectAvroStandalonePropChangeParam.put("value.converter.schema.registry.url",
+                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+        changePropertiesParameters(connectAvroStandalonePropChangeParam,
+                toolsConfigParametersTable.get(Debezium.Connector.CONFIG_PATH));
+        changePropertiesParameters(connectAvroStandalonePropChangeParam,
+                toolsConfigParametersTable.get(Debezium.Source.CONNECTOR_PATH));
+        changePropertiesParameters(connectAvroStandalonePropChangeParam,
+                toolsConfigParametersTable.get(Debezium.Sink.CONNECTOR_PATH));
+        changePropertiesParameters(connectAvroStandalonePropChangeParam,
+                toolsConfigParametersTable.get(Debezium.Source.REVERSE_CONNECTOR_PATH));
+        changePropertiesParameters(connectAvroStandalonePropChangeParam,
+                toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH));
+        // mysql-sink.properties文件修改
+        changeSinglePropertiesParameter("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort(),
+                toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
+        // mysql-source.properties文件修改
+        Hashtable<String, String> mysqlSouceParam = new Hashtable<>();
+        mysqlSouceParam.put("database.history.kafka.bootstrap.servers", portalConfig.getKafkaIpPort());
+        mysqlSouceParam.put("kafka.bootstrap.server", portalConfig.getKafkaIpPort());
+        LOGGER.info("change param = {}, path= {}", mysqlSouceParam,
+                toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
+        changePropertiesParameters(mysqlSouceParam,
+                toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
+        // opengauss-sink.properties文件修改
+        changeSinglePropertiesParameter("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort(),
+                toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONFIG_PATH));
+        // opengauss-source.properties文件修改
+        changeSinglePropertiesParameter("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort(),
+                toolsConfigParametersTable.get(Debezium.Source.REVERSE_CONFIG_PATH));
+    }
+
+    /**
+     * change DataCheck Kafak Params
+     *
+     */
+    public static void changeDataCheckKafakParams() {
+        MigrationConfluentInstanceConfig portalConfig = MigrationConfluentInstanceConfig.getInstanceFromPortalConfig();
+        String schemaRegistryPrefix = "http://";
+        // application-sink.yml文件修改
+        HashMap<String, Object> dataCheckParam = new HashMap<>();
+        dataCheckParam.put("spring.extract.debezium-avro-registry",
+                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+        dataCheckParam.put("spring.kafka.bootstrap-servers", portalConfig.getKafkaIpPort());
+        LOGGER.info("change param = {}, path= {}", dataCheckParam,
+                toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH));
+        changeYmlParameters(dataCheckParam, toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH));
+        // application-source.yml文件修改
+        LOGGER.info("change param = {}, path= {}", dataCheckParam,
+                toolsConfigParametersTable.get(Check.Source.CONFIG_PATH));
+        changeYmlParameters(dataCheckParam, toolsConfigParametersTable.get(Check.Source.CONFIG_PATH));
+        // application.yml文件修改
+        changeSingleYmlParameter("spring.kafka.bootstrap-servers", portalConfig.getKafkaIpPort(),
+                toolsConfigParametersTable.get(Check.CONFIG_PATH));
+    }
+
+    /**
+     *  Modify the input Confluent configuration information when installing the portal
+     *
+     * @param confluentInstanceConfig confluentInstanceConfig
+     */
+    public static void changeConfluentIPAdnPortForInstall(MigrationConfluentInstanceConfig confluentInstanceConfig) {
+        // kafka change
+        Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
+        kafkaConfigTable.put("listeners",
+                "PLAINTEXT://" + confluentInstanceConfig.getKafkaIp() + ":" + confluentInstanceConfig.getKafkaPort());
+        kafkaConfigTable.put("zookeeper.connect", "localhost:" + confluentInstanceConfig.getZookeeperPort());
+        Tools.changePropertiesParameters(kafkaConfigTable, toolsConfigParametersTable.get(Debezium.Kafka.CONFIG_PATH));
+        // zookeeper change
+        Tools.changeSinglePropertiesParameter("clientPort", confluentInstanceConfig.getZookeeperPort(),
+                toolsConfigParametersTable.get(Debezium.Zookeeper.CONFIG_PATH));
+        // schema_registry change
+        Hashtable<String, String> schemaRegistryConfig = new Hashtable<>();
+        schemaRegistryConfig.put("listeners", "http://0.0.0.0:" + confluentInstanceConfig.getSchemaRegistryPort());
+        schemaRegistryConfig.put("kafkastore.connection.url",
+                "localhost:" + confluentInstanceConfig.getZookeeperPort());
+        Tools.changePropertiesParameters(schemaRegistryConfig,
+                toolsConfigParametersTable.get(Debezium.Registry.CONFIG_PATH));
+    }
+
+    /**
+     * Modify the installation directory of the confulent and the path of the configuration file based on the path information passed in by the datakit
+     *
+     */
+    public static void changeConfluentDirFromSysParam() {
+        MigrationConfluentInstanceConfig confluentInstanceConfig =
+                MigrationConfluentInstanceConfig.getSystemParamAndParseEntity();
+        LOGGER.info("get confluentInstanceConfig success start change param");
+        Hashtable<String, String> migrationConfig = new Hashtable<>();
+        migrationConfig.put(Parameter.Port.KAFKA,
+                confluentInstanceConfig.getKafkaIp() + ":" + confluentInstanceConfig.getKafkaPort());
+        migrationConfig.put(Parameter.Port.ZOOKEEPER,
+                confluentInstanceConfig.getZkIp() + ":" + confluentInstanceConfig.getZookeeperPort());
+        migrationConfig.put(Parameter.Port.SCHEMA_REGISTRY,
+                confluentInstanceConfig.getSchemaRegistryIp() + ":" + confluentInstanceConfig.getSchemaRegistryPort());
+        Tools.changePropertiesParameters(migrationConfig,
+                PathUtils.combainPath(true, portalControlPath + "config",
+                        "migrationConfig.properties"));
+        Tools.changePropertiesParameters(migrationConfig, migrationConfigPath);
+        Hashtable<String, String> toolsConfig = new Hashtable<>();
+        if (MigrationConfluentInstanceConfig.ThirdPartySoftwareConfigType.BIND.getCode()
+                .equals(confluentInstanceConfig.getThirdPartySoftwareConfigType())) {
+            LOGGER.info("no need change kafka bind from = {}", confluentInstanceConfig.getKafkaIp());
+            toolsConfig.put(Debezium.Confluent.INSTALL_PATH, toolsConfigParametersTable.get(Debezium.Confluent.PATH));
+            toolsConfigParametersTable.put(Debezium.Confluent.INSTALL_PATH,
+                    toolsConfigParametersTable.get(Debezium.PATH));
+        } else {
+            toolsConfigParametersTable.put(Debezium.Confluent.PATH, PathUtils.combainPath(false,
+                    confluentInstanceConfig.getInstallDir(), Debezium.Confluent.DIR_NAME));
+            toolsConfigParametersTable.put(Debezium.Confluent.INSTALL_PATH, confluentInstanceConfig.getInstallDir());
+            toolsConfig.put(Debezium.Confluent.PATH, toolsConfigParametersTable.get(Debezium.Confluent.PATH));
+            toolsConfig.put(Debezium.Confluent.INSTALL_PATH,
+                    toolsConfigParametersTable.get(Debezium.Confluent.INSTALL_PATH));
+        }
+        Tools.changePropertiesParameters(toolsConfig,
+                PathUtils.combainPath(true, portalControlPath + "config",
+                        "toolspath.properties"));
+        Tools.changePropertiesParameters(toolsConfig, toolsConfigPath);
+    }
+
+    /**
+     * datakit the delivered parameters are initialized into the configuration file
+     *
+     */
+    public static void initMigrationParamsFromProps() {
+        Hashtable<String, String> migrationConfig = new Hashtable<>();
+        Properties properties = System.getProperties();
+        LOGGER.info("properties = {}", properties.toString());
+        properties.keySet().forEach(key -> {
+            String keyStr = String.valueOf(key);
+            if (keyStr.startsWith(NEW_PARAM_PREFIX)) {
+                String migrationValue = System.getProperty(keyStr);
+                if (Integer.parseInt(String.valueOf(keyStr.charAt(NEW_PARAM_PREFIX.length()))) == ToolsConfigEnum
+                        .PORTAL_MIGRATION.getType()) {
+                    migrationConfig.put(keyStr.substring(NEW_PARAM_PREFIX.length() + KEY_SUB_INDEX),
+                            migrationValue);
+                } else {
+                    migrationConfig.put(keyStr, migrationValue);
+                }
+            }
+        });
+        String migrationConfigPath = PathUtils.combainPath(true, portalControlPath + "config",
+                "migrationConfig.properties");
+        if (!migrationConfig.isEmpty()) {
+            Tools.changePropertiesParameters(migrationConfig, migrationConfigPath);
+        }
+        // delete key 参数
+        String portalDeleteKeys = System.getProperty(ToolsConfigEnum.PORTAL_MIGRATION.getConfigName());
+        if (Strings.isBlank(portalDeleteKeys)) {
+            return;
+        }
+        Tools.deletePropParameters(List.of(portalDeleteKeys.split(",")), migrationConfigPath);
+    }
+
+
+    /**
      * Prepare confluent.
      */
     public static void prepareConfluent() {
@@ -1756,13 +2075,170 @@ public class Tools {
         RuntimeExecTools.runShell(buildFileName, workDirectory);
     }
 
+    /**
+     * Configurable keys that are filtered in the blacklist cannot be configured by DataKit
+     *
+     * @param parmaMap parmaMap
+     */
+    private static void filterBlackToolsParams(Map parmaMap) {
+        String blackList = Tools.getSinglePropertiesParameter(TOOLS_BLACK_LIST_CONFIG_KEY,
+                PathUtils.combainPath(true, portalControlPath + "config",
+                "migrationConfig.properties"));
+        if (!Strings.isBlank(blackList)) {
+            String[] blackArr = blackList.split("\\|");
+            List.of(blackArr).forEach(parmaMap.keySet()::remove);
+        }
+    }
 
     /**
-     * Start kafka.
+     * Load the tool's configuration file information and write to the log
+     *
+     */
+    public static void loadToolsConfig() {
+        String portalConfigPath = PathUtils.combainPath(true, portalControlPath + "config",
+                "migrationConfig.properties");
+        printPropsConfigParma(portalConfigPath, ToolsConfigEnum.PORTAL_MIGRATION);
+        String chameleonConfigOldPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config",
+                "chameleon", "config-example.yml");
+        printYmlConfigParma(chameleonConfigOldPath, ToolsConfigEnum.CHAMELEON_CONFIG);
+        String checkConfigParamsPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config",
+                "datacheck", "application.yml");
+        printYmlConfigParma(checkConfigParamsPath, ToolsConfigEnum.DATA_CHECK_APPLICATION);
+        String checkConfigSinkParamsPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config",
+                "datacheck", "application-sink.yml");
+        printYmlConfigParma(checkConfigSinkParamsPath, ToolsConfigEnum.DATA_CHECK_APPLICATION_SINK);
+        String checkConfigSourceParamsPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config",
+                "datacheck", "application-source.yml");
+        printYmlConfigParma(checkConfigSourceParamsPath, ToolsConfigEnum.DATA_CHECK_APPLICATION_SOURCE);
+        String debeziumSinkConfigIncrementParametersPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config", "debezium", "mysql-sink.properties");
+        printPropsConfigParma(debeziumSinkConfigIncrementParametersPath, ToolsConfigEnum.DEBEZIUM_MYSQL_SINK);
+        String debeziumSourceConfigIncrementParametersPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config", "debezium", "mysql-source.properties");
+        printPropsConfigParma(debeziumSourceConfigIncrementParametersPath, ToolsConfigEnum.DEBEZIUM_MYSQL_SOURCE);
+        String debeziumSourceConfigReverseParametersPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config", "debezium", "opengauss-source.properties");
+        printPropsConfigParma(debeziumSourceConfigReverseParametersPath, ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SOURCE);
+        String debeziumSinkConfigReverseParametersPath = PathUtils.combainPath(true,
+                PortalControl.portalWorkSpacePath + "config", "debezium", "opengauss-sink.properties");
+        printPropsConfigParma(debeziumSourceConfigReverseParametersPath, ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SINK);
+    }
+
+    private static void printYmlConfigParma(String checkConfigParamsPath, ToolsConfigEnum configEnum) {
+        Map<String, Object> configParams = getYmlParameters(checkConfigParamsPath);
+        filterBlackToolsParams(configParams);
+        LOGGER.info("{}{}{}", configEnum.getStartFromLog(),
+                JSONObject.toJSONString(configParams), configEnum.getEndStrFromLog());
+        changePortalConfig(configParams, configEnum);
+    }
+
+    private static void printPropsConfigParma(String checkConfigParamsPath, ToolsConfigEnum configEnum) {
+        Map<String, String> configParameters = getPropertiesParameters(checkConfigParamsPath);
+        filterBlackToolsParams(configParameters);
+        LOGGER.info("{}{}{}", configEnum.getStartFromLog(),
+                JSONObject.toJSONString(configParameters),
+                configEnum.getEndStrFromLog());
+        if (configEnum.getType().equals(ToolsConfigEnum.PORTAL_MIGRATION.getType())) {
+            LOGGER.info("portal no need change");
+            return;
+        }
+        changePortalConfig(configParameters, configEnum);
+    }
+
+    /**
+     * mapping CriteriaFile type FieldtypeFieldValue
+     *
+     * @param parmaMap parmaMap
+     * @param toolsConfigEnum toolsConfigEnum
+     */
+    private static void changePortalConfig(Map parmaMap, ToolsConfigEnum toolsConfigEnum) {
+        Hashtable<String, String> portalParamsMap = new Hashtable<>();
+        parmaMap.forEach((key, value) -> {
+            portalParamsMap.put(toolsConfigEnum.getType() + "." + getParamValueType(value) + "." + key,
+                    getParamStringValue(value));
+        });
+        Tools.changePropertiesParameters(portalParamsMap, PathUtils.combainPath(true,
+                portalControlPath + "config",
+                "migrationConfig.properties"));
+    }
+
+    /**
+     * Determine the data type based on the value passed in
+     *
+     * @param value value
+     * @return Integer Integer
+     */
+    public static Integer getParamValueType(Object value) {
+        if (value instanceof List) {
+            return TaskParamType.TYPE_LIST.getCode();
+        } else if (value instanceof Integer) {
+            return TaskParamType.TYPE_NUMBER.getCode();
+        } else if (value instanceof Boolean) {
+            return TaskParamType.TYPE_BOOLEAN.getCode();
+        } else {
+            return TaskParamType.TYPE_STRING.getCode();
+        }
+    }
+
+    /**
+     * convert Based On TheValueAndType PassedIn
+     *
+     * @param value value
+     * @param paramType paramType
+     * @return Object
+     */
+    public static Object getParamValueByType(String value, Integer paramType) {
+        try {
+            if (paramType.equals(TaskParamType.TYPE_NUMBER.getCode())) {
+                return Integer.parseInt(String.valueOf(value));
+            }
+            if (paramType.equals(TaskParamType.TYPE_BOOLEAN.getCode())) {
+                return Boolean.parseBoolean(value);
+            }
+            if (paramType.equals(TaskParamType.TYPE_LIST.getCode())) {
+                return List.of(value.split(","));
+            }
+        } catch (Exception e) {
+            LOGGER.error("{} parse exception : ", value, e);
+        }
+        return value;
+    }
+
+    /**
+     * getParamStringValue to string
+     *
+     * @param value  value
+     * @return String  String
+     */
+    public static String getParamStringValue(Object value) {
+        if (value instanceof List) {
+            return String.join(",", (List<String>) value);
+        }
+        return value.toString();
+    }
+
+
+    /**
+     * start Kafka
+     *
      */
     public static void startKafka() {
         PortalControl.initHashTable();
         Task.initRunTaskHandlerHashMap();
+        PortalControl.initToolsConfigParametersTableConfluent();
+        Task.setConfluentConfig(toolsConfigParametersTable, Task.getTaskProcessMap());
+        MigrationConfluentInstanceConfig confluentInstanceConfig =
+                MigrationConfluentInstanceConfig.getSystemParamAndParseEntity();
+        if (confluentInstanceConfig.getThirdPartySoftwareConfigType()
+                .equals(MigrationConfluentInstanceConfig.ThirdPartySoftwareConfigType.BIND.getCode())) {
+            LOGGER.info("Start kafka success. bind from = {}", confluentInstanceConfig.getKafkaIp());
+            return;
+        }
+        Tools.changeConfluentIPAdnPortForInstall(confluentInstanceConfig);
         changeKafkaParameters();
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String confluentPath = hashtable.get(Debezium.Confluent.PATH);
@@ -1882,6 +2358,40 @@ public class Tools {
     }
 
     /**
+     * modify TheLogLevel Of DataCheck
+     *
+     * @param logPatternFile logPatternFile
+     */
+    public static void changeDatacheckLogLevel(String logPatternFile) {
+        if (Strings.isBlank(toolsMigrationParametersTable.get(MigrationParameters.Log.GLOBAL_LOG_LEVEL))) {
+            LOGGER.info("global log level param is empty");
+            return;
+        }
+        Hashtable<String, String> hashtable = toolsConfigParametersTable;
+        Optional<Document> document = XmlUtils.loadXml(hashtable.get(Check.LOG_PATTERN_PATH));
+        if (document.isEmpty()) {
+            LOGGER.error("xml get logHome is empty");
+            return;
+        }
+        Optional<String> name = XmlUtils.getLog4j2Properties("name", document.get());
+        if (name.isEmpty()) {
+            LOGGER.error("get xml name is empty");
+            return;
+        }
+        String logHome = " <Property name=\"LOG_LEVEL\">";
+        String path = hashtable.get(logPatternFile);
+        String log = LogView.getFullLog(path);
+        for (String str : log.split(System.lineSeparator())) {
+            if (!str.contains(logHome)) {
+                continue;
+            }
+            String newLogLevel =
+                    toolsMigrationParametersTable.get(MigrationParameters.Log.GLOBAL_LOG_LEVEL).toUpperCase();
+            Tools.changeFile(name.get(), newLogLevel, path);
+        }
+    }
+
+    /**
      * Change value string.
      *
      * @param oldString the old string
@@ -1990,5 +2500,50 @@ public class Tools {
         if (maxTime <= 0) {
             LOGGER.error("{} timed out.", information);
         }
+    }
+
+    /**
+     * Retrieve the keys to be deleted based on the environment variables
+     *
+     * @param configName configName
+     * @param path path
+     */
+    public static void deleteParams(String configName, String path) {
+        String deleteKeys = System.getProperty(configName);
+        if (Strings.isBlank(deleteKeys)) {
+            LOGGER.info("{} no need delete keys", configName);
+            return;
+        }
+        if (configName.endsWith("yml")) {
+            deleteYmlParameters(List.of(deleteKeys.split(",")), path);
+        } else {
+            deletePropParameters(List.of(deleteKeys.split(",")), path);
+        }
+    }
+
+    /**
+     * Modify the configuration parameters of datacheck The parameters are passed in from the datakit
+     *
+     */
+    public static void changeDataCheckParmasFromEnv() {
+        Tools.changeToolsYmlParameters(ToolsConfigEnum.DATA_CHECK_APPLICATION,
+                PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH));
+        Tools.changeToolsYmlParameters(ToolsConfigEnum.DATA_CHECK_APPLICATION_SINK,
+                PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH));
+        Tools.changeToolsYmlParameters(ToolsConfigEnum.DATA_CHECK_APPLICATION_SOURCE,
+                PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH));
+    }
+
+    /**
+     * delete The Parameter Configuration Of Datacheck
+     *
+     */
+    public static void deleteDataCheckParamsFromEnv() {
+        Tools.deleteParams(ToolsConfigEnum.DATA_CHECK_APPLICATION.getConfigName(),
+                PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH));
+        Tools.deleteParams(ToolsConfigEnum.DATA_CHECK_APPLICATION_SINK.getConfigName(),
+                PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH));
+        Tools.deleteParams(ToolsConfigEnum.DATA_CHECK_APPLICATION_SOURCE.getConfigName(),
+                PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH));
     }
 }

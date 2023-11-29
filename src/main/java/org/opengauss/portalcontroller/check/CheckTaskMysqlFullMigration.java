@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller.check;
 
+import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.*;
 import org.opengauss.portalcontroller.constant.*;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -28,6 +29,7 @@ import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 
 import static org.opengauss.portalcontroller.Plan.runningTaskList;
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
 /**
  * The type Check task mysql full migration.
@@ -167,6 +169,10 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
             hashMap.put("sources.mysql.csv_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "tmp"));
             hashMap.put("sources.mysql.out_dir", PathUtils.combainPath(false, PortalControl.portalWorkSpacePath + "tmp"));
             hashMap.put("dump_json", "yes");
+            if (Strings.isNotBlank(toolsMigrationParametersTable.get(MigrationParameters.Log.GLOBAL_LOG_LEVEL))) {
+                hashMap.put("log_level",
+                        toolsMigrationParametersTable.get(MigrationParameters.Log.GLOBAL_LOG_LEVEL).toLowerCase());
+            }
             Tools.changeYmlParameters(hashMap, chameleonConfigPath);
             Tools.changeFullMigrationParameters(PortalControl.toolsMigrationParametersTable);
         } catch (PortalException e) {
@@ -187,6 +193,10 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         try {
             changeParameters(workspaceId);
             copyConfigFiles(workspaceId);
+            Tools.changeToolsYmlParameters(ToolsConfigEnum.CHAMELEON_CONFIG,
+                    PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH));
+            Tools.deleteParams(ToolsConfigEnum.CHAMELEON_CONFIG.getConfigName(),
+                    PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH));
         } catch (PortalException e) {
             LOGGER.error(e.toString());
             Tools.shutDownPortal(e.toString());

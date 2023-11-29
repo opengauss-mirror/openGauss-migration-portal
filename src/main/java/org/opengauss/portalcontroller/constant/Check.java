@@ -122,6 +122,16 @@ public interface Check {
     String DROP_LOGICAL_SLOT = "drop.logical.slot.on.stop";
 
     /**
+     * The constant tools.black.list.config.key.
+     */
+    String TOOLS_BLACK_LIST_CONFIG_KEY = "tools.black.list.config.key";
+
+    /**
+     * The constant underline.replace.space.keys.
+     */
+    String UNDERLINE_REPLACE_SPACE_KEYS = "underline.replace.space.keys";
+
+    /**
      * The interface Parameters.
      */
     interface Parameters {

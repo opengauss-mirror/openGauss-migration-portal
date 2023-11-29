@@ -15,16 +15,26 @@
 
 package org.opengauss.portalcontroller.check;
 
+import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
-import org.opengauss.portalcontroller.*;
+import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.JdbcTools;
+import org.opengauss.portalcontroller.Plan;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.Task;
+import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
+import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
-import org.opengauss.portalcontroller.software.*;
+import org.opengauss.portalcontroller.software.Confluent;
+import org.opengauss.portalcontroller.software.ConnectorMysql;
+import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +42,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+
+import static org.opengauss.portalcontroller.constant.Debezium.Connector.LOG_PATTERN_PATH;
 
 /**
  * The type Check task incremental migration.
@@ -81,12 +93,28 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         hashtable2.put("xlog.location", hashtable.get(Status.XLOG_PATH));
         hashtable2.put("fail.sql.path", incrementalFolder);
         Tools.changePropertiesParameters(hashtable2, hashtable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
+        Tools.changeConfluentParameters();
+        if (Strings.isNotBlank(PortalControl.toolsMigrationParametersTable
+                .get(MigrationParameters.Log.GLOBAL_LOG_LEVEL))) {
+            Tools.changeSinglePropertiesParameter("log4j.rootLogger",
+                    PortalControl.toolsMigrationParametersTable.get(MigrationParameters.Log.GLOBAL_LOG_LEVEL)
+                            .toUpperCase() + ", stdout, connectAppender",
+                    PortalControl.toolsConfigParametersTable.get(LOG_PATTERN_PATH));
+        }
     }
 
     @Override
     public void prepareWork(String workspaceId) {
         Tools.changeIncrementalMigrationParameters(PortalControl.toolsMigrationParametersTable);
         changeParameters(workspaceId);
+        Tools.changeToolsPropsParameters(ToolsConfigEnum.DEBEZIUM_MYSQL_SOURCE,
+                PortalControl.toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
+        Tools.changeToolsPropsParameters(ToolsConfigEnum.DEBEZIUM_MYSQL_SINK,
+                PortalControl.toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
+        Tools.deleteParams(ToolsConfigEnum.DEBEZIUM_MYSQL_SOURCE.getConfigName(),
+                PortalControl.toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
+        Tools.deleteParams(ToolsConfigEnum.DEBEZIUM_MYSQL_SINK.getConfigName(),
+                PortalControl.toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH));
         if (checkAnotherConnectExists()) {
             LOGGER.error("Another connector is running.Cannot run incremental migration whose workspace id is " + workspaceId + " .");
             return;
@@ -98,7 +126,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
             Tools.shutDownPortal(e.toString());
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        Tools.changeConnectXmlFile(workspaceId + "_source", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
+        Tools.changeConnectXmlFile(workspaceId + "_source", hashtable.get(LOG_PATTERN_PATH));
         String standaloneSourcePath = hashtable.get(Debezium.Source.CONNECTOR_PATH);
         int sourcePort = StartPort.REST_MYSQL_SOURCE + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sourcePort, 1, 1000).get(0);
@@ -113,7 +141,7 @@ public class CheckTaskIncrementalMigration implements CheckTask {
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String standaloneSinkFilePath = hashtable.get(Debezium.Sink.CONNECTOR_PATH);
-        Tools.changeConnectXmlFile(workspaceId + "_sink", hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
+        Tools.changeConnectXmlFile(workspaceId + "_sink", hashtable.get(LOG_PATTERN_PATH));
         int sinkPort = StartPort.REST_MYSQL_SINK + PortalControl.portId * 10;
         int port = Tools.getAvailablePorts(sinkPort, 1, 1000).get(0);
         Tools.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSinkFilePath);

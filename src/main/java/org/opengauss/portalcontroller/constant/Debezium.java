@@ -114,6 +114,16 @@ public interface Debezium {
         String NAME = "confluent";
 
         /**
+         * unzip dir name
+         */
+        String DIR_NAME = "confluent-5.5.1";
+
+        /**
+         * install path
+         */
+        String INSTALL_PATH = "confluent.install.path";
+
+        /**
          * The constant PATH.
          */
         String PATH = "confluent.path";
@@ -282,6 +292,16 @@ public interface Debezium {
          * The constant REVERSE_LOG_PATH.
          */
         String REVERSE_LOG_PATH = "source.reverse.log.path";
+
+        /**
+         * The constant REVERSE_LOG_PATH.
+         */
+        String INCREMENTAL_SOURCE_NUMA_PARAMS = "incremental.source.numa.params";
+
+        /**
+         * The constant REVERSE_LOG_PATH.
+         */
+        String REVERSE_SOURCE_NUMA_PARAMS = "reverse.source.numa.params";
     }
 
     /**
@@ -322,6 +342,16 @@ public interface Debezium {
          * The constant REVERSE_LOG_PATH.
          */
         String REVERSE_LOG_PATH = "sink.reverse.log.path";
+
+        /**
+         * The constant REVERSE_LOG_PATH.
+         */
+        String REVERSE_SINK_NUMA_PARAMS = "reverse.sink.numa.params";
+
+        /**
+         * The constant REVERSE_LOG_PATH.
+         */
+        String INCREMENTAL_SINK_NUMA_PARAMS = "incremental.sink.numa.params";
 
         /**
          * The interface Mysql.

@@ -172,4 +172,20 @@ public interface Parameter {
          */
         String SCHEMA_REGISTRY = "confluent.port";
     }
+
+    /**
+     * ThirdPartySoftwareInstanceParam
+     *
+     * @author: www
+     * @date: 2023/11/28 12:06
+     * @description: msg
+     * @since: 1.1
+     * @version: 1.1
+     */
+    interface ThirdPartySoftwareInstanceParam {
+        /**
+         *  MigrationThirdPartySoftwareInstanceConfig
+         */
+        String THIRD_PARTY_SOFTWARE_INSTANCE_PARAM = "MigrationThirdPartySoftwareInstanceConfig";
+    }
 }

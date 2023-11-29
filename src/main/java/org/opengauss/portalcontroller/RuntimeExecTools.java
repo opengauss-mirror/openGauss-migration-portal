@@ -247,9 +247,31 @@ public class RuntimeExecTools {
         if (file.exists()) {
             String fileName = file.getName();
             String newFilePath = directory + fileName;
-            boolean exist = new File(newFilePath).exists();
-            if (!exist || recovery) {
+            boolean isExist = new File(newFilePath).exists();
+            if (!isExist || recovery) {
                 String command = "cp -R " + filePath + " " + directory;
+                executeOrder(command, 60000, PortalControl.portalErrorPath);
+            }
+        } else {
+            LOGGER.error("File " + filePath + " not exist.");
+        }
+    }
+
+    /**
+     * Copy files to a new directory If the files are already in the new directory, the files will not be overwritten
+     *
+     * @param filePath  the file path
+     * @param directory the directory
+     * @throws PortalException the portal exception
+     */
+    public static void copyFileIfNotExist(String filePath, String directory) throws PortalException {
+        File file = new File(filePath);
+        if (file.exists()) {
+            String fileName = file.getName();
+            String newFilePath = directory + fileName;
+            boolean isExist = new File(newFilePath).exists();
+            if (!isExist) {
+                String command = "cp -R -n " + filePath + " " + directory;
                 executeOrder(command, 60000, PortalControl.portalErrorPath);
             }
         } else {
@@ -346,6 +368,7 @@ public class RuntimeExecTools {
      */
     public static void executeStartOrder(String command, int time, String workDirectory, String errorFilePath,
                                          boolean shouldChangeOutput, String information) {
+        LOGGER.info("start command = {}", command);
         try {
             if (!workDirectory.equals("")) {
                 RuntimeExecTools.executeOrder(command, time, workDirectory, errorFilePath, shouldChangeOutput, new ArrayList<>());

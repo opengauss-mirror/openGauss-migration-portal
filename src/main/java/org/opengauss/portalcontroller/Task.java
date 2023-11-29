@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller;
 
+import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.check.CheckTaskFullDatacheck;
 import org.opengauss.portalcontroller.check.CheckTaskIncrementalDatacheck;
 import org.opengauss.portalcontroller.check.CheckTaskIncrementalMigration;
@@ -146,15 +147,6 @@ public class Task {
     public static void initTaskProcessMap() {
         HashMap<String, String> tempTaskProcessMap = new HashMap<>();
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
-        String confluentPath = hashtable.get(Debezium.Confluent.PATH);
-        String zookeeperPath = PathUtils.combainPath(true, confluentPath + "etc", "kafka",
-                "zookeeper.properties");
-        tempTaskProcessMap.put(Method.Run.ZOOKEEPER, "QuorumPeerMain " + zookeeperPath);
-        String kafkaPath = PathUtils.combainPath(true, confluentPath + "etc", "kafka", "server.properties");
-        tempTaskProcessMap.put(Method.Run.KAFKA, "Kafka " + kafkaPath);
-        String registryName = PathUtils.combainPath(true, confluentPath + "etc", "schema-registry",
-                "schema-registry.properties");
-        tempTaskProcessMap.put(Method.Run.REGISTRY, "SchemaRegistryMain " + registryName);
         tempTaskProcessMap.put(Method.Run.CONNECT_SOURCE, "ConnectStandalone "
                 + hashtable.get(Debezium.Source.CONNECTOR_PATH)
                 + " " + hashtable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH));
@@ -179,7 +171,27 @@ public class Task {
         String checkProcessName = String.format("spring.config.additional-location=%s -jar %s > /dev/null &",
                 hashtable.get(Check.CONFIG_PATH), checkJarName);
         tempTaskProcessMap.put(Method.Run.CHECK, checkProcessName);
+        setConfluentConfig(hashtable, tempTaskProcessMap);
         setTaskProcessMap(tempTaskProcessMap);
+    }
+
+    /**
+     * Set the configuration information of Confluent Kafka zk register
+     *
+     * @param hashtable hashtable
+     * @param tempTaskProcessMap tempTaskProcessMap
+     */
+    public static void setConfluentConfig(Hashtable<String, String> hashtable,
+                                          HashMap<String, String> tempTaskProcessMap) {
+        String confluentPath = hashtable.get(Debezium.Confluent.PATH);
+        String zookeeperPath = PathUtils.combainPath(true, confluentPath + "etc", "kafka",
+                "zookeeper.properties");
+        tempTaskProcessMap.put(Method.Run.ZOOKEEPER, "QuorumPeerMain " + zookeeperPath);
+        String kafkaPath = PathUtils.combainPath(true, confluentPath + "etc", "kafka", "server.properties");
+        tempTaskProcessMap.put(Method.Run.KAFKA, "Kafka " + kafkaPath);
+        String registryName = PathUtils.combainPath(true, confluentPath + "etc", "schema-registry",
+                "schema-registry.properties");
+        tempTaskProcessMap.put(Method.Run.REGISTRY, "SchemaRegistryMain " + registryName);
     }
 
     /**
@@ -483,7 +495,12 @@ public class Task {
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         Tools.runCurl(PortalControl.portalWorkSpacePath + "curl.log", connectConfigPath);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
+        String numaParams =
+                PortalControl.toolsMigrationParametersTable.get(Debezium.Source.INCREMENTAL_SOURCE_NUMA_PARAMS);
         String order = executeFile + " -daemon " + connectConfigPath + " " + sourceConfigPath;
+        if (Strings.isNotBlank(numaParams)) {
+            order = numaParams + " " + order;
+        }
         RuntimeExecTools.executeStartOrder(order, 3000, "", errorPath, false, "Start mysql connector source");
     }
 
@@ -497,7 +514,11 @@ public class Task {
         String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH);
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
+        String numaParams = PortalControl.toolsMigrationParametersTable.get(Debezium.Sink.INCREMENTAL_SINK_NUMA_PARAMS);
         String order = executeFile + " -daemon " + connectConfigPath + " " + sinkConfigPath;
+        if (Strings.isNotBlank(numaParams)) {
+            order = numaParams + " " + order;
+        }
         RuntimeExecTools.executeStartOrder(order, 3000, "", errorPath, false, "Start mysql connector sink");
     }
 
@@ -512,7 +533,11 @@ public class Task {
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         Tools.runCurl(PortalControl.portalWorkSpacePath + "curl-reverse.log", connectConfigPath);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
+        String numaParams = PortalControl.toolsMigrationParametersTable.get(Debezium.Source.REVERSE_SOURCE_NUMA_PARAMS);
         String order = executeFile + " -daemon " + connectConfigPath + " " + sourceConfigPath;
+        if (Strings.isNotBlank(numaParams)) {
+            order = numaParams + " " + order;
+        }
         RuntimeExecTools.executeStartOrder(order, 5000, "", errorPath, false, "Start opengauss connector source");
     }
 
@@ -527,7 +552,11 @@ public class Task {
         String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONFIG_PATH);
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
+        String numaParams = PortalControl.toolsMigrationParametersTable.get(Debezium.Sink.REVERSE_SINK_NUMA_PARAMS);
         String order = executeFile + " -daemon " + connectConfigPath + " " + sinkConfigPath;
+        if (Strings.isNotBlank(numaParams)) {
+            order = numaParams + " " + order;
+        }
         RuntimeExecTools.executeStartOrder(order, 5000, "", errorPath, false, "Start opengauss connector sink");
     }
 
@@ -705,13 +734,8 @@ public class Task {
     }
 
     /**
-     * 启动datacheck
+     * Start Datacheck
      *
-     * @author: www
-     * @date: 2023/11/24 14:13
-     * @description: 启动datacheck
-     * @since: 1.1
-     * @version: 1.1
      * @param logFileListener DataCheckLogFileCheck
      */
     public static void startDataCheck(LogFileListener logFileListener) {

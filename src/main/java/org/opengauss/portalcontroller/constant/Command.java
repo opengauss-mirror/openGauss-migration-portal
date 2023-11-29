@@ -393,9 +393,14 @@ public interface Command {
         String HELP = "help";
 
         /**
-         * The constant HELP.
+         * The constant status.
          */
         String STATUS = "status";
+
+        /**
+         * The constant load config.
+         */
+        String LOAD = "load";
     }
 
     /**
@@ -406,5 +411,21 @@ public interface Command {
          * check portal status
          */
         String CHECK_POTAL_STATUS = "check portal status";
+    }
+
+    /**
+     * LoadToolsConfig
+     *
+     * @author: www
+     * @date: 2023/11/28 12:08
+     * @description: msg
+     * @since: 1.1
+     * @version: 1.1
+     */
+    interface LoadToolsConfig {
+        /**
+         * load tools config
+         */
+        String LOAD_TOOLS_CONFIG = "load tools config";
     }
 }

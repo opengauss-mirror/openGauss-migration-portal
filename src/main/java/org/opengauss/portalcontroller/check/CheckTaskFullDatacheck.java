@@ -82,6 +82,9 @@ public class CheckTaskFullDatacheck implements CheckTask {
         Tools.changeSingleYmlParameter("spring.extract.debezium-enable", false, hashtable.get(Check.Sink.CONFIG_PATH));
         Tools.changeSingleYmlParameter("data.check.data-path", hashtable.get(Check.Result.FULL), hashtable.get(Check.CONFIG_PATH));
         Tools.changeMigrationDatacheckParameters(PortalControl.toolsMigrationParametersTable);
+        Tools.changeDataCheckKafakParams();
+        Tools.changeDataCheckParmasFromEnv();
+        Tools.deleteDataCheckParamsFromEnv();
     }
 
     @Override

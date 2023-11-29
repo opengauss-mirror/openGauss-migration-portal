@@ -335,7 +335,7 @@ public final class Plan {
             Tools.createFile(workspacePath.getWorkspacePath(), false);
             Tools.createFile(PathUtils.combainPath(false, path, "tmp"), false);
             Tools.createFile(workspacePath.getWorkspaceLogPath(), false);
-            RuntimeExecTools.copyFile(PathUtils.combainPath(false, PortalControl.portalControlPath + "config"), path, false);
+            RuntimeExecTools.copyFileIfNotExist(PathUtils.combainPath(false, PortalControl.portalControlPath + "config"), path);
             PortalControl.initHashTable();
             Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
             Tools.createFile(hashtable.get(Status.FOLDER), false);
@@ -358,6 +358,7 @@ public final class Plan {
             Tools.changeDatacheckLogPath(Check.LOG_PATTERN_PATH);
             Tools.changeDatacheckLogPath(Check.Source.LOG_PATTERN_PATH);
             Tools.changeDatacheckLogPath(Check.Sink.LOG_PATTERN_PATH);
+            Tools.changeDatacheckLogLevel(Check.LOG_PATTERN_PATH);
             Tools.changeCommandLineParameters();
         } catch (PortalException e) {
             e.setRequestInformation("Create workspace failed");

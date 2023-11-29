@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller;
 
+import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.command.ConcreteCommand;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -42,6 +43,9 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.opengauss.portalcontroller.Tools.initMigrationParamsFromProps;
+import static org.opengauss.portalcontroller.constant.Check.UNDERLINE_REPLACE_SPACE_KEYS;
 
 /**
  * Portal control.
@@ -173,6 +177,7 @@ public class PortalControl {
         initCommandLineParameters();
         initValidOrderList();
         initPortalPath();
+        initMigrationParamsFromProps();
         Plan.createWorkspace(workspaceId);
         Task.initMethodNameMap();
         Task.initTaskProcessMap();
@@ -299,6 +304,24 @@ public class PortalControl {
         Tools.getParameterCommandLineFirst(PortalControl.toolsConfigParametersTable, PortalControl.toolsConfigPath);
         PortalControl.initToolsConfigParametersTable();
         Tools.getParameterCommandLineFirst(PortalControl.toolsMigrationParametersTable, PortalControl.migrationConfigPath);
+        replaceUnderLineToSpace();
+    }
+
+    private static void replaceUnderLineToSpace() {
+        String keysList = Tools.getSinglePropertiesParameter(UNDERLINE_REPLACE_SPACE_KEYS,
+                PathUtils.combainPath(true, portalControlPath + "config",
+                        "migrationConfig.properties"));
+        if (!Strings.isBlank(keysList)) {
+            for (String key : keysList.split("\\|")) {
+                if (PortalControl.toolsMigrationParametersTable.containsKey(key)) {
+                    PortalControl.toolsMigrationParametersTable.put(key,
+                            PortalControl.toolsMigrationParametersTable.get(key)
+                                    .replaceAll("&&&", " "));
+                    LOGGER.info("replaceUnderLineToSpace==============={}",
+                            PortalControl.toolsMigrationParametersTable.get(key));
+                }
+            }
+        }
     }
 
     /**
@@ -466,6 +489,7 @@ public class PortalControl {
         validOrderList.add(Command.Run.INCREMENTAL_MIGRATION);
         validOrderList.add(Command.Run.REVERSE_MIGRATION);
         validOrderList.add(Command.CheckPortalStatus.CHECK_POTAL_STATUS);
+        validOrderList.add(Command.LoadToolsConfig.LOAD_TOOLS_CONFIG);
     }
 
     /**
@@ -515,17 +539,9 @@ public class PortalControl {
      */
     public static void initToolsConfigParametersTable() {
         WorkspacePath workspacePath = WorkspacePath.getInstance(portalControlPath, workspaceId);
-        String confluentPath = toolsConfigParametersTable.get(Debezium.Confluent.PATH);
         String workPath = PortalControl.portalWorkSpacePath;
         String workConfigDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(), "debezium");
         String workConfigDataCheckPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(), "datacheck");
-        String portalPath = PortalControl.portalControlPath;
-        toolsConfigParametersTable.put(Debezium.Zookeeper.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "kafka", "zookeeper.properties"));
-        toolsConfigParametersTable.put(Debezium.Kafka.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "kafka", "server.properties"));
-        toolsConfigParametersTable.put(Debezium.Registry.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry.properties"));
-        toolsConfigParametersTable.put(Debezium.Zookeeper.TMP_PATH, PathUtils.combainPath(true, portalPath + "tmp", "zookeeper"));
-        toolsConfigParametersTable.put(Debezium.Kafka.TMP_PATH, PathUtils.combainPath(true, portalPath + "tmp", "kafka-logs"));
-        toolsConfigParametersTable.put(Debezium.Confluent.CONFIG_PATH, PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry.properties"));
         toolsConfigParametersTable.put(Debezium.CONFIG_PATH, workConfigDebeziumPath);
         toolsConfigParametersTable.put(Debezium.Connector.CONFIG_PATH, workConfigDebeziumPath + "connect-avro-standalone.properties");
         toolsConfigParametersTable.put(Debezium.Source.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-source.properties");
@@ -561,7 +577,6 @@ public class PortalControl {
         toolsConfigParametersTable.put(Check.Result.FULL_CURRENT, PathUtils.combainPath(false, workPath + "check_result", "result"));
         toolsConfigParametersTable.put(Check.Result.INCREMENTAL, PathUtils.combainPath(false, workPath + "check_result", "incremental"));
         toolsConfigParametersTable.put(Check.Result.REVERSE, PathUtils.combainPath(false, workPath + "check_result", "reverse"));
-        toolsConfigParametersTable.put(Debezium.Connector.LOG_PATTERN_PATH, PathUtils.combainPath(true, confluentPath + "etc", "kafka", "connect-log4j.properties"));
         String venvPath = toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         toolsConfigParametersTable.put(Chameleon.RUNNABLE_FILE_PATH, PathUtils.combainPath(true, venvPath + "venv", "bin", "chameleon"));
         toolsConfigParametersTable.put(Chameleon.CONFIG_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceConfigPath(), "chameleon", "default_" + workspaceId + ".yml"));
@@ -569,15 +584,45 @@ public class PortalControl {
         toolsConfigParametersTable.put(Parameter.INPUT_ORDER_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceConfigPath(), "input"));
         String workLogDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceLogPath(), "debezium");
         toolsConfigParametersTable.put(Debezium.LOG_PATH, workLogDebeziumPath);
-        String confluentLogPath = PathUtils.combainPath(false, confluentPath, "logs");
-        toolsConfigParametersTable.put(Debezium.Zookeeper.LOG_PATH, confluentLogPath + "server.log");
-        toolsConfigParametersTable.put(Debezium.Kafka.LOG_PATH, confluentLogPath + "server.log");
-        toolsConfigParametersTable.put(Debezium.Registry.LOG_PATH, confluentLogPath + "schema-registry.log");
         toolsConfigParametersTable.put(Debezium.Source.LOG_PATH, workLogDebeziumPath + "connect_source.log");
         toolsConfigParametersTable.put(Debezium.Sink.LOG_PATH, workLogDebeziumPath + "connect_sink.log");
         toolsConfigParametersTable.put(Debezium.Source.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_source.log");
         toolsConfigParametersTable.put(Debezium.Sink.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_sink.log");
         toolsConfigParametersTable.put(Parameter.ERROR_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "error.log"));
+        initToolsConfigParametersTableConfluent();
+    }
+
+    /**
+     * initialize TheConfluentConfiguration Parameters
+     *
+     */
+    public static void initToolsConfigParametersTableConfluent() {
+        String confluentPath = toolsConfigParametersTable.get(Debezium.Confluent.PATH);
+        toolsConfigParametersTable.put(Debezium.Zookeeper.CONFIG_PATH,
+                PathUtils.combainPath(true, confluentPath
+                        + "etc", "kafka", "zookeeper.properties"));
+        toolsConfigParametersTable.put(Debezium.Kafka.CONFIG_PATH,
+                PathUtils.combainPath(true, confluentPath + "etc",
+                        "kafka", "server.properties"));
+        toolsConfigParametersTable.put(Debezium.Registry.CONFIG_PATH,
+                PathUtils.combainPath(true, confluentPath
+                        + "etc", "schema-registry", "schema-registry.properties"));
+        String portalPath = PortalControl.portalControlPath;
+        toolsConfigParametersTable.put(Debezium.Zookeeper.TMP_PATH,
+                PathUtils.combainPath(true, portalPath + "tmp",
+                        "zookeeper"));
+        toolsConfigParametersTable.put(Debezium.Kafka.TMP_PATH,
+                PathUtils.combainPath(true, portalPath + "tmp",
+                        "kafka-logs"));
+        toolsConfigParametersTable.put(Debezium.Confluent.CONFIG_PATH,
+                PathUtils.combainPath(true, confluentPath
+                        + "etc", "schema-registry", "schema-registry.properties"));
+        toolsConfigParametersTable.put(Debezium.Connector.LOG_PATTERN_PATH, PathUtils.combainPath(true,
+                confluentPath + "etc", "kafka", "connect-log4j.properties"));
+        String confluentLogPath = PathUtils.combainPath(false, confluentPath, "logs");
+        toolsConfigParametersTable.put(Debezium.Zookeeper.LOG_PATH, confluentLogPath + "server.log");
+        toolsConfigParametersTable.put(Debezium.Kafka.LOG_PATH, confluentLogPath + "server.log");
+        toolsConfigParametersTable.put(Debezium.Registry.LOG_PATH, confluentLogPath + "schema-registry.log");
     }
 
     /**

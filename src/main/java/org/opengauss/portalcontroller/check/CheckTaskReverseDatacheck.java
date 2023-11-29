@@ -15,7 +15,11 @@
 
 package org.opengauss.portalcontroller.check;
 
-import org.opengauss.portalcontroller.*;
+import org.opengauss.portalcontroller.InstallMigrationTools;
+import org.opengauss.portalcontroller.Plan;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.Task;
+import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -24,7 +28,9 @@ import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
-import org.opengauss.portalcontroller.software.*;
+import org.opengauss.portalcontroller.software.Confluent;
+import org.opengauss.portalcontroller.software.Datacheck;
+import org.opengauss.portalcontroller.software.Software;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +73,8 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sourceTopic, hashtable.get(Check.Source.CONFIG_PATH));
         String sinkTopic = Tools.getSinglePropertiesParameter("transforms.route.replacement", hashtable.get(Debezium.Sink.REVERSE_CONFIG_PATH));
         Tools.changeSingleYmlParameter("spring.extract.debezium-topic", sinkTopic, hashtable.get(Check.Sink.CONFIG_PATH));
+        Tools.changeDataCheckKafakParams();
+        Tools.deleteDataCheckParamsFromEnv();
     }
 
     @Override
@@ -74,7 +82,6 @@ public class CheckTaskReverseDatacheck implements CheckTask {
         runningTaskList.add(Command.Start.Mysql.REVERSE_CHECK);
         changeParameters(workspaceId);
     }
-
 
     @Override
     public void start(String workspaceId) {
