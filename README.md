@@ -387,8 +387,10 @@ sh gs_rep_portal.sh run_reverse_migration 3 &
 
 ### 启动指令列表
 
-| 指令名称                                    | 指令说明                                                     |
-| ------------------------------------------- | ------------------------------------------------------------ |
+| 指令名称                                        | 指令说明                                                 |
+|---------------------------------------------|-------------------------------------------------             |
+| verify pre migration                        | 迁移前校验                                                   |
+| verify reverse migration                    | 反向迁移前校验                                               |
 | start_mysql_full_migration                  | 开始mysql全量迁移                                            |
 | start_mysql_incremental_migration           | 开始mysql增量迁移                                            |
 | start_mysql_reverse_migration               | 开始mysql反向迁移                                            |

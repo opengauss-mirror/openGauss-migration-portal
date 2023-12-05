@@ -36,8 +36,13 @@ import java.util.Objects;
  * The type Thread status controller.
  */
 public class ThreadStatusController extends Thread {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadStatusController.class);
+
+    /**
+     * capacity reduced flag
+     */
+    private static boolean isReduced = false;
+
     private String workspaceId;
 
     /**
@@ -81,6 +86,7 @@ public class ThreadStatusController extends Thread {
     @Override
     public void run() {
         while (!exit) {
+            ChangeStatusTools.reduceDiskSpace();
             ChangeStatusTools.writePortalStatus();
             Hashtable<String, String> toolsConfigHashtable = PortalControl.toolsConfigParametersTable;
             String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
@@ -166,5 +172,14 @@ public class ThreadStatusController extends Thread {
             }
             Tools.sleepThread(1000, "writing the status");
         }
+        isReduced = false;
+    }
+
+    public static boolean isReduced() {
+        return isReduced;
+    }
+
+    public static void setIsReduced(boolean isReduced) {
+        ThreadStatusController.isReduced = isReduced;
     }
 }

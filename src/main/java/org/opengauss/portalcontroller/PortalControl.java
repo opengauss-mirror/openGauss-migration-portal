@@ -490,6 +490,8 @@ public class PortalControl {
         validOrderList.add(Command.Run.REVERSE_MIGRATION);
         validOrderList.add(Command.CheckPortalStatus.CHECK_POTAL_STATUS);
         validOrderList.add(Command.LoadToolsConfig.LOAD_TOOLS_CONFIG);
+        validOrderList.add(Command.Verify.VERIFY_PRE_MIGRATION);
+        validOrderList.add(Command.Verify.VERIFY_REVERSE_MIGRATION);
     }
 
     /**

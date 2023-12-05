@@ -401,6 +401,11 @@ public interface Command {
          * The constant load config.
          */
         String LOAD = "load";
+
+        /**
+         * The constant verify.
+         */
+        String VERIFY = "verify";
     }
 
     /**
@@ -427,5 +432,20 @@ public interface Command {
          * load tools config
          */
         String LOAD_TOOLS_CONFIG = "load tools config";
+    }
+
+    /**
+     * check before migration
+     */
+    interface Verify {
+        /**
+         * check all
+         */
+        String VERIFY_PRE_MIGRATION = "verify pre migration";
+
+        /**
+         * check reverse
+         */
+        String VERIFY_REVERSE_MIGRATION = "verify reverse migration";
     }
 }
