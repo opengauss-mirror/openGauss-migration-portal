@@ -2125,7 +2125,7 @@ public class Tools {
         printPropsConfigParma(debeziumSourceConfigReverseParametersPath, ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SOURCE);
         String debeziumSinkConfigReverseParametersPath = PathUtils.combainPath(true,
                 PortalControl.portalWorkSpacePath + "config", "debezium", "opengauss-sink.properties");
-        printPropsConfigParma(debeziumSourceConfigReverseParametersPath, ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SINK);
+        printPropsConfigParma(debeziumSinkConfigReverseParametersPath, ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SINK);
     }
 
     private static void printYmlConfigParma(String checkConfigParamsPath, ToolsConfigEnum configEnum) {
@@ -2344,7 +2344,7 @@ public class Tools {
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
         String path = hashtable.get(logPatternFile);
         String log = LogView.getFullLog(path);
-        String logHome = "<Property name=\"LOG_HOME\">";
+        String logHome = "<Property name=\"LOG_HOME\">logs</Property>";
         String datacheck = "datacheck";
         String logs = "logs";
         for (String str : log.split(System.lineSeparator())) {

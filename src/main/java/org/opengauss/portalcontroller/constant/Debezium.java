@@ -360,27 +360,27 @@ public interface Debezium {
             /**
              * The constant USER.
              */
-            String USER = "mysql.username";
+            String USER = "database.username";
 
             /**
              * The constant PASSWORD.
              */
-            String PASSWORD = "mysql.password";
+            String PASSWORD = "database.password";
 
             /**
              * The constant URL.
              */
-            String URL = "mysql.url";
+            String URL = "database.ip";
 
             /**
              * The constant PORT.
              */
-            String PORT = "mysql.port";
+            String PORT = "database.port";
 
             /**
              * The constant NAME.
              */
-            String NAME = "mysql.database";
+            String NAME = "database.name";
         }
 
         /**
