@@ -15,7 +15,6 @@
 
 package org.opengauss.portalcontroller;
 
-import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.command.ConcreteCommand;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -45,7 +44,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.opengauss.portalcontroller.Tools.initMigrationParamsFromProps;
-import static org.opengauss.portalcontroller.constant.Check.UNDERLINE_REPLACE_SPACE_KEYS;
 
 /**
  * Portal control.
@@ -304,24 +302,6 @@ public class PortalControl {
         Tools.getParameterCommandLineFirst(PortalControl.toolsConfigParametersTable, PortalControl.toolsConfigPath);
         PortalControl.initToolsConfigParametersTable();
         Tools.getParameterCommandLineFirst(PortalControl.toolsMigrationParametersTable, PortalControl.migrationConfigPath);
-        replaceUnderLineToSpace();
-    }
-
-    private static void replaceUnderLineToSpace() {
-        String keysList = Tools.getSinglePropertiesParameter(UNDERLINE_REPLACE_SPACE_KEYS,
-                PathUtils.combainPath(true, portalControlPath + "config",
-                        "migrationConfig.properties"));
-        if (!Strings.isBlank(keysList)) {
-            for (String key : keysList.split("\\|")) {
-                if (PortalControl.toolsMigrationParametersTable.containsKey(key)) {
-                    PortalControl.toolsMigrationParametersTable.put(key,
-                            PortalControl.toolsMigrationParametersTable.get(key)
-                                    .replaceAll("&&&", " "));
-                    LOGGER.info("replaceUnderLineToSpace==============={}",
-                            PortalControl.toolsMigrationParametersTable.get(key));
-                }
-            }
-        }
     }
 
     /**
