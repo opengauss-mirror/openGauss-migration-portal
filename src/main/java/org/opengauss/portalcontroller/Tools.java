@@ -946,7 +946,7 @@ public class Tools {
             String uuid = tGtidSet.substring(0, uuidIndex);
             if (uuid.equals(mysqlUuid) && (tGtidSet.contains("-"))) {
                 int offsetIndex = tGtidSet.lastIndexOf("-") + 1;
-                int offset = Integer.parseInt(tGtidSet.substring(offsetIndex));
+                long offset = Long.parseLong(tGtidSet.substring(offsetIndex));
                 LOGGER.info("Offset: {}", offset);
                 offset--;
                 tGtidSet = tGtidSet.substring(0, offsetIndex) + offset;
