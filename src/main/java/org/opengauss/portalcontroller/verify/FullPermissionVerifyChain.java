@@ -127,7 +127,7 @@ public class FullPermissionVerifyChain extends AbstractPreMigrationVerifyChain {
                 "select rolsystemadmin from pg_roles where rolname= '"
                     + PortalControl.toolsMigrationParametersTable.get(Opengauss.USER) + "'", "rolsystemadmin");
             LOGGER.info("permissionStr is {}", permissionStr);
-            isAdmin = permissionStr.equals("1");
+            isAdmin = permissionStr.equals("1") || permissionStr.equals("t");
         } catch (SQLException e) {
             LOGGER.error("select rolsystemadmin from pg_roles where rolname= '"
                 + PortalControl.toolsMigrationParametersTable.get(Opengauss.USER) + "' execute failed.");
@@ -143,6 +143,9 @@ public class FullPermissionVerifyChain extends AbstractPreMigrationVerifyChain {
                     + PortalControl.toolsMigrationParametersTable.get(Opengauss.DATABASE_NAME) + "'", "datacl");
             LOGGER.info("permissionStr is {}", permissionStr);
             StringBuilder permissionBuild = new StringBuilder();
+            if (permissionStr == null) {
+                return false;
+            }
             if (permissionStr.contains(",")) {
                 String[] userPermissions = permissionStr.split(",");
                 for (String userPermission : userPermissions) {
