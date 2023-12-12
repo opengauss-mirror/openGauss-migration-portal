@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller;
 
+import org.apache.commons.io.FileUtils;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.check.*;
 import org.opengauss.portalcontroller.constant.Check;
@@ -26,6 +27,7 @@ import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -189,6 +191,7 @@ public final class Plan {
         Task.initRunTaskHandlerHashMap();
         PortalControl.showMigrationParameters();
         if (isPlanRunnable) {
+            adjustKernelParam();
             isPlanRunnable = false;
             CheckTaskMysqlFullMigration checkTaskMysqlFullMigration = new CheckTaskMysqlFullMigration();
             CheckTaskFullDatacheck checkTaskFullDatacheck = new CheckTaskFullDatacheck();
@@ -248,10 +251,59 @@ public final class Plan {
             } else {
                 LOGGER.info("Plan finished.");
             }
+            restoreKernelParam();
             PortalControl.threadCheckProcess.exit = true;
         } else {
             LOGGER.error("There is a plan running.Please stop current plan or wait.");
         }
+    }
+
+    private void adjustKernelParam() {
+        String isAdjustKernelParam = System.getProperty("is_adjustKernel_param", "false");
+        LOGGER.info("is_adjustKernel_param is {}", isAdjustKernelParam);
+        if (!Boolean.parseBoolean(isAdjustKernelParam)) {
+            LOGGER.info("no adjust kernel parameter.");
+            return;
+        }
+        LOGGER.info("adjust kernel parameter start.");
+        String databaseAdjustParamsPath = PathUtils.combainPath(true, PortalControl.portalWorkSpacePath + "config",
+            "databaseAdjustParams.properties");
+        Hashtable<String, String> databaseKernelParams = Tools.getPropertiesParameters(databaseAdjustParamsPath);
+        LOGGER.info("databaseKernelParams is {}", databaseKernelParams);
+        String databaseOldParamsPath = PathUtils.combainPath(true, PortalControl.portalWorkSpacePath + "config",
+            "databaseOldParams.properties");
+        PgConnection pgConnection = null;
+        try {
+            pgConnection = JdbcTools.getPgConnection();
+            Tools.writeMapToProperties(JdbcTools.queryParam(pgConnection, databaseKernelParams), databaseOldParamsPath);
+            JdbcTools.adjustDatabaseParam(pgConnection, databaseKernelParams);
+        } finally {
+            JdbcTools.closeConnection(pgConnection);
+        }
+        LOGGER.info("adjust kernel parameter end.");
+    }
+
+    private void restoreKernelParam() {
+        String isAdjustKernelParam = System.getProperty("is_adjustKernel_param", "false");
+        LOGGER.info("is_adjustKernel_param is {}", isAdjustKernelParam);
+        if (!Boolean.parseBoolean(isAdjustKernelParam)) {
+            LOGGER.info("no restore kernel parameter.");
+            return;
+        }
+        LOGGER.info("restore kernel parameter start.");
+        String databaseOldParamsPath = PathUtils.combainPath(true, PortalControl.portalWorkSpacePath + "config",
+            "databaseOldParams.properties");
+        Hashtable<String, String> databaseKernelParams = Tools.getPropertiesParameters(databaseOldParamsPath);
+        LOGGER.info("databaseOldParams is {}", databaseKernelParams);
+        FileUtils.deleteQuietly(new File(databaseOldParamsPath));
+        PgConnection pgConnection = null;
+        try {
+            pgConnection = JdbcTools.getPgConnection();
+            JdbcTools.adjustDatabaseParam(pgConnection, databaseKernelParams);
+        } finally {
+            JdbcTools.closeConnection(pgConnection);
+        }
+        LOGGER.info("restore kernel parameter end.");
     }
 
     /**

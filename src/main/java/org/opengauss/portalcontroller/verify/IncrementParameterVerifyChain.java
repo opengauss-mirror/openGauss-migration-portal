@@ -81,7 +81,7 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
         String selectSql = "show variables like '" + key + "'";
         try {
             String permissionStr = JdbcTools.selectStringValue(mysqlConnection, selectSql, "Value");
-            LOGGER.info("binlog parameter {} is {}", key, permissionStr);
+            LOGGER.info("parameter {} is {}", key, permissionStr);
             if (!value.equals(permissionStr)) {
                 errorParamList.add(key + "=" + permissionStr);
             }

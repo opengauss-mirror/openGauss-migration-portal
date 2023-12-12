@@ -58,6 +58,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.lang.management.ManagementFactory;
@@ -2573,6 +2574,24 @@ public class Tools {
             } catch (IOException e) {
                 LOGGER.error("close {} failed.", filePath);
             }
+        }
+    }
+
+    /**
+     * write map to properties file
+     *
+     * @param resultMap map
+     * @param propertiesPath path
+     */
+    public static void writeMapToProperties(Map<String, Object> resultMap, String propertiesPath) {
+        Properties properties = new Properties();
+        for (String key : resultMap.keySet()) {
+            properties.setProperty(key, resultMap.get(key).toString());
+        }
+        try (OutputStream fos = new FileOutputStream(propertiesPath)) {
+            properties.store(fos, properties.toString());
+        } catch (IOException e) {
+            LOGGER.error("writeMapToProperties failed", e);
         }
     }
 }

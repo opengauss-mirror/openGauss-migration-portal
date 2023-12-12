@@ -370,4 +370,57 @@ public class JdbcTools {
             LOGGER.error("close connection fail.");
         }
     }
+
+    /**
+     * query param
+     *
+     * @param pgConnection target connection
+     * @param databaseKernelParams paramMap
+     * @return resultMap
+     */
+    public static Map<String, Object> queryParam(Connection pgConnection,
+        Hashtable<String, String> databaseKernelParams) {
+        String paramValue;
+        Map<String, Object> resultMap = new HashMap<>();
+        try {
+            for (String key : databaseKernelParams.keySet()) {
+                String selectSql = "show variables like '" + key + "'";
+                paramValue = JdbcTools.selectStringValue(pgConnection, selectSql, "Value");
+                LOGGER.info("param {} is {}", key, paramValue);
+                resultMap.put(key, paramValue);
+            }
+        } catch (SQLException e) {
+            LOGGER.error("queryParam failed.", e);
+        }
+        return resultMap;
+    }
+
+    /**
+     * query param
+     *
+     * @param pgConnection target connection
+     * @param databaseKernelParams paramMap
+     */
+    public static void adjustDatabaseParam(Connection pgConnection, Hashtable<String, String> databaseKernelParams) {
+        for (String key : databaseKernelParams.keySet()) {
+            String selectSql = "alter system set " + key + " to " + databaseKernelParams.get(key);
+            JdbcTools.executeSql(pgConnection, selectSql);
+        }
+    }
+
+    /**
+     * execute sql ,not result set.
+     *
+     * @param connection the connection
+     * @param sql sql
+     */
+    public static void executeSql(Connection connection, String sql) {
+        if (connection != null) {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(sql);
+            } catch (SQLException e) {
+                LOGGER.error("execute {} failed.", sql, e);
+            }
+        }
+    }
 }
