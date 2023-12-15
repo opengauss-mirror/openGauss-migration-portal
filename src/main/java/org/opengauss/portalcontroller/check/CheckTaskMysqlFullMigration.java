@@ -192,11 +192,11 @@ public class CheckTaskMysqlFullMigration implements CheckTask {
         }
         try {
             changeParameters(workspaceId);
-            copyConfigFiles(workspaceId);
             Tools.changeToolsYmlParameters(ToolsConfigEnum.CHAMELEON_CONFIG,
                     PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH));
             Tools.deleteParams(ToolsConfigEnum.CHAMELEON_CONFIG.getConfigName(),
                     PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH));
+            copyConfigFiles(workspaceId);
         } catch (PortalException e) {
             LOGGER.error(e.toString());
             Tools.shutDownPortal(e.toString());
