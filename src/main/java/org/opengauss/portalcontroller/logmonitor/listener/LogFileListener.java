@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
-import org.opengauss.portalcontroller.Plan;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
+import org.opengauss.portalcontroller.task.Plan;
 
 import java.io.File;
 import java.util.HashMap;
@@ -96,7 +96,7 @@ public class LogFileListener implements Runnable {
                 }
                 for (String checkStr : checkStrList) {
                     if (line.contains(checkStr)) {
-                        log.error("find check str... {}....{}", line, checkStr);
+                        log.error("{} find check str... {}....{}", filePath, line, checkStr);
                         logMap.put(checkStr, line);
                     }
                 }

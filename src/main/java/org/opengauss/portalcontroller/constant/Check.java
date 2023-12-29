@@ -23,7 +23,6 @@ import java.util.List;
  * @author ：liutong
  * @date ：Created in 2023/07/29
  * @since ：11
- *
  */
 public interface Check {
     /**
@@ -424,6 +423,8 @@ public interface Check {
          * error string
          */
         String ERR = "Error:";
+
+        String ERR_UPPER = "ERROR:";
 
         /**
          * Exception String

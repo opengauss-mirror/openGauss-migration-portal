@@ -15,13 +15,14 @@
 package org.opengauss.portalcontroller;
 
 import org.junit.jupiter.api.Test;
+import org.opengauss.portalcontroller.task.Task;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TaskTest {
     @Test
-    public void checkPlanTest(){
+    public void checkPlanTest() {
         ArrayList<String> list1 = new ArrayList<>();
         list1.add("start mysql full migration");
         list1.add("start mysql full migration datacheck");
@@ -48,8 +49,8 @@ public class TaskTest {
     public void taskProcessMapTest() {
         Task.initTaskProcessMap();
         assert Task.getTaskProcessMap().containsKey("runKafka");
-        HashMap<String,String> map = new HashMap<>();
-        map.put("test","testProcess");
+        HashMap<String, String> map = new HashMap<>();
+        map.put("test", "testProcess");
         Task.setTaskProcessMap(map);
         assert Task.getTaskProcessMap().get("test").equals("testProcess");
         map.clear();

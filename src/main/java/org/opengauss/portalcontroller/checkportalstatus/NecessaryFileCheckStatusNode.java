@@ -28,10 +28,10 @@ import java.util.List;
 /**
  * NecessaryFileCheckStatusNode
  *
- * @since 1.1
  * @date :2023/9/19 16:22
  * @description: NecessaryFileCheckStatusNode
  * @version: 1.1
+ * @since 1.1
  */
 public class NecessaryFileCheckStatusNode extends BaseCheckNode {
     @Override

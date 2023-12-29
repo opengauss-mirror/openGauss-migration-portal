@@ -26,14 +26,14 @@ import java.util.Map;
 /**
  * IncrementPermissionVerifyChain
  *
- * @since 1.1
  * @date :2023/11/3 15:22
  * @description: IncrementPermissionVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public class IncrementPermissionVerifyChain extends FullPermissionVerifyChain {
     private static final String[] PERMISSION_COLUMN = {
-        Constants.PERMISSION_SELECT, Constants.PERMISSION_REP_SLAVE, Constants.PERMISSION_REP_CLIENT
+            Constants.PERMISSION_SELECT, Constants.PERMISSION_REP_SLAVE, Constants.PERMISSION_REP_CLIENT
     };
 
     @Override
@@ -46,18 +46,18 @@ public class IncrementPermissionVerifyChain extends FullPermissionVerifyChain {
     }
 
     private void verifyMysqlPermission(Map<String, Object> resultMap, Map<String, Object> databaseMap,
-        Connection mysqlConnection) {
+                                       Connection mysqlConnection) {
         super.verifyMysqlPermission(resultMap, databaseMap, mysqlConnection,
-            new StringBuilder("select ").append(String.join(",", PERMISSION_COLUMN))
-                .append(" from mysql.user where user='")
-                .append(PortalControl.toolsMigrationParametersTable.get(Mysql.USER))
-                .append("';")
-                .toString(), PERMISSION_COLUMN);
+                new StringBuilder("select ").append(String.join(",", PERMISSION_COLUMN))
+                        .append(" from mysql.user where user='")
+                        .append(PortalControl.toolsMigrationParametersTable.get(Mysql.USER))
+                        .append("';")
+                        .toString(), PERMISSION_COLUMN);
     }
 
     private void verifyOpenGaussPermission(Map<String, Object> resultMap, Map<String, Object> databaseMap,
-        PgConnection pgConnection) {
+                                           PgConnection pgConnection) {
         super.verifyOpenGaussPermission(resultMap, databaseMap, pgConnection,
-            new String[] {"C", "T", "c", "A", "P", "m"});
+                new String[]{"C", "T", "c", "A", "P", "m"});
     }
 }

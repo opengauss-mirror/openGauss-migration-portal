@@ -21,7 +21,6 @@ package org.opengauss.portalcontroller.constant;
  * @author ：liutong
  * @date ：Created in 2023/07/29
  * @since ：11
- *
  */
 public interface Debezium {
     /**

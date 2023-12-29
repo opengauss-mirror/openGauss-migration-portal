@@ -24,10 +24,10 @@ import java.util.Map;
 /**
  * DatabaseConnectVerifyChain
  *
- * @since 1.1
  * @date :2023/11/3 15:25
  * @description: DatabaseConnectVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public class DatabaseConnectVerifyChain extends AbstractPreMigrationVerifyChain {
     @Override
@@ -39,7 +39,7 @@ public class DatabaseConnectVerifyChain extends AbstractPreMigrationVerifyChain 
         int pgResult = (pgConnection != null) ? Constants.KEY_FLAG_TRUE : Constants.KEY_FLAG_FALSE;
         databaseMap.put(Constants.KEY_OPENGAUSS, pgResult);
         resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-            Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | mysqlResult | pgResult);
+                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | mysqlResult | pgResult);
         super.transfer(resultMap, mysqlConnection, pgConnection);
     }
 }

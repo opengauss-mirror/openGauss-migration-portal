@@ -15,6 +15,10 @@
 package org.opengauss.portalcontroller;
 
 import org.junit.jupiter.api.Test;
+import org.opengauss.portalcontroller.utils.LogViewUtils;
+import org.opengauss.portalcontroller.utils.ParamsUtils;
+import org.opengauss.portalcontroller.utils.PropertitesUtils;
+import org.opengauss.portalcontroller.utils.YmlUtils;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,7 +36,7 @@ public class ToolsTest {
         fw.write("");
         fw.flush();
         fw.close();
-        String str = Tools.getSinglePropertiesParameter("snapshot.mode", file.getCanonicalPath());
+        String str = PropertitesUtils.getSinglePropertiesParameter("snapshot.mode", file.getCanonicalPath());
         assert str.equals("schema_only");
         file.delete();
     }
@@ -48,7 +52,7 @@ public class ToolsTest {
         fw.write("");
         fw.flush();
         fw.close();
-        Hashtable<String, String> hashtable = Tools.getPropertiesParameters(file.getCanonicalPath());
+        Hashtable<String, String> hashtable = PropertitesUtils.getPropertiesParameters(file.getCanonicalPath());
         assert hashtable.get("name").equals("cdc-connector_test4636");
         assert hashtable.get("database.user").equals("ltt");
         assert hashtable.get("snapshot.mode").equals("schema_only");
@@ -65,9 +69,9 @@ public class ToolsTest {
         fw.write(" user: lty" + System.lineSeparator());
         fw.flush();
         fw.close();
-        String str = Tools.getSingleYmlParameter("log_level", file.getAbsolutePath());
+        String str = YmlUtils.getSingleYmlParameter("log_level", file.getAbsolutePath());
         assert str.equals("info");
-        str = Tools.getSingleYmlParameter("pg_conn.user", file.getCanonicalPath());
+        str = YmlUtils.getSingleYmlParameter("pg_conn.user", file.getCanonicalPath());
         assert str.equals("lty");
         file.delete();
     }
@@ -82,8 +86,8 @@ public class ToolsTest {
         fw.write("");
         fw.flush();
         fw.close();
-        Tools.changeSinglePropertiesParameter("snapshot.mode", "schema_only_test", path);
-        String str = Tools.getSinglePropertiesParameter("snapshot.mode", path);
+        PropertitesUtils.changeSinglePropertiesParameter("snapshot.mode", "schema_only_test", path);
+        String str = PropertitesUtils.getSinglePropertiesParameter("snapshot.mode", path);
         assert str.equals("schema_only_test");
         file.delete();
     }
@@ -101,12 +105,12 @@ public class ToolsTest {
         Hashtable<String, String> table = new Hashtable<>();
         table.put("name", "test");
         table.put("snapshot.mode", "schema_only_test");
-        Tools.changePropertiesParameters(table, path);
-        String str = Tools.getSinglePropertiesParameter("name", path);
+        PropertitesUtils.changePropertiesParameters(table, path);
+        String str = PropertitesUtils.getSinglePropertiesParameter("name", path);
         assert str.equals("test");
-        str = Tools.getSinglePropertiesParameter("database.user", path);
+        str = PropertitesUtils.getSinglePropertiesParameter("database.user", path);
         assert str.equals("ltt");
-        str = Tools.getSinglePropertiesParameter("snapshot.mode", path);
+        str = PropertitesUtils.getSinglePropertiesParameter("snapshot.mode", path);
         assert str.equals("schema_only_test");
         file.delete();
     }
@@ -120,11 +124,11 @@ public class ToolsTest {
         fw.write("port: 1234" + System.lineSeparator());
         fw.flush();
         fw.close();
-        Tools.changeSingleYmlParameter("port", "2345", path);
-        String str = Tools.getSingleYmlParameter("port", path);
+        YmlUtils.changeSingleYmlParameter("port", "2345", path);
+        String str = YmlUtils.getSingleYmlParameter("port", path);
         assert str.equals("2345");
-        Tools.changeSingleYmlParameter("pg_conn.database", "test123", path);
-        str = Tools.getSingleYmlParameter("pg_conn.database", path);
+        YmlUtils.changeSingleYmlParameter("pg_conn.database", "test123", path);
+        str = YmlUtils.getSingleYmlParameter("pg_conn.database", path);
         assert str.equals("test123");
         file.delete();
     }
@@ -146,14 +150,14 @@ public class ToolsTest {
         hashmap.put("port", "1234");
         hashmap.put("testtest", "test");
         hashmap.put("test.test", "test");
-        Tools.changeYmlParameters(hashmap, path);
-        String str = Tools.getSingleYmlParameter("pg_conn.database", path);
+        YmlUtils.changeYmlParameters(hashmap, path);
+        String str = YmlUtils.getSingleYmlParameter("pg_conn.database", path);
         assert str.equals("test1234");
-        str = Tools.getSingleYmlParameter("port", path);
+        str = YmlUtils.getSingleYmlParameter("port", path);
         assert str.equals("1234");
-        str = Tools.getSingleYmlParameter("testtest", path);
+        str = YmlUtils.getSingleYmlParameter("testtest", path);
         assert str.equals("test");
-        str = Tools.getSingleYmlParameter("test.test", path);
+        str = YmlUtils.getSingleYmlParameter("test.test", path);
         assert str.equals("test");
         file.delete();
     }
@@ -169,7 +173,7 @@ public class ToolsTest {
         fw.write("2022-12-19 20:01:51 MainProcess INFO: start_proc_replica finished." + System.lineSeparator());
         fw.flush();
         fw.close();
-        String lastLine = Tools.lastLine(path);
+        String lastLine = LogViewUtils.lastLine(path);
         String str = "2022-12-19 20:01:51 MainProcess INFO: start_proc_replica finished.";
         assert str.equals(lastLine);
     }
@@ -183,11 +187,11 @@ public class ToolsTest {
         String oldStr3 = "${${test}@@@${test}${";
         String oldStr4 = "";
         String oldStr5 = "Huawei12#$${}";
-        String newStr1 = Tools.changeValue(oldStr1, hashtable);
-        String newStr2 = Tools.changeValue(oldStr2, hashtable);
-        String newStr3 = Tools.changeValue(oldStr3, hashtable);
-        String newStr4 = Tools.changeValue(oldStr4, hashtable);
-        String newStr5 = Tools.changeValue(oldStr5, hashtable);
+        String newStr1 = ParamsUtils.changeValue(oldStr1, hashtable);
+        String newStr2 = ParamsUtils.changeValue(oldStr2, hashtable);
+        String newStr3 = ParamsUtils.changeValue(oldStr3, hashtable);
+        String newStr4 = ParamsUtils.changeValue(oldStr4, hashtable);
+        String newStr5 = ParamsUtils.changeValue(oldStr5, hashtable);
         assert "@@@****${test222}".equals(newStr1);
         assert "****@@@****".equals(newStr2);
         assert "${****@@@****${".equals(newStr3);

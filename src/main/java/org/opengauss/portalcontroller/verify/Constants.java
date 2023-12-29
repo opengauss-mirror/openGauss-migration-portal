@@ -18,10 +18,10 @@ package org.opengauss.portalcontroller.verify;
 /**
  * constants
  *
- * @since 1.1
  * @date :2023/11/15 15:22
  * @description: CommonServiceVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public class Constants {
     /**

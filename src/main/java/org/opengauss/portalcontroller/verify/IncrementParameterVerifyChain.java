@@ -16,7 +16,7 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
-import org.opengauss.portalcontroller.JdbcTools;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +30,10 @@ import java.util.Map;
 /**
  * MigrationParameterVerifyChain
  *
- * @since 1.1
  * @date :2023/11/3 15:22
  * @description: MigrationParameterVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(IncrementParameterVerifyChain.class);
@@ -47,7 +47,7 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
     }
 
     private void verifyMysqlBinLogParam(Map<String, Object> resultMap, Map<String, Object> databaseMap,
-        Connection mysqlConnection) {
+                                        Connection mysqlConnection) {
         Map<String, Object> mysqMap = new HashMap<>();
         databaseMap.put(Constants.KEY_MYSQL, mysqMap);
         if (mysqlConnection != null) {
@@ -62,8 +62,8 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
                 mysqMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_TRUE);
             }
             resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | Integer.parseInt(
-                    mysqMap.get(Constants.KEY_RESULT).toString()));
+                    Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | Integer.parseInt(
+                            mysqMap.get(Constants.KEY_RESULT).toString()));
         } else {
             mysqMap.put(Constants.KEY_RESULT, Constants.CROSS_BAR);
         }
@@ -74,13 +74,13 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
      *
      * @param mysqlConnection mysql connection
      * @param errorParamList  error param list
-     * @param key param name
-     * @param value param value
+     * @param key             param name
+     * @param value           param value
      */
     public void judgeParam(Connection mysqlConnection, List<String> errorParamList, String key, String value) {
         String selectSql = "show variables like '" + key + "'";
         try {
-            String permissionStr = JdbcTools.selectStringValue(mysqlConnection, selectSql, "Value");
+            String permissionStr = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "Value");
             LOGGER.info("parameter {} is {}", key, permissionStr);
             if (!value.equals(permissionStr)) {
                 errorParamList.add(key + "=" + permissionStr);

@@ -13,5 +13,6 @@ public interface Regex {
     String OFFSET_GTID = "";
     String POSITION = "";
 
-    String CHAMELEON_LOG = "^((\\d{4}(-)\\d{1,2}(-)\\d{1,2})|(\\d{4}(/)\\d{1,2}(/)\\d{1,2}))(\\s)\\d{1,2}:\\d{1,2}:\\d{1,2}(.*)";
+    String CHAMELEON_LOG = "^((\\d{4}(-)\\d{1,2}(-)\\d{1,2})|(\\d{4}(/)\\d{1,2}(/)\\d{1,2}))(\\s)\\d{1,2}:\\d{1,"
+            + "2}:\\d{1,2}(.*)";
 }

@@ -24,6 +24,7 @@ public class PortalException extends Exception {
     private String processName;
     private String requestInformation;
     private String repairTips;
+
     /**
      * Gets standard exception type.
      *
@@ -133,7 +134,8 @@ public class PortalException extends Exception {
      * @param standardExceptionMessage the standard exception message
      * @param requestInformation       the request information
      */
-    public PortalException(String standardExceptionType, String processName, String standardExceptionMessage, String requestInformation) {
+    public PortalException(String standardExceptionType, String processName, String standardExceptionMessage,
+                           String requestInformation) {
         this(standardExceptionType, processName, standardExceptionMessage, requestInformation, "");
     }
 
@@ -146,7 +148,8 @@ public class PortalException extends Exception {
      * @param requestInformation       the request information
      * @param repairTips               the repair tips
      */
-    public PortalException(String standardExceptionType, String processName, String standardExceptionMessage, String requestInformation, String repairTips) {
+    public PortalException(String standardExceptionType, String processName, String standardExceptionMessage,
+                           String requestInformation, String repairTips) {
         this.standardExceptionType = standardExceptionType;
         this.standardExceptionMessage = standardExceptionMessage;
         this.processName = processName;

@@ -15,20 +15,20 @@
 
 package org.opengauss.portalcontroller.checkportalstatus;
 
-import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.check.CheckTaskMysqlFullMigration;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
+import org.opengauss.portalcontroller.utils.PathUtils;
 
 /**
  * ChameleonCheckNode
  *
- * @since 1.1
  * @date :2023/9/19 16:22
  * @description: ChameleonCheckNode
  * @version: 1.1
+ * @since 1.1
  */
 public class ChameleonCheckNode extends BaseCheckNode {
     @Override
@@ -45,7 +45,7 @@ public class ChameleonCheckNode extends BaseCheckNode {
         String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath
                 + "logs", "install_chameleon.log");
         try {
-            new CheckTaskMysqlFullMigration().checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
+            new MysqlFullMigrationTool().checkChameleonVersion(chameleonVersionOrder, chameleonInstallLogPath);
         } catch (PortalException e) {
             this.setStatus(1);
             this.setMsg(Check.CheckPortalStatus.CHECK_STATUS_PREFIX

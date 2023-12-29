@@ -18,10 +18,10 @@ package org.opengauss.portalcontroller.verify;
 /**
  * VerifyChainBuilder
  *
- * @since 1.1
  * @date :2023/11/3 15:22
  * @description: VerifyChainBuilder
  * @version: 1.1
+ * @since 1.1
  */
 public class VerifyChainBuilder {
     private AbstractPreMigrationVerifyChain head;
@@ -43,15 +43,15 @@ public class VerifyChainBuilder {
      */
     public static AbstractPreMigrationVerifyChain getOnlineVerifyChain() {
         return getChainBuilder().addChain(new CommonServiceVerifyChain())
-            .addChain(new DatabaseConnectVerifyChain())
-            .addChain(new FullPermissionVerifyChain())
-            .addChain(new IncrementPermissionVerifyChain())
-            .addChain(new IncrementParameterVerifyChain())
-            .addChain(new ReversePermissionVerifyChain())
-            .addChain(new ReverseParameterVerifyChain())
-            .addChain(new LowerParameterVerifyChain())
-            .addChain(new DiskSpaceVerifyChain())
-            .build();
+                .addChain(new DatabaseConnectVerifyChain())
+                .addChain(new FullPermissionVerifyChain())
+                .addChain(new IncrementPermissionVerifyChain())
+                .addChain(new IncrementParameterVerifyChain())
+                .addChain(new ReversePermissionVerifyChain())
+                .addChain(new ReverseParameterVerifyChain())
+                .addChain(new LowerParameterVerifyChain())
+                .addChain(new DiskSpaceVerifyChain())
+                .build();
     }
 
     /**
@@ -61,11 +61,11 @@ public class VerifyChainBuilder {
      */
     public static AbstractPreMigrationVerifyChain getOfflineVerifyChain() {
         return getChainBuilder().addChain(new CommonServiceVerifyChain())
-            .addChain(new DatabaseConnectVerifyChain())
-            .addChain(new FullPermissionVerifyChain())
-            .addChain(new LowerParameterVerifyChain())
-            .addChain(new DiskSpaceVerifyChain())
-            .build();
+                .addChain(new DatabaseConnectVerifyChain())
+                .addChain(new FullPermissionVerifyChain())
+                .addChain(new LowerParameterVerifyChain())
+                .addChain(new DiskSpaceVerifyChain())
+                .build();
     }
 
     /**
@@ -75,11 +75,11 @@ public class VerifyChainBuilder {
      */
     public static AbstractPreMigrationVerifyChain getReverseVerifyChain() {
         return getChainBuilder().addChain(new CommonServiceVerifyChain())
-            .addChain(new DatabaseConnectVerifyChain())
-            .addChain(new ReversePermissionVerifyChain())
-            .addChain(new ReverseParameterVerifyChain())
-            .addChain(new LowerParameterVerifyChain())
-            .build();
+                .addChain(new DatabaseConnectVerifyChain())
+                .addChain(new ReversePermissionVerifyChain())
+                .addChain(new ReverseParameterVerifyChain())
+                .addChain(new LowerParameterVerifyChain())
+                .build();
     }
 
     private VerifyChainBuilder addChain(AbstractPreMigrationVerifyChain chain) {

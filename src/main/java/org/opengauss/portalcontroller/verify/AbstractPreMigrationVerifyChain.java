@@ -23,10 +23,10 @@ import java.util.Map;
 /**
  * AbstractPreMigrationVerifyChain
  *
- * @since 1.1
  * @date :2023/11/3 15:22
  * @description: AbstractPreMigrationVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public abstract class AbstractPreMigrationVerifyChain {
     /**
@@ -37,18 +37,18 @@ public abstract class AbstractPreMigrationVerifyChain {
     /**
      * verify migration must be ok
      *
-     * @param resultMap result Map
+     * @param resultMap       result Map
      * @param mysqlConnection mysql connect
-     * @param pgConnection openGauss connect
+     * @param pgConnection    openGauss connect
      */
     public abstract void verify(Map<String, Object> resultMap, Connection mysqlConnection, PgConnection pgConnection);
 
     /**
      * transfer parameter and chain
      *
-     * @param resultMap result Map
+     * @param resultMap       result Map
      * @param mysqlConnection mysql connect
-     * @param pgConnection openGauss connect
+     * @param pgConnection    openGauss connect
      */
     protected void transfer(Map<String, Object> resultMap, Connection mysqlConnection, PgConnection pgConnection) {
         if (next != null) {

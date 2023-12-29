@@ -141,7 +141,9 @@ public class FullMigrationStatus {
      * @param trigger   the trigger
      * @param procedure the procedure
      */
-    public FullMigrationStatus(Object total,ArrayList<TableStatus> table, ArrayList<ObjectStatus> view, ArrayList<ObjectStatus> function, ArrayList<ObjectStatus> trigger, ArrayList<ObjectStatus> procedure) {
+    public FullMigrationStatus(Object total, ArrayList<TableStatus> table, ArrayList<ObjectStatus> view,
+                               ArrayList<ObjectStatus> function, ArrayList<ObjectStatus> trigger,
+                               ArrayList<ObjectStatus> procedure) {
         this.total = total;
         this.table = table;
         this.view = view;

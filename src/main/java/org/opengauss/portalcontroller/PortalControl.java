@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.command.ConcreteCommand;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -29,6 +30,19 @@ import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.status.ChangeStatusTools;
 import org.opengauss.portalcontroller.status.ThreadStatusController;
+import org.opengauss.portalcontroller.task.Plan;
+import org.opengauss.portalcontroller.task.Task;
+import org.opengauss.portalcontroller.task.WorkspacePath;
+import org.opengauss.portalcontroller.thread.ThreadCheckProcess;
+import org.opengauss.portalcontroller.thread.ThreadExceptionHandler;
+import org.opengauss.portalcontroller.thread.ThreadGetOrder;
+import org.opengauss.portalcontroller.utils.FileUtils;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
+import org.opengauss.portalcontroller.utils.LogViewUtils;
+import org.opengauss.portalcontroller.utils.ParamsUtils;
+import org.opengauss.portalcontroller.utils.PathUtils;
+import org.opengauss.portalcontroller.utils.ProcessUtils;
+import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
@@ -36,14 +50,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.opengauss.portalcontroller.Tools.initMigrationParamsFromProps;
+import static org.opengauss.portalcontroller.utils.ParamsUtils.initMigrationParamsFromProps;
 
 /**
  * Portal control.
@@ -170,6 +188,7 @@ public class PortalControl {
      * @param args the input arguments
      */
     public static void main(String[] args) {
+        Thread.currentThread().setUncaughtExceptionHandler(new ThreadExceptionHandler());
         initPlanList();
         initParametersRegexMap();
         initCommandLineParameters();
@@ -177,12 +196,10 @@ public class PortalControl {
         initPortalPath();
         initMigrationParamsFromProps();
         Plan.createWorkspace(workspaceId);
-        Task.initMethodNameMap();
-        Task.initTaskProcessMap();
-        Task.initTaskLogMap();
+        initTaskMap();
         threadCheckProcess.setName("threadCheckProcess");
         threadCheckProcess.start();
-        Tools.cleanInputOrder();
+        FileUtils.cleanInputOrder();
         threadGetOrder.start();
         String order = commandLineParameterStringMap.get(Command.Parameters.ORDER);
         String standardOrder = order.replaceAll("_", " ").trim();
@@ -194,6 +211,13 @@ public class PortalControl {
         }
         threadCheckProcess.exit = true;
         threadGetOrder.exit = true;
+    }
+
+    private static void initTaskMap() {
+        Task.initMethodNameMap();
+        Task.initTaskProcessMap();
+        Task.initTaskLogMap();
+        Task.initCheckProcessMap();
     }
 
     /**
@@ -219,7 +243,7 @@ public class PortalControl {
             PortalException portalException = new PortalException("IO exception", "read current plan", e.getMessage());
             portalException.setRequestInformation("Read current plan failed");
             LOGGER.error(portalException.toString());
-            Tools.shutDownPortal(portalException.toString());
+            shutDownPortal(portalException.toString());
         }
         return taskArrayList;
     }
@@ -276,7 +300,7 @@ public class PortalControl {
         criticalWordList.add("-Dpath=" + PortalControl.portalControlPath);
         criticalWordList.add(Parameter.PORTAL_NAME);
         criticalWordList.add("-Dworkspace.id=" + PortalControl.workspaceId);
-        if (Tools.checkAnotherProcessExist(criticalWordList)) {
+        if (ProcessUtils.checkAnotherProcessExist(criticalWordList)) {
             LOGGER.info("Plan " + PortalControl.workspaceId + " is running.");
         } else {
             LOGGER.info("Plan " + PortalControl.workspaceId + " is not running.");
@@ -299,9 +323,9 @@ public class PortalControl {
         PortalControl.toolsConfigParametersTable.clear();
         PortalControl.toolsMigrationParametersTable.clear();
         PortalControl.initParametersRegexMap();
-        Tools.getParameterCommandLineFirst(PortalControl.toolsConfigParametersTable, PortalControl.toolsConfigPath);
+        getParameterCommandLineFirst(PortalControl.toolsConfigParametersTable, PortalControl.toolsConfigPath);
         PortalControl.initToolsConfigParametersTable();
-        Tools.getParameterCommandLineFirst(PortalControl.toolsMigrationParametersTable, PortalControl.migrationConfigPath);
+        getParameterCommandLineFirst(PortalControl.toolsMigrationParametersTable, PortalControl.migrationConfigPath);
     }
 
     /**
@@ -351,7 +375,8 @@ public class PortalControl {
         LOGGER.info("start_current plan --You can execute current plan in currentPlan.");
         LOGGER.info("show_plans --Show default plans.");
         LOGGER.info("show_status --Show plan status.");
-        LOGGER.info("show_information --Show information of migration which include user name,password,host,port,database name,schema in mysql and openGauss database.");
+        LOGGER.info("show_information --Show information of migration which include user name,password,host,port,"
+                + "database name,schema in mysql and openGauss database.");
         LOGGER.info("show_parameters --Show parameters of commandline.");
         LOGGER.info("stop_plan");
     }
@@ -365,15 +390,16 @@ public class PortalControl {
         PortalControl.taskList = taskList;
         threadStatusController.setWorkspaceId(workspaceId);
         threadStatusController.start();
-        Tools.generatePlanHistory(taskList);
+        generatePlanHistory(taskList);
         if (!Task.checkPlan(taskList)) {
             LOGGER.error("Invalid plan.");
             return;
         }
         if (taskList.contains("start mysql reverse migration")) {
-            boolean flag = Tools.checkReverseMigrationRunnable();
-            Tools.outputInformation(flag, "Reverse migration is runnable.", "Reverse migration can not run.");
-            PortalControl.allowReverseMigration = flag;
+            boolean canAllowReverseMigration = checkReverseMigrationRunnable();
+            LogViewUtils.outputInformation(canAllowReverseMigration, "Reverse migration is runnable.",
+                    "Reverse migration can not run.");
+            PortalControl.allowReverseMigration = canAllowReverseMigration;
         }
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
         Plan.getInstance(workspaceId).execPlan(taskList);
@@ -522,18 +548,29 @@ public class PortalControl {
     public static void initToolsConfigParametersTable() {
         WorkspacePath workspacePath = WorkspacePath.getInstance(portalControlPath, workspaceId);
         String workPath = PortalControl.portalWorkSpacePath;
-        String workConfigDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(), "debezium");
-        String workConfigDataCheckPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(), "datacheck");
+        String workConfigDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(),
+                "debezium");
+        String workConfigDataCheckPath = PathUtils.combainPath(false, workspacePath.getWorkspaceConfigPath(),
+                "datacheck");
         toolsConfigParametersTable.put(Debezium.CONFIG_PATH, workConfigDebeziumPath);
-        toolsConfigParametersTable.put(Debezium.Connector.CONFIG_PATH, workConfigDebeziumPath + "connect-avro-standalone.properties");
-        toolsConfigParametersTable.put(Debezium.Source.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-source.properties");
-        toolsConfigParametersTable.put(Debezium.Sink.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-sink.properties");
-        toolsConfigParametersTable.put(Debezium.Source.REVERSE_CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-reverse-source.properties");
-        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro-standalone-reverse-sink.properties");
-        toolsConfigParametersTable.put(Debezium.Source.INCREMENTAL_CONFIG_PATH, workConfigDebeziumPath + "mysql-source.properties");
-        toolsConfigParametersTable.put(Debezium.Sink.INCREMENTAL_CONFIG_PATH, workConfigDebeziumPath + "mysql-sink.properties");
-        toolsConfigParametersTable.put(Debezium.Source.REVERSE_CONFIG_PATH, workConfigDebeziumPath + "opengauss-source.properties");
-        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_CONFIG_PATH, workConfigDebeziumPath + "opengauss-sink.properties");
+        toolsConfigParametersTable.put(Debezium.Connector.CONFIG_PATH, workConfigDebeziumPath + "connect-avro"
+                + "-standalone.properties");
+        toolsConfigParametersTable.put(Debezium.Source.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro"
+                + "-standalone-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro"
+                + "-standalone-sink.properties");
+        toolsConfigParametersTable.put(Debezium.Source.REVERSE_CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro"
+                + "-standalone-reverse-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_CONNECTOR_PATH, workConfigDebeziumPath + "connect-avro"
+                + "-standalone-reverse-sink.properties");
+        toolsConfigParametersTable.put(Debezium.Source.INCREMENTAL_CONFIG_PATH, workConfigDebeziumPath + "mysql"
+                + "-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.INCREMENTAL_CONFIG_PATH, workConfigDebeziumPath + "mysql-sink"
+                + ".properties");
+        toolsConfigParametersTable.put(Debezium.Source.REVERSE_CONFIG_PATH, workConfigDebeziumPath + "opengauss"
+                + "-source.properties");
+        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_CONFIG_PATH, workConfigDebeziumPath + "opengauss-sink"
+                + ".properties");
         toolsConfigParametersTable.put(Check.CONFIG_PATH, workConfigDataCheckPath + "application.yml");
         toolsConfigParametersTable.put(Check.Source.CONFIG_PATH, workConfigDataCheckPath + "application-source.yml");
         toolsConfigParametersTable.put(Check.Sink.CONFIG_PATH, workConfigDataCheckPath + "application-sink.yml");
@@ -542,13 +579,18 @@ public class PortalControl {
         toolsConfigParametersTable.put(Check.Sink.LOG_PATTERN_PATH, workConfigDataCheckPath + "log4j2sink.xml");
         String statusFolder = workspacePath.getWorkspaceStatusPath();
         toolsConfigParametersTable.put(Status.FOLDER, PathUtils.combainPath(false, statusFolder));
-        toolsConfigParametersTable.put(Status.INCREMENTAL_FOLDER, PathUtils.combainPath(false, statusFolder, "incremental"));
+        toolsConfigParametersTable.put(Status.INCREMENTAL_FOLDER, PathUtils.combainPath(false, statusFolder,
+                "incremental"));
         toolsConfigParametersTable.put(Status.REVERSE_FOLDER, PathUtils.combainPath(false, statusFolder, "reverse"));
         toolsConfigParametersTable.put(Status.PORTAL_PATH, PathUtils.combainPath(true, statusFolder, "portal.txt"));
-        toolsConfigParametersTable.put(Status.FULL_PATH, PathUtils.combainPath(true, statusFolder, "full_migration.txt"));
-        toolsConfigParametersTable.put(Status.FULL_CHECK_PATH, PathUtils.combainPath(true, statusFolder, "full_migration_datacheck.txt"));
-        toolsConfigParametersTable.put(Status.INCREMENTAL_PATH, PathUtils.combainPath(true, statusFolder, "incremental_migration.txt"));
-        toolsConfigParametersTable.put(Status.REVERSE_PATH, PathUtils.combainPath(true, statusFolder, "reverse_migration.txt"));
+        toolsConfigParametersTable.put(Status.FULL_PATH, PathUtils.combainPath(true, statusFolder, "full_migration"
+                + ".txt"));
+        toolsConfigParametersTable.put(Status.FULL_CHECK_PATH, PathUtils.combainPath(true, statusFolder,
+                "full_migration_datacheck.txt"));
+        toolsConfigParametersTable.put(Status.INCREMENTAL_PATH, PathUtils.combainPath(true, statusFolder,
+                "incremental_migration.txt"));
+        toolsConfigParametersTable.put(Status.REVERSE_PATH, PathUtils.combainPath(true, statusFolder,
+                "reverse_migration.txt"));
         toolsConfigParametersTable.put(Status.XLOG_PATH, PathUtils.combainPath(true, statusFolder, "xlog.txt"));
         String checkLogFolder = PathUtils.combainPath(false, workspacePath.getWorkspaceLogPath(), "datacheck");
         toolsConfigParametersTable.put(Check.LOG_FOLDER, checkLogFolder);
@@ -556,27 +598,36 @@ public class PortalControl {
         toolsConfigParametersTable.put(Check.Source.LOG_PATH, checkLogFolder + "source.log");
         toolsConfigParametersTable.put(Check.Sink.LOG_PATH, checkLogFolder + "sink.log");
         toolsConfigParametersTable.put(Check.Result.FULL, PathUtils.combainPath(false, workPath + "check_result"));
-        toolsConfigParametersTable.put(Check.Result.FULL_CURRENT, PathUtils.combainPath(false, workPath + "check_result", "result"));
-        toolsConfigParametersTable.put(Check.Result.INCREMENTAL, PathUtils.combainPath(false, workPath + "check_result", "incremental"));
-        toolsConfigParametersTable.put(Check.Result.REVERSE, PathUtils.combainPath(false, workPath + "check_result", "reverse"));
+        toolsConfigParametersTable.put(Check.Result.FULL_CURRENT, PathUtils.combainPath(false, workPath
+                + "check_result", "result"));
+        toolsConfigParametersTable.put(Check.Result.INCREMENTAL, PathUtils.combainPath(false, workPath
+                + "check_result", "incremental"));
+        toolsConfigParametersTable.put(Check.Result.REVERSE, PathUtils.combainPath(false, workPath + "check_result",
+                "reverse"));
         String venvPath = toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-        toolsConfigParametersTable.put(Chameleon.RUNNABLE_FILE_PATH, PathUtils.combainPath(true, venvPath + "venv", "bin", "chameleon"));
-        toolsConfigParametersTable.put(Chameleon.CONFIG_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceConfigPath(), "chameleon", "default_" + workspaceId + ".yml"));
-        toolsConfigParametersTable.put(Chameleon.LOG_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "full_migration.log"));
-        toolsConfigParametersTable.put(Parameter.INPUT_ORDER_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceConfigPath(), "input"));
+        toolsConfigParametersTable.put(Chameleon.RUNNABLE_FILE_PATH, PathUtils.combainPath(true, venvPath + "venv",
+                "bin", "chameleon"));
+        toolsConfigParametersTable.put(Chameleon.CONFIG_PATH, PathUtils.combainPath(true,
+                workspacePath.getWorkspaceConfigPath(), "chameleon", "default_" + workspaceId + ".yml"));
+        toolsConfigParametersTable.put(Chameleon.LOG_PATH, PathUtils.combainPath(true,
+                workspacePath.getWorkspaceLogPath(), "full_migration.log"));
+        toolsConfigParametersTable.put(Parameter.INPUT_ORDER_PATH, PathUtils.combainPath(true,
+                workspacePath.getWorkspaceConfigPath(), "input"));
         String workLogDebeziumPath = PathUtils.combainPath(false, workspacePath.getWorkspaceLogPath(), "debezium");
         toolsConfigParametersTable.put(Debezium.LOG_PATH, workLogDebeziumPath);
         toolsConfigParametersTable.put(Debezium.Source.LOG_PATH, workLogDebeziumPath + "connect_source.log");
         toolsConfigParametersTable.put(Debezium.Sink.LOG_PATH, workLogDebeziumPath + "connect_sink.log");
-        toolsConfigParametersTable.put(Debezium.Source.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_source.log");
-        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_sink.log");
-        toolsConfigParametersTable.put(Parameter.ERROR_PATH, PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "error.log"));
+        toolsConfigParametersTable.put(Debezium.Source.REVERSE_LOG_PATH, workLogDebeziumPath
+                + "reverse_connect_source.log");
+        toolsConfigParametersTable.put(Debezium.Sink.REVERSE_LOG_PATH, workLogDebeziumPath + "reverse_connect_sink"
+                + ".log");
+        toolsConfigParametersTable.put(Parameter.ERROR_PATH, PathUtils.combainPath(true,
+                workspacePath.getWorkspaceLogPath(), "error.log"));
         initToolsConfigParametersTableConfluent();
     }
 
     /**
      * initialize TheConfluentConfiguration Parameters
-     *
      */
     public static void initToolsConfigParametersTableConfluent() {
         String confluentPath = toolsConfigParametersTable.get(Debezium.Confluent.PATH);
@@ -627,6 +678,121 @@ public class PortalControl {
         }
         toolsConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "toolspath.properties");
         migrationConfigPath = PathUtils.combainPath(true, portalWorkSpacePath + "config", "migrationConfig.properties");
+    }
+
+    /**
+     * Generate plan history.
+     *
+     * @param taskList the task list
+     */
+    public static void generatePlanHistory(List<String> taskList) {
+        String planHistoryFilePath = PathUtils.combainPath(true, PortalControl.portalControlPath + "logs",
+                "planHistory.log");
+        File file = new File(planHistoryFilePath);
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            Date date = new Date();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+            ArrayList<String> planInforamtionPatrs = new ArrayList<>();
+            planInforamtionPatrs.add(dateFormat.format(date));
+            planInforamtionPatrs.add("Current plan: ");
+            planInforamtionPatrs.addAll(taskList);
+            for (String str : planInforamtionPatrs) {
+                LOGGER.info(str);
+            }
+            StringBuilder planInformation = new StringBuilder();
+            for (String str : planInforamtionPatrs) {
+                planInformation.append(str).append(System.lineSeparator());
+            }
+            LogViewUtils.writeFile(planInformation.toString(), planHistoryFilePath, true);
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "generating plan history",
+                    e.getMessage());
+            portalException.setRequestInformation("Generating plan history failed");
+            LOGGER.error(portalException.toString());
+        }
+    }
+
+    /**
+     * Gets parameter command line first.
+     *
+     * @param hashtable the hashtable
+     * @param path      the path
+     */
+    public static void getParameterCommandLineFirst(Hashtable<String, String> hashtable, String path) {
+        File file = new File(path);
+        if (file.exists() && file.isFile()) {
+            Properties pps = new Properties();
+            try {
+                pps.load(new FileInputStream(path));
+            } catch (IOException e) {
+                PortalException portalException = new PortalException("IO exception", "loading the parameters in file"
+                        + " " + path, e.getMessage());
+                LOGGER.error(portalException.toString());
+                shutDownPortal(portalException.toString());
+                return;
+            }
+            for (Object key : pps.keySet()) {
+                String keyString = String.valueOf(key);
+                String valueString = System.getProperty(keyString);
+                if (valueString == null) {
+                    valueString = pps.getProperty(keyString);
+                }
+                if (keyString.contains("path") && !valueString.endsWith(File.separator)) {
+                    valueString += File.separator;
+                }
+                hashtable.put(keyString, valueString);
+            }
+            pps.clear();
+            for (String key : hashtable.keySet()) {
+                String valueString = hashtable.get(key);
+                hashtable.replace(key, ParamsUtils.changeValue(valueString, hashtable));
+            }
+            PropertitesUtils.changePropertiesParameters(hashtable, path);
+        }
+    }
+
+    /**
+     * Check reverse migration runnable boolean.
+     *
+     * @return the boolean
+     */
+    public static boolean checkReverseMigrationRunnable() {
+        boolean isReverseRunnable = false;
+        try (PgConnection connection = JdbcUtils.getPgConnection()) {
+            Hashtable<String, String> parameterTable = new Hashtable<>();
+            parameterTable.put("wal_level", "logical");
+            int parameter = 0;
+            for (String key : parameterTable.keySet()) {
+                if (JdbcUtils.selectGlobalVariables(connection, key, parameterTable.get(key))) {
+                    parameter++;
+                } else {
+                    break;
+                }
+            }
+            if (parameter == parameterTable.size()) {
+                isReverseRunnable = true;
+            }
+        } catch (SQLException e) {
+            PortalException portalException = new PortalException("IO exception",
+                    "checking reverse migration is runnable", e.getMessage());
+            refuseReverseMigrationReason = portalException.getMessage();
+            LOGGER.error(portalException.toString());
+        }
+        return isReverseRunnable;
+    }
+
+    /**
+     * Shut down portal.
+     *
+     * @param str the str
+     */
+    public static void shutDownPortal(String str) {
+        Plan.stopPlan = true;
+        status = Status.ERROR;
+        errorMsg = str;
     }
 
     /**

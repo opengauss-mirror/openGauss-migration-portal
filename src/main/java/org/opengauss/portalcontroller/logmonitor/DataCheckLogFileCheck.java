@@ -22,9 +22,9 @@ import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executors;
 
 import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_START_INFO_LIST;
 import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_STOP_INFO_LIST;

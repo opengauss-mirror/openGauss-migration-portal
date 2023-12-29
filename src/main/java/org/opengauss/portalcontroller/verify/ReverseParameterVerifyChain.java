@@ -26,10 +26,10 @@ import java.util.Map;
 /**
  * MigrationParameterVerifyChain
  *
- * @since 1.1
  * @date :2023/11/3 15:22
  * @description: MigrationParameterVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
     @Override
@@ -41,7 +41,7 @@ public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
     }
 
     private void verifyOpenGaussBinLogParam(Map<String, Object> resultMap, Map<String, Object> databaseMap,
-        PgConnection pgConnection) {
+                                            PgConnection pgConnection) {
         Map<String, Object> openGaussMap = new HashMap<>();
         databaseMap.put(Constants.KEY_OPENGAUSS, openGaussMap);
         if (pgConnection != null) {
@@ -54,8 +54,8 @@ public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
                 openGaussMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_TRUE);
             }
             resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | Integer.parseInt(
-                    openGaussMap.get(Constants.KEY_RESULT).toString()));
+                    Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | Integer.parseInt(
+                            openGaussMap.get(Constants.KEY_RESULT).toString()));
         } else {
             openGaussMap.put(Constants.KEY_RESULT, Constants.CROSS_BAR);
         }

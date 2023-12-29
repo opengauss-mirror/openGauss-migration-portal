@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ShowCommandReceiver extends CommandReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShowCommandReceiver.class);
+
     public void action(String order) {
         switch (order) {
             case Command.Show.PLAN:

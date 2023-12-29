@@ -15,10 +15,10 @@
 
 package org.opengauss.portalcontroller.software;
 
-import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.utils.PathUtils;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -31,7 +31,8 @@ public class ConnectorOpengauss implements Software {
         String connectorPath = PortalControl.toolsConfigParametersTable.get(Debezium.Connector.PATH);
         ArrayList<String> connectorOpengaussList = new ArrayList<>();
         String jarName = Debezium.Connector.OPENGAUSS_JAR_NAME;
-        connectorOpengaussList.add(PathUtils.combainPath(true, connectorPath + "debezium-connector-opengauss", jarName));
+        connectorOpengaussList.add(PathUtils.combainPath(true, connectorPath + "debezium-connector-opengauss",
+                jarName));
         return connectorOpengaussList;
     }
 

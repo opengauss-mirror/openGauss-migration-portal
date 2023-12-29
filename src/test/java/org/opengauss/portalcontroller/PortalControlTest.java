@@ -15,15 +15,25 @@
 package org.opengauss.portalcontroller;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import static org.mockito.Mockito.mockStatic;
+
 public class PortalControlTest {
+
+
     @Test
-    public void initPlanListTest(){
+    public void mainTest() {
+        MockedStatic<PortalControl> portalControlMockedStatic = mockStatic(PortalControl.class);
+    }
+
+    @Test
+    public void initPlanListTest() {
         PortalControl.initPlanList();
         List<String> plan1 = PortalControl.planList.get("plan1");
         assert plan1.contains("start mysql full migration");
@@ -67,14 +77,14 @@ public class PortalControlTest {
     }
 
     @Test
-    public void checkPathTest(){
-        File file1 =new File("test");
+    public void checkPathTest() {
+        File file1 = new File("test");
         file1.mkdir();
         PortalControl.portalControlPath = file1.getAbsolutePath();
-        File file2 =new File("toolsTest");
+        File file2 = new File("toolsTest");
         file2.mkdir();
         PortalControl.toolsConfigPath = file2.getAbsolutePath();
-        File file3 =new File("migrationTest");
+        File file3 = new File("migrationTest");
         file3.mkdir();
         PortalControl.migrationConfigPath = file3.getAbsolutePath();
         assert PortalControl.checkPath();
