@@ -407,7 +407,7 @@ public class ChangeStatusTools {
             Iterator iterator = array.iterator();
             int index = 0;
             while (iterator.hasNext()) {
-                String tableName = array.getJSONObject(index).getString("tableName");
+                String tableName = array.getJSONObject(index).getString("table");
                 for (TableStatus tableStatus : tableStatusArrayList) {
                     if (tableStatus.getName().equals(tableName)) {
                         tableStatus.setStatus(Status.Object.CHECK_FAILED);

@@ -430,6 +430,7 @@ public class Task {
             LOGGER.info(order + " running");
             boolean processQuit = Tools.getCommandPid(processString) == -1;
             boolean finished = Tools.lastLine(logPath).contains(endFlag);
+            LOGGER.info("processQuit={}, finished={}", processQuit, finished);
             if (processQuit && finished) {
                 LOGGER.info(order + " finished");
                 break;
