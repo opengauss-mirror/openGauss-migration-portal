@@ -1973,6 +1973,10 @@ public class Tools {
      * @param confluentInstanceConfig confluentInstanceConfig
      */
     public static void changeConfluentIPAdnPortForInstall(MigrationConfluentInstanceConfig confluentInstanceConfig) {
+        if (!confluentInstanceConfig.checkNecessaryParams()) {
+            LOGGER.info("no need change kafka param");
+            return;
+        }
         // kafka change
         Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
         kafkaConfigTable.put("listeners",
@@ -1999,6 +2003,10 @@ public class Tools {
         MigrationConfluentInstanceConfig confluentInstanceConfig =
                 MigrationConfluentInstanceConfig.getSystemParamAndParseEntity();
         LOGGER.info("get confluentInstanceConfig success start change param");
+        if (!confluentInstanceConfig.checkNecessaryParams()) {
+            LOGGER.info("necessary param is not match");
+            return;
+        }
         Hashtable<String, String> migrationConfig = new Hashtable<>();
         migrationConfig.put(Parameter.Port.KAFKA,
                 confluentInstanceConfig.getKafkaIp() + ":" + confluentInstanceConfig.getKafkaPort());
@@ -2235,8 +2243,8 @@ public class Tools {
         Task.setConfluentConfig(toolsConfigParametersTable, Task.getTaskProcessMap());
         MigrationConfluentInstanceConfig confluentInstanceConfig =
                 MigrationConfluentInstanceConfig.getSystemParamAndParseEntity();
-        if (confluentInstanceConfig.getThirdPartySoftwareConfigType()
-                .equals(MigrationConfluentInstanceConfig.ThirdPartySoftwareConfigType.BIND.getCode())) {
+        if (MigrationConfluentInstanceConfig.ThirdPartySoftwareConfigType.BIND.getCode()
+                .equals(confluentInstanceConfig.getThirdPartySoftwareConfigType())) {
             LOGGER.info("Start kafka success. bind from = {}", confluentInstanceConfig.getKafkaIp());
             return;
         }
