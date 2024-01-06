@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.Tools;
@@ -117,6 +118,37 @@ public class MigrationConfluentInstanceConfig {
 
         log.info("get MigrationConfluentInstanceConfig from system param = {}", migrationConfluentInstanceConfig);
         return migrationConfluentInstanceConfig;
+    }
+
+    /**
+     * check necessary params
+     *
+     * @return boolean
+     */
+    public boolean checkNecessaryParams() {
+        if (Strings.isBlank(this.thirdPartySoftwareConfigType)) {
+            return false;
+        }
+        if (Strings.isBlank(this.kafkaIp)) {
+            return false;
+        }
+        if (Strings.isBlank(this.zkIp)) {
+            return false;
+        }
+        if (Strings.isBlank(this.schemaRegistryIp)) {
+            return false;
+        }
+        if (Strings.isBlank(this.kafkaPort)) {
+            return false;
+        }
+        if (Strings.isBlank(this.zookeeperPort)) {
+            return false;
+        }
+
+        if (Strings.isBlank(this.schemaRegistryPort)) {
+            return false;
+        }
+        return true;
     }
 
 
