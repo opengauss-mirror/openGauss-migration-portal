@@ -42,13 +42,13 @@ portal/
 		portal.log 
 	pkg/           
 		chameleon/
-			chameleon-5.1.1-py3-none-any.whl
+			chameleon-6.0.0-py3-none-any.whl
 		datacheck/
-			gs_datacheck-5.1.1.tar.gz
+			gs_datacheck-6.0.0.tar.gz
 		debezium/
 			confluent-community-5.5.1-2.12.zip
-			replicate-mysql2openGauss-5.1.1.tar.gz
-			replicate-openGauss2mysql-5.1.1.tar.gz
+			replicate-mysql2openGauss-6.0.0.tar.gz
+			replicate-openGauss2mysql-6.0.0.tar.gz
 	tmp/
 	tools/
 		chameleon/
@@ -97,22 +97,22 @@ maven版本：3.8.1以上
 
 | 系统名称       | 系统架构 | 下载链接                                                                                                              |
 | :------------- | -------- |-------------------------------------------------------------------------------------------------------------------|
-| centos7        | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-5.1.1-x86_64.tar.gz         |
-| openEuler20.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.1.1-x86_64.tar.gz  |
-| openEuler20.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-5.1.1-aarch64.tar.gz |
-| openEuler22.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-5.1.1-x86_64.tar.gz  |
-| openEuler22.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-5.1.1-aarch64.tar.gz |
+| centos7        | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-6.0.0-x86_64.tar.gz         |
+| openEuler20.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-6.0.0-x86_64.tar.gz  |
+| openEuler20.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-6.0.0-aarch64.tar.gz |
+| openEuler22.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-6.0.0-x86_64.tar.gz  |
+| openEuler22.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-6.0.0-aarch64.tar.gz |
 
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-5.1.1-x86_64.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-6.0.0-x86_64.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
 
    ```
-tar -zxvf PortalControl-5.1.1-x86_64.tar.gz
+tar -zxvf PortalControl-6.0.0-x86_64.tar.gz
    ```
 
 ## 启动方式
@@ -152,11 +152,11 @@ sh gs_rep_portal.sh help &
 
 | 工具                          | 版本    |
 |-----------------------------|-------|
-| chameleon                   | 5.1.1 |
+| chameleon                   | 6.0.0 |
 | confluent                   | 5.5.1 |
-| datacheck                   | 5.1.1 |
-| replicate-mysql2openGauss   | 5.1.1 |
-| replicate-openGauss2mysql   | 5.1.1 |
+| datacheck                   | 6.0.0 |
+| replicate-mysql2openGauss   | 6.0.0 |
+| replicate-openGauss2mysql   | 6.0.0 |
 
 在/ops/portal/config目录的toolspath.properties文件中修改工具安装路径，其中文件夹要以/结尾：
 
@@ -477,13 +477,13 @@ sh gs_rep_portal.sh uninstall_mysql_all_migration_tools 1 &
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-5.1.1-x86_64.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-6.0.0-x86_64.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
 
    ```
-tar -zxvf PortalControl-5.1.1-x86_64.tar.gz
+tar -zxvf PortalControl-6.0.0-x86_64.tar.gz
    ```
 
 3.在/ops/portal/config目录的toolspath.properties文件中修改安装路径，然后启动命令安装
