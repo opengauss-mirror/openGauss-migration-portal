@@ -940,6 +940,10 @@ public class Tools {
      * @return the string
      */
     public static String changeGtidSet(String oldGtidSet, String mysqlUuid) {
+        if (oldGtidSet.equals("None") || mysqlUuid.equals("")) {
+            LOGGER.info("Gtid set is null or uuid is null");
+            return "";
+        }
         StringBuilder newGtidSet = new StringBuilder();
         String[] gtidSetParts = oldGtidSet.replaceAll(System.lineSeparator(), "").split(",");
         for (String tGtidSet : gtidSetParts) {
