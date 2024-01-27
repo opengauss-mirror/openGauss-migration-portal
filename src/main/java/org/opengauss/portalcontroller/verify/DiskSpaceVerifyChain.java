@@ -79,10 +79,10 @@ public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
      * @return  single table max capacity
      */
     public static BigDecimal getMaxTableSpace(Connection mysqlConnection, boolean isDefault) {
-        String permissionStr = "";
+        String permissionStr = "0";
         try {
             permissionStr = JdbcTools.selectStringValue(mysqlConnection,
-                "SELECT MAX(DATA_LENGTH + INDEX_LENGTH + DATA_FREE) as total from "
+                "SELECT IFNULL(MAX(DATA_LENGTH + INDEX_LENGTH + DATA_FREE),0) as total from "
                     + "information_schema.tables where TABLE_SCHEMA ='"
                     + PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME) + "'", "total");
         } catch (SQLException e) {
