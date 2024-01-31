@@ -50,6 +50,11 @@ public class Constants {
     public static final String KEY_MYSQL = "mysql";
 
     /**
+     * mysql encryption
+     */
+    public static final String ENCRYPTION_MYSQL = "mysql_native_password";
+
+    /**
      * string key opengauss
      */
     public static final String KEY_OPENGAUSS = "opengauss";
