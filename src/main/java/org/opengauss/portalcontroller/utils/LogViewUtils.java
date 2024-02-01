@@ -56,7 +56,7 @@ public class LogViewUtils {
      * @return the error msg
      */
     public static String getErrorMsg(String logPath) {
-        return getLog(logPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR));
+        return getLog(logPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER));
     }
 
     /**

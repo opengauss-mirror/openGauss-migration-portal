@@ -424,7 +424,7 @@ public interface Check {
          */
         String ERR = "Error:";
 
-        String ERR_UPPER = "ERROR:";
+        String ERR_UPPER = "ERROR";
 
         /**
          * Exception String

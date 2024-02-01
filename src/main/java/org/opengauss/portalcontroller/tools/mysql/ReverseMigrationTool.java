@@ -68,6 +68,7 @@ import static org.opengauss.portalcontroller.utils.ProcessUtils.checkProcess;
  */
 public class ReverseMigrationTool extends ParamsConfig implements Tool {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReverseMigrationTool.class);
+    public static final String XLOG_LOCATION = "xlog.location";
 
     private final LogFileListener reverseLogFileListener = new LogFileListener();
 
@@ -157,8 +158,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
                 BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
                 String tempStr;
                 while ((tempStr = fileReader.readLine()) != null) {
-                    if (tempStr.contains("xlog location")) {
-                        int index = tempStr.lastIndexOf(":") + 1;
+                    if (tempStr.contains(XLOG_LOCATION)) {
+                        int index = tempStr.lastIndexOf("=") + 1;
                         xLogLocation = tempStr.substring(index).trim();
                     }
                 }
@@ -171,7 +172,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
             PortalControl.shutDownPortal(portalException.toString());
             return;
         }
-        reverseSinkParams.put("xlog.location", xLogLocation);
+        reverseSourceParams.put(XLOG_LOCATION, xLogLocation);
     }
 
     /**
@@ -243,6 +244,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      *
      * initParmasFromEnvForAddAndChange
      */
+    @Override
     public void initParmasFromEnvForAddAndChange() {
         reverseSinkParams.putAll(ParamsUtils.changeToolsPropsParameters(ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SINK));
         reverseSourceParams.putAll(ParamsUtils.changeToolsPropsParameters(ToolsConfigEnum.DEBEZIUM_OPENGAUSS_SOURCE));

@@ -77,10 +77,11 @@ public class DataCheckLogFileCheck {
         String checkResultFile = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT)
                 + "process.pid";
         sinkLogListener = new LogFileListener(checkSinkLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR));
+                Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER));
         sourceLogListener = new LogFileListener(checkSourceLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR));
-        appLogListener = new LogFileListener(checkLogPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR));
+                Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER));
+        appLogListener = new LogFileListener(checkLogPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR,
+                Check.CheckLog.ERR_UPPER));
         List<String> checkList = new ArrayList<>();
         checkList.addAll(DATA_CHECK_START_INFO_LIST);
         checkList.addAll(DATA_CHECK_STOP_INFO_LIST);
@@ -104,11 +105,14 @@ public class DataCheckLogFileCheck {
      */
     public boolean getErrResult() {
         boolean isSinkCheckErr = sinkLogListener.getLogMap().containsKey(Check.CheckLog.EXCEPTION)
-                || sinkLogListener.getLogMap().containsKey(Check.CheckLog.ERR);
+                || sinkLogListener.getLogMap().containsKey(Check.CheckLog.ERR)
+                || sinkLogListener.getLogMap().containsKey(Check.CheckLog.ERR_UPPER);
         boolean isSourceCheckErr = sourceLogListener.getLogMap().containsKey(Check.CheckLog.EXCEPTION)
-                || sourceLogListener.getLogMap().containsKey(Check.CheckLog.ERR);
+                || sourceLogListener.getLogMap().containsKey(Check.CheckLog.ERR)
+                || sourceLogListener.getLogMap().containsKey(Check.CheckLog.ERR_UPPER);
         boolean isAppErrCheck = appLogListener.getLogMap().containsKey(Check.CheckLog.EXCEPTION)
-                || appLogListener.getLogMap().containsKey(Check.CheckLog.ERR);
+                || appLogListener.getLogMap().containsKey(Check.CheckLog.ERR)
+                || appLogListener.getLogMap().containsKey(Check.CheckLog.ERR_UPPER);
         return !(isSinkCheckErr || isSourceCheckErr || isAppErrCheck);
     }
 
