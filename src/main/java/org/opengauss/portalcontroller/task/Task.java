@@ -350,6 +350,7 @@ public class Task {
             LOGGER.info("{} has started.", name);
             runningTaskThread.setPid(ProcessUtils.getCommandPid(methodProcessName));
         }
+
     }
 
     /**

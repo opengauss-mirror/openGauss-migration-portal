@@ -31,10 +31,10 @@ import java.util.Map;
 /**
  * ReversePermissionVerifyChain
  *
+ * @since 1.1
  * @date :2023/11/3 15:22
  * @description: ReversePermissionVerifyChain
  * @version: 1.1
- * @since 1.1
  */
 public class ReversePermissionVerifyChain extends FullPermissionVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReversePermissionVerifyChain.class);

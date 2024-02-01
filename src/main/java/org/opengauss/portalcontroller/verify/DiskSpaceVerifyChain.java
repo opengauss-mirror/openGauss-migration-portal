@@ -43,10 +43,10 @@ import java.util.Map;
 /**
  * DiskSpaceVerifyChain
  *
+ * @since 1.1
  * @date :2023/11/3 15:22
  * @description: DiskSpaceVerifyChain
  * @version: 1.1
- * @since 1.1
  */
 public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskSpaceVerifyChain.class);
@@ -79,7 +79,7 @@ public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
      * @return  single table max capacity
      */
     public static BigDecimal getMaxTableSpace(Connection mysqlConnection, boolean isDefault) {
-        String permissionStr = "0";
+        String permissionStr = "";
         try {
             permissionStr = JdbcUtils.selectStringValue(mysqlConnection,
                 "SELECT IFNULL(MAX(DATA_LENGTH + INDEX_LENGTH + DATA_FREE),0) as total from "

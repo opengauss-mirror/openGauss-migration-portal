@@ -98,36 +98,6 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     }
 
     /**
-     * Sets x log path.
-     */
-    public static void setXLogPath() {
-        String xLogPath = PortalControl.toolsConfigParametersTable.get(Status.XLOG_PATH);
-        String xLogLocation = "";
-        File file = new File(xLogPath);
-        try {
-            if (file.exists()) {
-                BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-                String tempStr;
-                while ((tempStr = fileReader.readLine()) != null) {
-                    if (tempStr.contains("xlog location")) {
-                        int index = tempStr.lastIndexOf(":") + 1;
-                        xLogLocation = tempStr.substring(index).trim();
-                    }
-                }
-                fileReader.close();
-            }
-        } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception",
-                    "reading xlog.path in file " + file.getAbsolutePath(), e.getMessage());
-            LOGGER.error(portalException.toString());
-            PortalControl.shutDownPortal(portalException.toString());
-            return;
-        }
-        String configPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONFIG_PATH);
-        PropertitesUtils.changeSinglePropertiesParameter("xlog.location", xLogLocation, configPath);
-    }
-
-    /**
      * install
      *
      * @param isDownload isDownload
@@ -170,7 +140,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         reverseSinkParams.put("sink.process.file.path", toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
         reverseSinkParams.put("create.count.info.path", toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
         reverseSinkParams.put("fail.sql.path", toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
-        setXLogPath();
+
     }
 
     /**
@@ -179,7 +149,29 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     void initInteractionParams() {
-
+        String xLogPath = PortalControl.toolsConfigParametersTable.get(Status.XLOG_PATH);
+        String xLogLocation = "";
+        File file = new File(xLogPath);
+        try {
+            if (file.exists()) {
+                BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
+                String tempStr;
+                while ((tempStr = fileReader.readLine()) != null) {
+                    if (tempStr.contains("xlog location")) {
+                        int index = tempStr.lastIndexOf(":") + 1;
+                        xLogLocation = tempStr.substring(index).trim();
+                    }
+                }
+                fileReader.close();
+            }
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception",
+                    "reading xlog.path in file " + file.getAbsolutePath(), e.getMessage());
+            LOGGER.error(portalException.toString());
+            PortalControl.shutDownPortal(portalException.toString());
+            return;
+        }
+        reverseSinkParams.put("xlog.location", xLogLocation);
     }
 
     /**
