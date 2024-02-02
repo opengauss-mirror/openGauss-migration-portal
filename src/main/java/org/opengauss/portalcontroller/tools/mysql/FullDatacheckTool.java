@@ -37,6 +37,7 @@ import org.opengauss.portalcontroller.status.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
+import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
@@ -311,7 +312,7 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
         ThreadStatusController.fullMigrationStatus.setTable(
                 getdataCheckTableStatus(ThreadStatusController.fullMigrationStatus.getTable()));
         String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.fullMigrationStatus);
-        LogViewUtils.writeFile(fullMigrationStatusString,
+        FileUtils.writeFile(fullMigrationStatusString,
                 PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH), false);
         return true;
     }

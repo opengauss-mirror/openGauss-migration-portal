@@ -52,10 +52,10 @@ import static org.opengauss.portalcontroller.constant.ToolsParamsLog.KEY_SUB_IND
 import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_PARAM_PREFIX;
 
 /**
- * some msg
+ * ParamsUtils
  *
  * @date :2024/1/15 16:46
- * @description: some description
+ * @description: ParamsUtils
  * @version: 1.1
  * @since 1.1
  */

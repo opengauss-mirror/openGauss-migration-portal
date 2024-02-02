@@ -49,7 +49,7 @@ class FullDatacheckToolTest {
             fileCheckFiled.setAccessible(true);
             fileCheckFiled.set(fullDatacheckToolUnderTest, fileCheck);
             Mockito.doCallRealMethod().when(fullDatacheckToolUnderTest).start(Mockito.anyString());
-            Mockito.doNothing().when(fullDatacheckToolUnderTest).stop();
+            Mockito.doReturn(true).when(fullDatacheckToolUnderTest).stop();
             try (MockedStatic<Task> taskMocked = Mockito.mockStatic(Task.class)) {
                 taskMocked.when(() -> Task.startDataCheck(Mockito.any(LogFileListener.class)))
                         .then(invocationOnMock -> null);

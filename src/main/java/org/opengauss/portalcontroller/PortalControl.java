@@ -15,7 +15,6 @@
 
 package org.opengauss.portalcontroller;
 
-import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.command.ConcreteCommand;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -33,11 +32,10 @@ import org.opengauss.portalcontroller.status.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.task.WorkspacePath;
-import org.opengauss.portalcontroller.thread.ThreadCheckProcess;
 import org.opengauss.portalcontroller.thread.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.thread.ThreadGetOrder;
+import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.opengauss.portalcontroller.utils.FileUtils;
-import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
@@ -50,7 +48,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -128,10 +125,6 @@ public class PortalControl {
      */
     public static Hashtable<String, String> toolsMigrationParametersTable = new Hashtable<>();
 
-    /**
-     * The constant threadCheckProcess.
-     */
-    public static ThreadCheckProcess threadCheckProcess = new ThreadCheckProcess();
 
     /**
      * The constant commandLineParameterStringMap.
@@ -147,16 +140,6 @@ public class PortalControl {
      * The constant status.
      */
     public static int status = Status.START_FULL_MIGRATION;
-
-    /**
-     * The constant allowReverseMigration.
-     */
-    public static boolean allowReverseMigration = false;
-
-    /**
-     * The constant refuseReverseMigrationReason.
-     */
-    public static String refuseReverseMigrationReason = "";
 
     /**
      * The constant portId.
@@ -188,17 +171,7 @@ public class PortalControl {
      * @param args the input arguments
      */
     public static void main(String[] args) {
-        Thread.currentThread().setUncaughtExceptionHandler(new ThreadExceptionHandler());
-        initPlanList();
-        initParametersRegexMap();
-        initCommandLineParameters();
-        initValidOrderList();
-        initPortalPath();
-        initMigrationParamsFromProps();
-        Plan.createWorkspace(workspaceId);
-        initTaskMap();
-        threadCheckProcess.setName("threadCheckProcess");
-        threadCheckProcess.start();
+        init();
         FileUtils.cleanInputOrder();
         threadGetOrder.start();
         String order = commandLineParameterStringMap.get(Command.Parameters.ORDER);
@@ -209,11 +182,18 @@ public class PortalControl {
         } else {
             LOGGER.error("Invalid command.");
         }
-        threadCheckProcess.exit = true;
         threadGetOrder.exit = true;
     }
 
-    private static void initTaskMap() {
+    private static void init() {
+        Thread.currentThread().setUncaughtExceptionHandler(new ThreadExceptionHandler());
+        initPlanList();
+        initParametersRegexMap();
+        initCommandLineParameters();
+        initValidOrderList();
+        initPortalPath();
+        initMigrationParamsFromProps();
+        Plan.createWorkspace(workspaceId);
         Task.initMethodNameMap();
         Task.initTaskProcessMap();
         Task.initTaskLogMap();
@@ -396,10 +376,9 @@ public class PortalControl {
             return;
         }
         if (taskList.contains("start mysql reverse migration")) {
-            boolean canAllowReverseMigration = checkReverseMigrationRunnable();
+            boolean canAllowReverseMigration = ReverseMigrationTool.checkReverseMigrationRunnable();
             LogViewUtils.outputInformation(canAllowReverseMigration, "Reverse migration is runnable.",
                     "Reverse migration can not run.");
-            PortalControl.allowReverseMigration = canAllowReverseMigration;
         }
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
         Plan.getInstance(workspaceId).execPlan(taskList);
@@ -706,7 +685,7 @@ public class PortalControl {
             for (String str : planInforamtionPatrs) {
                 planInformation.append(str).append(System.lineSeparator());
             }
-            LogViewUtils.writeFile(planInformation.toString(), planHistoryFilePath, true);
+            FileUtils.writeFile(planInformation.toString(), planHistoryFilePath, true);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "generating plan history",
                     e.getMessage());
@@ -752,36 +731,6 @@ public class PortalControl {
             }
             PropertitesUtils.changePropertiesParameters(hashtable, path);
         }
-    }
-
-    /**
-     * Check reverse migration runnable boolean.
-     *
-     * @return the boolean
-     */
-    public static boolean checkReverseMigrationRunnable() {
-        boolean isReverseRunnable = false;
-        try (PgConnection connection = JdbcUtils.getPgConnection()) {
-            Hashtable<String, String> parameterTable = new Hashtable<>();
-            parameterTable.put("wal_level", "logical");
-            int parameter = 0;
-            for (String key : parameterTable.keySet()) {
-                if (JdbcUtils.selectGlobalVariables(connection, key, parameterTable.get(key))) {
-                    parameter++;
-                } else {
-                    break;
-                }
-            }
-            if (parameter == parameterTable.size()) {
-                isReverseRunnable = true;
-            }
-        } catch (SQLException e) {
-            PortalException portalException = new PortalException("IO exception",
-                    "checking reverse migration is runnable", e.getMessage());
-            refuseReverseMigrationReason = portalException.getMessage();
-            LOGGER.error(portalException.toString());
-        }
-        return isReverseRunnable;
     }
 
     /**

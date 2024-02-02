@@ -25,10 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -208,66 +204,6 @@ public class LogViewUtils {
      */
     public static String getFullLogNoSeparator(String logPath) {
         return getFullLog(logPath).replaceAll(System.lineSeparator(), "");
-    }
-
-    /**
-     * Write file.
-     *
-     * @param stringList the string list
-     * @param path       the path
-     * @param append     the append
-     */
-    public static void writeFile(List<String> stringList, String path, boolean append) {
-        StringBuilder str = new StringBuilder();
-        for (String tempStr : stringList) {
-            str.append(tempStr).append(System.lineSeparator());
-        }
-        writeFile(str.toString(), path, append);
-    }
-
-    /**
-     * Write file.
-     *
-     * @param str    the str
-     * @param path   the path
-     * @param append the append
-     */
-    public static void writeFile(String str, String path, boolean append) {
-        if (append) {
-            writeAppendFile(path, str);
-        } else {
-            writeFileRest(path, str);
-        }
-    }
-
-    /**
-     * Write lines of text to a file. Characters are encoded into bytes using the UTF-8 charset.
-     *
-     * @param filename filename
-     * @param content  content
-     */
-    public static void writeAppendFile(String filename, String content) {
-        try {
-            Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND,
-                    StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            LOGGER.error("file write error:", e);
-        }
-    }
-
-    /**
-     * Write file rest.
-     *
-     * @param filename the filename
-     * @param content  the content
-     */
-    public static void writeFileRest(String filename, String content) {
-        try {
-            Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            LOGGER.error("file write error:", e);
-        }
     }
 
     /**

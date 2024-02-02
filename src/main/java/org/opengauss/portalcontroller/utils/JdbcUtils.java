@@ -21,6 +21,7 @@ import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.task.Plan;
+import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,14 +183,14 @@ public class JdbcUtils {
                 String reason = "If you want to use reverse migration,"
                         + "please alter system set " + columnName + " to " + defaultValue + " "
                         + "and restart openGauss to make it work.";
-                PortalControl.refuseReverseMigrationReason = reason;
+                ReverseMigrationTool.refuseReverseMigrationReason = reason;
                 LOGGER.error(reason);
             }
         } catch (SQLException e) {
             PortalException portalException = new PortalException("SQL exception", "select global variable",
                     e.getMessage());
             portalException.setRequestInformation("Select global variable " + columnName + " failed.");
-            PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+            ReverseMigrationTool.refuseReverseMigrationReason = portalException.getMessage();
             LOGGER.error(portalException.toString());
         }
         return flag;
@@ -218,7 +219,7 @@ public class JdbcUtils {
                         flag = true;
                     } else {
                         String reason = "Please upgrade openGauss to 3.0.0 or higher to use reverse migration.";
-                        PortalControl.refuseReverseMigrationReason = reason;
+                        ReverseMigrationTool.refuseReverseMigrationReason = reason;
                         LOGGER.error(reason);
                     }
                 } else {
@@ -228,7 +229,7 @@ public class JdbcUtils {
                 PortalException portalException = new PortalException("SQL exception", "select openGauss version",
                         e.getMessage());
                 portalException.setRequestInformation("Select openGauss version failed.");
-                PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                ReverseMigrationTool.refuseReverseMigrationReason = portalException.getMessage();
                 LOGGER.error(portalException.toString());
             }
         }

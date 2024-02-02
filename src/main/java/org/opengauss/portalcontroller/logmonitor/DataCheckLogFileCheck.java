@@ -76,12 +76,11 @@ public class DataCheckLogFileCheck {
         String checkLogPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
         String checkResultFile = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT)
                 + "process.pid";
-        sinkLogListener = new LogFileListener(checkSinkLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER));
-        sourceLogListener = new LogFileListener(checkSourceLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER));
-        appLogListener = new LogFileListener(checkLogPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR,
-                Check.CheckLog.ERR_UPPER));
+        List<String> checkLogStrs = List.of(Check.CheckLog.EXCEPTION,
+                Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER);
+        sinkLogListener = new LogFileListener(checkSinkLogPath, checkLogStrs);
+        sourceLogListener = new LogFileListener(checkSourceLogPath, checkLogStrs);
+        appLogListener = new LogFileListener(checkLogPath, checkLogStrs);
         List<String> checkList = new ArrayList<>();
         checkList.addAll(DATA_CHECK_START_INFO_LIST);
         checkList.addAll(DATA_CHECK_STOP_INFO_LIST);

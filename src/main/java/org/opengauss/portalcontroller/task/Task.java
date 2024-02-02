@@ -15,16 +15,17 @@
 
 package org.opengauss.portalcontroller.task;
 
+import lombok.Builder;
 import lombok.Getter;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalMigrationTool;
 import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
-import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -33,12 +34,6 @@ import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
-import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
-import org.opengauss.portalcontroller.tools.mysql.IncrementalDatacheckTool;
-import org.opengauss.portalcontroller.tools.mysql.IncrementalMigrationTool;
-import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
-import org.opengauss.portalcontroller.tools.mysql.ReverseDatacheckTool;
-import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
@@ -64,24 +59,30 @@ import static org.opengauss.portalcontroller.PortalControl.workspaceId;
  */
 public class Task {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(Task.class);
+    private static final int DATA_CHECK_START_TIME = 15000;
+    private static final int METHOD_START_TIME = 1000;
+    public static final int PROCESS_START_TIME = 3000;
+    public static final int KAFKA_START_TIME = 8000;
+    public static final int REVERSE_START_TIME = 5000;
     private static HashMap<String, String> methodNameMap = new HashMap<>();
     private static HashMap<String, String> taskProcessMap = new HashMap<>();
     private static HashMap<String, String> taskLogMap = new HashMap<>();
     @Getter
     private static HashMap<String, CheckProcess> checkProcessMap = new HashMap<>();
 
-    private static final IncrementalMigrationTool INCREMENTAL_MIGRATION_TOOL = new IncrementalMigrationTool();
+    private static final Tool INCREMENTAL_MIGRATION_TOOL = new IncrementalMigrationTool();
+    private static final Tool REVERSE_MIGRATION_TOOL = new ReverseMigrationTool();
 
     /**
      * The constant ALL_TASK_LIST.
      */
     public static final List<String> ALL_TASK_LIST = Arrays.asList(
-            "start mysql full migration",
-            "start mysql full migration datacheck",
-            "start mysql incremental migration",
-            "start mysql incremental migration datacheck",
-            "start mysql reverse migration",
-            "start mysql reverse migration datacheck"
+            Plan.START_MYSQL_FULL_MIGRATION,
+            Plan.START_MYSQL_FULL_MIGRATION_DATACHECK,
+            Plan.START_MYSQL_INCREMENTAL_MIGRATION,
+            Plan.START_MYSQL_INCREMENTAL_MIGRATION_DATACHECK,
+            Plan.START_MYSQL_REVERSE_MIGRATION,
+            Plan.START_MYSQL_REVERSE_MIGRATION_DATACHECK
     );
 
     /**
@@ -262,16 +263,15 @@ public class Task {
     public static void initCheckProcessMap() {
         checkProcessMap.put(Method.Name.CONNECT_SINK, () -> INCREMENTAL_MIGRATION_TOOL.checkStatus(workspaceId));
         checkProcessMap.put(Method.Name.CONNECT_SOURCE, () -> INCREMENTAL_MIGRATION_TOOL.checkStatus(workspaceId));
-        checkProcessMap.put(Method.Name.REVERSE_CONNECT_SOURCE,
-                () -> INCREMENTAL_MIGRATION_TOOL.checkStatus(workspaceId));
-        checkProcessMap.put(Method.Name.REVERSE_CONNECT_SINK, () -> INCREMENTAL_MIGRATION_TOOL.checkStatus(workspaceId));
+        checkProcessMap.put(Method.Name.REVERSE_CONNECT_SOURCE, () -> REVERSE_MIGRATION_TOOL.checkStatus(workspaceId));
+        checkProcessMap.put(Method.Name.REVERSE_CONNECT_SINK, () -> REVERSE_MIGRATION_TOOL.checkStatus(workspaceId));
     }
 
     /**
      * Start task method.
      *
      * @param name        the name
-     * @param sleepTime   the sleep time
+     * @param sleepTime   the sleep time MILLISECONDS
      * @param startSign   the start sign
      * @param logListener the LogFileListener
      */
@@ -313,8 +313,8 @@ public class Task {
                                              String startSign, LogFileListener logListener) {
         if (!startSign.equals("")) {
             while (sleepTime > 0) {
-                ProcessUtils.sleepThread(1000, information);
-                sleepTime -= 1000;
+                ProcessUtils.sleepThread(METHOD_START_TIME, information);
+                sleepTime -= METHOD_START_TIME;
                 if (LogViewUtils.checkStartSignFlag(startSign, logListener)) {
                     break;
                 }
@@ -366,9 +366,9 @@ public class Task {
             String tmpPath = PathUtils.combainPath(true, PortalControl.portalControlPath, "tmp",
                     "test_" + Plan.workspaceId + ".txt");
             try {
-                RuntimeExecUtils.executeOrder(successOrder, 1000, PortalControl.portalControlPath, tmpPath,
+                RuntimeExecUtils.executeOrder(successOrder, METHOD_START_TIME, PortalControl.portalControlPath, tmpPath,
                         true, new ArrayList<>());
-                ProcessUtils.sleepThread(1000, "test " + name);
+                ProcessUtils.sleepThread(METHOD_START_TIME, "test " + name);
                 String str = LogViewUtils.getFullLog(tmpPath);
                 RuntimeExecUtils.removeFile(tmpPath, PortalControl.portalErrorPath);
                 if (!str.equals("") && !str.contains(failSign)) {
@@ -382,7 +382,7 @@ public class Task {
                 LOGGER.warn("Run " + name + " failed.");
                 break;
             }
-            sleepTime -= 1000;
+            sleepTime -= METHOD_START_TIME;
         }
     }
 
@@ -431,7 +431,7 @@ public class Task {
         String[] cmdParts = new String[]{"curl", "-X", "PUT", "-H", "Content-Type: application/vnd.schemaregistry"
                 + ".v1+json", "--data", "{\"compatibility\": \"NONE\"}", config};
         try {
-            RuntimeExecUtils.executeOrderCurrentRuntime(cmdParts, 1000, log, "Run curl failed.");
+            RuntimeExecUtils.executeOrderCurrentRuntime(cmdParts, METHOD_START_TIME, log, "Run curl failed.");
         } catch (PortalException e) {
             e.setRequestInformation("Run curl failed.");
             LOGGER.error(e.toString());
@@ -449,7 +449,7 @@ public class Task {
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "zookeeper-server-start");
         String order = executeFile + " -daemon " + configPath;
-        RuntimeExecUtils.executeStartOrder(order, 3000, "", errorPath, false, "Start zookeeper");
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, "", errorPath, false, "Start zookeeper");
     }
 
     /**
@@ -462,7 +462,7 @@ public class Task {
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "kafka-server-start");
         String order = executeFile + " -daemon " + configPath;
-        RuntimeExecUtils.executeStartOrder(order, 8000, "", errorPath, false, "Start kafka");
+        RuntimeExecUtils.executeStartOrder(order, KAFKA_START_TIME, "", errorPath, false, "Start kafka");
     }
 
     /**
@@ -475,7 +475,7 @@ public class Task {
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "schema-registry-start");
         String order = executeFile + " -daemon " + configPath;
-        RuntimeExecUtils.executeStartOrder(order, 3000, "", errorPath, false, "Start kafka schema registry");
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, "", errorPath, false, "Start kafka schema registry");
     }
 
     /**
@@ -495,7 +495,7 @@ public class Task {
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, 3000, "", errorPath, false, "Start mysql connector source");
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, "", errorPath, false, "Start mysql connector source");
     }
 
     /**
@@ -513,7 +513,7 @@ public class Task {
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, 3000, "", errorPath, false, "Start mysql connector sink");
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, "", errorPath, false, "Start mysql connector sink");
     }
 
     /**
@@ -532,7 +532,7 @@ public class Task {
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, 5000, "", errorPath, false, "Start opengauss connector source");
+        RuntimeExecUtils.executeStartOrder(order, REVERSE_START_TIME, "", errorPath, false, "Start opengauss connector source");
     }
 
 
@@ -551,9 +551,29 @@ public class Task {
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, 5000, "", errorPath, false, "Start opengauss connector sink");
+        RuntimeExecUtils.executeStartOrder(order, REVERSE_START_TIME, "", errorPath, false, "Start opengauss connector sink");
     }
 
+    @Builder
+    static class DataCheckRunCommand {
+        String jvmParameter;
+        String loaderPath;
+        String configPath;
+        String jarPath;
+        String param;
+        public String getRunCommamd() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("nohup java").append(" ")
+                    .append(jvmParameter).append(" ")
+                    .append("-Dloader.path=").append(loaderPath).append("lib").append(" ")
+                    .append("-Dspring.config.additional-location=").append(configPath).append(" ")
+                    .append("-jar").append(" ")
+                    .append(jarPath).append(" ")
+                    .append(param).append(" ")
+                    .append("> /dev/null &");
+            return builder.toString();
+        }
+    }
     /**
      * Run data check sink.
      *
@@ -570,9 +590,9 @@ public class Task {
         } else {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_EXTRACT_SINK_JVM);
         }
-        String order = "nohup java " + jvmParameter + " -Dloader.path=" + datacheckPath + "lib -Dspring.config"
-                + ".additional-location=" + sinkConfigPath + " -jar " + path + extractName + " --sink > /dev/null &";
-        RuntimeExecUtils.executeStartOrder(order, 3000, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
+        String order = DataCheckRunCommand.builder().jvmParameter(jvmParameter).loaderPath(datacheckPath).configPath(sinkConfigPath)
+                .jarPath(path+extractName).param("--sink").build().getRunCommamd();
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
                 + "datacheck sink");
     }
 
@@ -592,9 +612,9 @@ public class Task {
         } else {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_EXTRACT_SOURCE_JVM);
         }
-        String order = "nohup java " + jvmParameter + " -Dloader.path=" + datacheckPath + "lib -Dspring.config"
-                + ".additional-location=" + sourceConfigPath + " -jar " + path + extractName + " --source > /dev/null &";
-        RuntimeExecUtils.executeStartOrder(order, 3000, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
+        String order = DataCheckRunCommand.builder().jvmParameter(jvmParameter).loaderPath(datacheckPath).configPath(sourceConfigPath)
+                .jarPath(path+extractName).param("--source").build().getRunCommamd();
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
                 + "datacheck source");
     }
 
@@ -614,9 +634,9 @@ public class Task {
         } else {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_CHECK_JVM);
         }
-        String order = "nohup java " + jvmParameter + " -Dloader.path=" + datacheckPath + "lib -Dspring.config"
-                + ".additional-location=" + checkConfigPath + " -jar " + path + checkName + " > /dev/null &";
-        RuntimeExecUtils.executeStartOrder(order, 1000, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
+        String order = DataCheckRunCommand.builder().jvmParameter(jvmParameter).loaderPath(datacheckPath).configPath(checkConfigPath)
+                .jarPath(path + checkName).param("").build().getRunCommamd();
+        RuntimeExecUtils.executeStartOrder(order, METHOD_START_TIME, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
                 + "datacheck");
     }
 
@@ -702,27 +722,27 @@ public class Task {
     private static void addCheckTask(List<String> taskList) {
         for (String task : taskList) {
             switch (task) {
-                case "start mysql full migration": {
+                case Plan.START_MYSQL_FULL_MIGRATION: {
                     Plan.toolList.add(new MysqlFullMigrationTool());
                     break;
                 }
-                case "start mysql full migration datacheck": {
+                case Plan.START_MYSQL_FULL_MIGRATION_DATACHECK: {
                     Plan.toolList.add(new FullDatacheckTool());
                     break;
                 }
-                case "start mysql incremental migration": {
+                case Plan.START_MYSQL_INCREMENTAL_MIGRATION: {
                     Plan.toolList.add(new IncrementalMigrationTool());
                     break;
                 }
-                case "start mysql incremental migration datacheck": {
+                case Plan.START_MYSQL_INCREMENTAL_MIGRATION_DATACHECK: {
                     Plan.toolList.add(new IncrementalDatacheckTool());
                     break;
                 }
-                case "start mysql reverse migration": {
+                case Plan.START_MYSQL_REVERSE_MIGRATION: {
                     Plan.toolList.add(new ReverseMigrationTool());
                     break;
                 }
-                case "start mysql reverse migration datacheck": {
+                case Plan.START_MYSQL_REVERSE_MIGRATION_DATACHECK: {
                     Plan.toolList.add(new ReverseDatacheckTool());
                     break;
                 }
@@ -739,18 +759,20 @@ public class Task {
      * @param logFileListener DataCheckLogFileCheck
      */
     public static void startDataCheck(LogFileListener logFileListener) {
-        startTaskMethod(Method.Name.CHECK_SOURCE, 15000, Check.CheckLog.START_SOURCE_LOG,
+        startTaskMethod(Method.Name.CHECK_SOURCE, DATA_CHECK_START_TIME, Check.CheckLog.START_SOURCE_LOG,
                 logFileListener);
-        startTaskMethod(Method.Name.CHECK_SINK, 15000, Check.CheckLog.START_SINK_LOG,
+        startTaskMethod(Method.Name.CHECK_SINK, DATA_CHECK_START_TIME, Check.CheckLog.START_SINK_LOG,
                 logFileListener);
-        startTaskMethod(Method.Name.CHECK, 15000, Check.CheckLog.START_CHECK_LOG,
+        startTaskMethod(Method.Name.CHECK, DATA_CHECK_START_TIME, Check.CheckLog.START_CHECK_LOG,
                 logFileListener);
     }
+
+
 
     /**
      * The interface CheckProcess.
      */
-    public interface CheckProcess {
+    interface CheckProcess {
 
         /**
          * checkStatus

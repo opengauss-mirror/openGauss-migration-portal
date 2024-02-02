@@ -497,7 +497,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                 PortalException portalException = new PortalException("SQL exception", "select global variable",
                         e.getMessage());
                 portalException.setRequestInformation("Create slot failed.");
-                PortalControl.refuseReverseMigrationReason = portalException.getMessage();
+                ReverseMigrationTool.refuseReverseMigrationReason = portalException.getMessage();
                 LOGGER.error(portalException.toString());
             }
         }

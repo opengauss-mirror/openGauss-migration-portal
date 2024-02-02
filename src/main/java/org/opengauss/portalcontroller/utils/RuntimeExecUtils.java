@@ -61,7 +61,7 @@ public class RuntimeExecUtils {
                 LOGGER.warn("Error command:" + command);
                 LOGGER.error(errorStr);
             }
-            LogViewUtils.writeFile(errorStr, errorFilePath, true);
+            FileUtils.writeFile(errorStr, errorFilePath, true);
         } catch (IOException e) {
             throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
@@ -174,17 +174,17 @@ public class RuntimeExecUtils {
                 String str = bufferedReader.readLine();
                 bufferedReader.close();
                 if (str != null && !str.equals("")) {
-                    LogViewUtils.writeFile(str, outputFilePath, true);
+                    FileUtils.writeFile(str, outputFilePath, true);
                 } else {
                     LOGGER.error(errorLog);
                 }
-                LogViewUtils.writeFile(errorStr, outputFilePath, true);
+                FileUtils.writeFile(errorStr, outputFilePath, true);
             }
         } catch (IOException e) {
-            String command = CommandUtils.combainOrder(cmdParts);
+            String command = CommandUtils.combineOrder(cmdParts);
             throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
-            String command = CommandUtils.combainOrder(cmdParts);
+            String command = CommandUtils.combineOrder(cmdParts);
             throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
         }
     }

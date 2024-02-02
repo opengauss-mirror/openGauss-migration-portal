@@ -42,7 +42,7 @@ import static org.opengauss.portalcontroller.PortalControl.toolsConfigPath;
  * @version: 1.1
  */
 public class KafkaUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaUtils.class);
 
     /**
      * Change connect xml file.
@@ -73,7 +73,7 @@ public class KafkaUtils {
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
-            PortalException portalException = new PortalException("IO exception", "changing xml file parameters",
+            PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
             LOGGER.error(portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
@@ -121,7 +121,6 @@ public class KafkaUtils {
         PropertitesUtils.changePropertiesParameters(toolsConfig,
                 PathUtils.combainPath(true, portalControlPath + "config",
                         "toolspath.properties"));
-        PropertitesUtils.changePropertiesParameters(toolsConfig, toolsConfigPath);
     }
 
     /**

@@ -25,6 +25,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,7 +74,7 @@ public class FileUtils {
             if (!file.exists()) {
                 createFile(inputOrderPath, true);
             }
-            LogViewUtils.writeFile(command, inputOrderPath, false);
+            writeFile(command, inputOrderPath, false);
         } catch (PortalException e) {
             e.setRequestInformation("Write input order failed");
             log.error(e.toString());
@@ -145,7 +150,7 @@ public class FileUtils {
                 result.append(temp).append(System.lineSeparator());
             }
             bufferedReader.close();
-            LogViewUtils.writeFile(result.toString(), path, false);
+            writeFile(result.toString(), path, false);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
@@ -177,5 +182,65 @@ public class FileUtils {
             PortalControl.shutDownPortal(portalException.toString());
         }
         return str.toString();
+    }
+
+    /**
+     * Write file.
+     *
+     * @param stringList the string list
+     * @param path       the path
+     * @param append     the append
+     */
+    public static void writeFile(List<String> stringList, String path, boolean append) {
+        StringBuilder str = new StringBuilder();
+        for (String tempStr : stringList) {
+            str.append(tempStr).append(System.lineSeparator());
+        }
+        writeFile(str.toString(), path, append);
+    }
+
+    /**
+     * Write file.
+     *
+     * @param str    the str
+     * @param path   the path
+     * @param append the append
+     */
+    public static void writeFile(String str, String path, boolean append) {
+        if (append) {
+            writeAppendFile(path, str);
+        } else {
+            writeFileRest(path, str);
+        }
+    }
+
+    /**
+     * Write lines of text to a file. Characters are encoded into bytes using the UTF-8 charset.
+     *
+     * @param filename filename
+     * @param content  content
+     */
+    public static void writeAppendFile(String filename, String content) {
+        try {
+            Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND,
+                    StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            log.error("file write error:", e);
+        }
+    }
+
+    /**
+     * Write file rest.
+     *
+     * @param filename the filename
+     * @param content  the content
+     */
+    public static void writeFileRest(String filename, String content) {
+        try {
+            Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            log.error("file write error:", e);
+        }
     }
 }

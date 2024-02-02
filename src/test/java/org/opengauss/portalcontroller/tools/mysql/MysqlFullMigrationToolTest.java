@@ -41,6 +41,7 @@ class MysqlFullMigrationToolTest {
 
     @BeforeAll
     void setUp() {
+        fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
         fileUtilsMockedStatic.when(() -> FileUtils.createFile(Mockito.anyString(), Mockito.anyBoolean()))
                 .thenAnswer(invocationOnMock -> null);
         fileUtilsMockedStatic.when(() -> FileUtils.outputFileString(Mockito.anyString())).thenReturn("");
@@ -53,7 +54,6 @@ class MysqlFullMigrationToolTest {
                 .thenAnswer(invocationOnMock -> null);
         runtimeExecToolsMockedStatic.when(() -> RuntimeExecUtils.unzipFile(Mockito.anyString(), Mockito.anyString(),
                 Mockito.anyString())).thenAnswer(invocationOnMock -> null);
-        fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
         fileUtilsMockedStatic.when(() -> FileUtils.checkFileExist(Mockito.anyString(), Mockito.anyInt()))
                 .thenAnswer(invocationOnMock -> null);
         logViewMockedStatic = Mockito.mockStatic(LogViewUtils.class);
@@ -65,7 +65,6 @@ class MysqlFullMigrationToolTest {
     void after() {
         fileUtilsMockedStatic.close();
         runtimeExecToolsMockedStatic.close();
-        fileUtilsMockedStatic.close();
         pathUtilsMockedStatic.close();
         logViewMockedStatic.close();
     }

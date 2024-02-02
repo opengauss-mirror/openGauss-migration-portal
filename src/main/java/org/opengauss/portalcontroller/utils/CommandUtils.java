@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * NecessaryFileCheckStatusNode
  *
  * @date :2023/9/19 16:22
- * @description: NecessaryFileCheckStatusNode
+ * @description: CommandUtils
  * @version: 1.1
  * @since 1.1
  */
@@ -33,7 +33,7 @@ public class CommandUtils {
      * @param parts the parts
      * @return the string
      */
-    public static String combainOrder(String[] parts) {
+    public static String combineOrder(String[] parts) {
         StringBuilder path;
         path = new StringBuilder(parts[0]);
         for (int i = 1; i < parts.length; i++) {

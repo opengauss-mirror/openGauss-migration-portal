@@ -14,6 +14,7 @@
 package org.opengauss.portalcontroller.tools.mysql;
 
 import org.apache.logging.log4j.util.Strings;
+import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -34,6 +35,7 @@ import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
@@ -47,6 +49,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -69,6 +72,14 @@ import static org.opengauss.portalcontroller.utils.ProcessUtils.checkProcess;
 public class ReverseMigrationTool extends ParamsConfig implements Tool {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReverseMigrationTool.class);
     public static final String XLOG_LOCATION = "xlog.location";
+    /**
+     * The constant allowReverseMigration.
+     */
+    public static boolean allowReverseMigration = false;
+    /**
+     * The constant refuseReverseMigrationReason.
+     */
+    public static String refuseReverseMigrationReason = "";
 
     private final LogFileListener reverseLogFileListener = new LogFileListener();
 
@@ -77,6 +88,37 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
 
     private Map<String, Object> reverseConnectSinkParams = null;
     private Map<String, Object> reverseConnectSourceParams = null;
+
+    /**
+     * Check reverse migration runnable boolean.
+     *
+     * @return the boolean
+     */
+    public static boolean checkReverseMigrationRunnable() {
+        boolean isReverseRunnable = false;
+        try (PgConnection connection = JdbcUtils.getPgConnection()) {
+            Hashtable<String, String> parameterTable = new Hashtable<>();
+            parameterTable.put("wal_level", "logical");
+            int parameter = 0;
+            for (String key : parameterTable.keySet()) {
+                if (JdbcUtils.selectGlobalVariables(connection, key, parameterTable.get(key))) {
+                    parameter++;
+                } else {
+                    break;
+                }
+            }
+            if (parameter == parameterTable.size()) {
+                isReverseRunnable = true;
+            }
+        } catch (SQLException e) {
+            PortalException portalException = new PortalException("IO exception",
+                    "checking reverse migration is runnable", e.getMessage());
+            refuseReverseMigrationReason = portalException.getMessage();
+            LOGGER.error(portalException.toString());
+        }
+        allowReverseMigration = isReverseRunnable;
+        return isReverseRunnable;
+    }
 
     /**
      * Change reverse migration parameters.
@@ -206,11 +248,11 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean init(String workspaceId) {
-        if (!PortalControl.allowReverseMigration) {
-            LOGGER.error("Can not run reverse migration" + PortalControl.refuseReverseMigrationReason);
+        if (!allowReverseMigration) {
+            LOGGER.error("Can not run reverse migration" + refuseReverseMigrationReason);
             Plan.stopPlan = true;
             PortalControl.status = Status.ERROR;
-            PortalControl.errorMsg = PortalControl.refuseReverseMigrationReason;
+            PortalControl.errorMsg = refuseReverseMigrationReason;
             return false;
         }
         if (PortalControl.status != Status.ERROR) {

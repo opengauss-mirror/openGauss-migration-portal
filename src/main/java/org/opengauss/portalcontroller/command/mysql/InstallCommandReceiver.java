@@ -27,7 +27,7 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
  */
 public class InstallCommandReceiver extends CommandReceiver {
     public void action(String order) {
-        KafkaUtils.changeConfluentDirFromSysParam();
+
         if (CommandUtils.containString(order, Command.ALL)) {
             InstallMigrationUtils.runAllInstallOrder(order);
         } else {

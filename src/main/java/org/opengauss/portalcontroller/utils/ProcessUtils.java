@@ -31,10 +31,10 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 
 /**
- * some msg
+ * ProcessUtils
  *
  * @date :2024/1/16 16:34
- * @description: some description
+ * @description: ProcessUtils
  * @version: 1.1
  * @since 1.1
  */

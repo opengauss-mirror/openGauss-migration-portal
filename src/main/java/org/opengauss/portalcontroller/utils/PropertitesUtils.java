@@ -111,7 +111,7 @@ public class PropertitesUtils {
                 bufferedWriter.flush();
             }
             bufferedWriter.close();
-            LogViewUtils.writeFile(stringList, path, false);
+            FileUtils.writeFile(stringList, path, false);
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing single properties "
                     + "parameter", e.getMessage());

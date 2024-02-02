@@ -29,6 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ThreadExceptionHandler implements Thread.UncaughtExceptionHandler {
     @Override
     public void uncaughtException(Thread t, Throwable e) {
-        log.error("thread {} cause ", t.getName(), e);
+        log.error("thread {} occur excetion: ", t.getName(), e);
     }
 }

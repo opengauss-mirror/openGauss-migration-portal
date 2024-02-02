@@ -26,6 +26,7 @@ import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.task.Plan;
+import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
@@ -189,7 +190,7 @@ public class ChangeStatusTools {
         ThreadStatusController.fullMigrationStatus = tempFullMigrationStatus;
 
         String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.fullMigrationStatus);
-        LogViewUtils.writeFile(fullMigrationStatusString,
+        FileUtils.writeFile(fullMigrationStatusString,
                 PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH), false);
     }
 
@@ -238,7 +239,7 @@ public class ChangeStatusTools {
                     incrementalMigrationStatus.setMsg(msg);
                 }
                 incrementalMigrationStatus.setStatus(status);
-                LogViewUtils.writeFile(JSON.toJSONString(incrementalMigrationStatus), incrementalPath, false);
+                FileUtils.writeFile(JSON.toJSONString(incrementalMigrationStatus), incrementalPath, false);
             }
         } catch (Exception ignored) {
         }
@@ -267,7 +268,7 @@ public class ChangeStatusTools {
             LOGGER.debug("No portal status to update.");
         }
         String str = JSON.toJSONString(ThreadStatusController.portalStatusWriterArrayList);
-        LogViewUtils.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
+        FileUtils.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
     }
 
     /**
@@ -474,7 +475,7 @@ public class ChangeStatusTools {
     public static void changeDatacheckSpeedStatus(String progressPath, String statusPath) {
         if (new File(progressPath).exists()) {
             String progressStr = LogViewUtils.lastLine(progressPath);
-            LogViewUtils.writeFile(progressStr, statusPath, false);
+            FileUtils.writeFile(progressStr, statusPath, false);
         } else {
             LOGGER.info("Get datacheck progess failed.Use old progress.");
         }

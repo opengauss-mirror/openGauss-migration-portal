@@ -29,6 +29,7 @@ import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.status.CheckColumnRule;
 import org.opengauss.portalcontroller.status.CheckRule;
 import org.opengauss.portalcontroller.status.RuleParameter;
+import org.opengauss.portalcontroller.thread.ThreadCheckProcess;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalDatacheckTool;
@@ -37,6 +38,7 @@ import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
+import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
@@ -73,11 +75,23 @@ import java.util.concurrent.TimeUnit;
  * @since ：1
  */
 public final class Plan {
+    public static final String START_MYSQL_FULL_MIGRATION = "start mysql full migration";
+    public static final String START_MYSQL_FULL_MIGRATION_DATACHECK = "start mysql full migration datacheck";
+    public static final String START_MYSQL_INCREMENTAL_MIGRATION = "start mysql incremental migration";
+    public static final String START_MYSQL_INCREMENTAL_MIGRATION_DATACHECK = "start mysql incremental migration datacheck";
+    public static final String START_MYSQL_REVERSE_MIGRATION = "start mysql reverse migration";
+    public static final String START_MYSQL_REVERSE_MIGRATION_DATACHECK = "start mysql reverse migration datacheck";
     private static volatile Plan plan;
 
     private Plan() {
 
     }
+
+
+    /**
+     * The constant threadCheckProcess.
+     */
+    public static ThreadCheckProcess threadCheckProcess = new ThreadCheckProcess();
 
     private static volatile List<RunningTaskThread> runningTaskThreadsList = new CopyOnWriteArrayList<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Plan.class);
@@ -417,6 +431,8 @@ public final class Plan {
      * @param taskList the task list
      */
     public void execPlan(List<String> taskList) {
+        threadCheckProcess.setName("threadCheckProcess");
+        threadCheckProcess.start();
         Task.initRunTaskHandlerHashMap();
         PortalControl.showMigrationParameters();
         if (isPlanRunnable) {
@@ -424,26 +440,26 @@ public final class Plan {
             isPlanRunnable = false;
             MysqlFullMigrationTool mysqlFullMigrationTool = new MysqlFullMigrationTool();
 
-            if (taskList.contains("start mysql full migration")) {
+            if (taskList.contains(START_MYSQL_FULL_MIGRATION)) {
                 mysqlFullMigrationTool.init(workspaceId);
             }
             IncrementalMigrationTool incrementalMigrationTool = new IncrementalMigrationTool();
-            if (taskList.contains("start mysql incremental migration")) {
+            if (taskList.contains(START_MYSQL_INCREMENTAL_MIGRATION)) {
                 incrementalMigrationTool.init(workspaceId);
             }
-            if (taskList.contains("start mysql full migration")) {
+            if (taskList.contains(START_MYSQL_FULL_MIGRATION)) {
                 mysqlFullMigrationTool.start(workspaceId);
             }
             FullDatacheckTool fullDatacheckTool = new FullDatacheckTool();
-            if (taskList.contains("start mysql full migration datacheck")) {
+            if (taskList.contains(START_MYSQL_FULL_MIGRATION_DATACHECK)) {
                 fullDatacheckTool.init(workspaceId);
                 fullDatacheckTool.start(workspaceId);
             }
-            if (taskList.contains("start mysql incremental migration")) {
+            if (taskList.contains(START_MYSQL_INCREMENTAL_MIGRATION)) {
                 IncrementalDatacheckTool incrementalDatacheckTool = new IncrementalDatacheckTool();
                 while (true) {
                     incrementalMigrationTool.start(workspaceId);
-                    if (taskList.contains("start mysql incremental migration datacheck")) {
+                    if (taskList.contains(START_MYSQL_INCREMENTAL_MIGRATION_DATACHECK)) {
                         incrementalDatacheckTool.init(workspaceId);
                         incrementalDatacheckTool.start(workspaceId);
                     }
@@ -457,13 +473,13 @@ public final class Plan {
                     }
                 }
             }
-            if (taskList.contains("start mysql reverse migration") && !stopPlan) {
+            if (taskList.contains(START_MYSQL_REVERSE_MIGRATION) && !stopPlan) {
                 ReverseMigrationTool reverseMigrationTool = new ReverseMigrationTool();
                 ReverseDatacheckTool reverseDatacheckTool = new ReverseDatacheckTool();
                 while (true) {
                     reverseMigrationTool.init(workspaceId);
                     reverseMigrationTool.start(workspaceId);
-                    if (taskList.contains("start mysql reverse migration datacheck")) {
+                    if (taskList.contains(START_MYSQL_REVERSE_MIGRATION_DATACHECK)) {
                         reverseDatacheckTool.init(workspaceId);
                         reverseDatacheckTool.start(workspaceId);
                     }
@@ -482,7 +498,7 @@ public final class Plan {
                 LOGGER.info("Plan finished.");
             }
             restoreKernelParam();
-            PortalControl.threadCheckProcess.exit = true;
+            threadCheckProcess.exit = true;
         } else {
             LOGGER.error("There is a plan running.Please stop current plan or wait.");
         }
@@ -545,7 +561,7 @@ public final class Plan {
     public static void stopPlanThreads() {
         LOGGER.info("Stop plan.");
         ProcessUtils.closeAllProcess("--config default_" + workspaceId + " --");
-        PortalControl.threadCheckProcess.exit = true;
+        threadCheckProcess.exit = true;
         stopAllTasks();
         Plan.clean();
         Plan.runningTaskThreadsList.clear();
@@ -603,6 +619,7 @@ public final class Plan {
      */
     public static void createWorkspace(String workspaceId) {
         try {
+            KafkaUtils.changeConfluentDirFromSysParam();
             WorkspacePath workspacePath = WorkspacePath.getInstance(PortalControl.portalControlPath, workspaceId);
             String portIdFile = PortalControl.portalControlPath + "portal.portId.lock";
             org.opengauss.portalcontroller.utils.FileUtils.createFile(portIdFile, true);

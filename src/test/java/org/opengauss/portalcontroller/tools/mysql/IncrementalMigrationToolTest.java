@@ -44,13 +44,15 @@ class IncrementalMigrationToolTest {
     @Test
     void testStart() {
         Mockito.doCallRealMethod().when(incrementalMigrationToolMocked).start(Mockito.anyString());
-        Mockito.doNothing().when(incrementalMigrationToolMocked).stop();
-        try (MockedStatic<ParamsUtils> toolsMocked = Mockito.mockStatic(ParamsUtils.class)) {
-            toolsMocked.when(() -> KafkaUtils.changekafkaLogParam(Mockito.anyString(), Mockito.anyString()))
+        Mockito.doReturn(true).when(incrementalMigrationToolMocked).stop();
+        try (MockedStatic<ParamsUtils> ParamsUtilsMocked = Mockito.mockStatic(ParamsUtils.class);
+             MockedStatic<KafkaUtils> KafkaUtilsMocked = Mockito.mockStatic(KafkaUtils.class);
+             MockedStatic<PropertitesUtils> PropertitesUtilsMocked = Mockito.mockStatic(PropertitesUtils.class)) {
+            KafkaUtilsMocked.when(() -> KafkaUtils.changekafkaLogParam(Mockito.anyString(), Mockito.anyString()))
                     .thenAnswer(invocationOnMock -> null);
-            toolsMocked.when(() -> ParamsUtils.getAvailablePorts(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt()))
+            ParamsUtilsMocked.when(() -> ParamsUtils.getAvailablePorts(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt()))
                     .thenReturn(new ArrayList<>(List.of(1)));
-            toolsMocked.when(() -> PropertitesUtils.changeSinglePropertiesParameter(Mockito.anyString(),
+            PropertitesUtilsMocked.when(() -> PropertitesUtils.changeSinglePropertiesParameter(Mockito.anyString(),
                     Mockito.anyString(),
                     Mockito.anyString())).thenAnswer(invocationOnMock -> null);
             try (MockedStatic<Task> taskMocked = Mockito.mockStatic(Task.class)) {
@@ -70,8 +72,8 @@ class IncrementalMigrationToolTest {
     void testCheckEnd() {
         Mockito.doCallRealMethod().when(incrementalMigrationToolMocked).stop();
         Plan.stopPlan = true;
-        Plan.stopIncrementalMigration = true;
-
+        boolean stop = incrementalMigrationToolMocked.stop();
+        Assertions.assertEquals(true, stop);
     }
 
     @Test
