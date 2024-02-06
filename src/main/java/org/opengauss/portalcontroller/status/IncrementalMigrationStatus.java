@@ -30,7 +30,8 @@ public class IncrementalMigrationStatus {
     private int skippedCount;
     private String msg;
 
-    public IncrementalMigrationStatus(){}
+    public IncrementalMigrationStatus() {
+    }
 
     /**
      * Gets status.

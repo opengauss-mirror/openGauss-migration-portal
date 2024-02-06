@@ -16,10 +16,10 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
-import org.opengauss.portalcontroller.JdbcTools;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +40,8 @@ public class ReversePermissionVerifyChain extends FullPermissionVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReversePermissionVerifyChain.class);
 
     private static final String[] PERMISSION_COLUMN = {
-        Constants.PERMISSION_SELECT, Constants.PERMISSION_INSERT, Constants.PERMISSION_UPDATE,
-        Constants.PERMISSION_DELETE
+            Constants.PERMISSION_SELECT, Constants.PERMISSION_INSERT, Constants.PERMISSION_UPDATE,
+            Constants.PERMISSION_DELETE
     };
 
     @Override
@@ -54,40 +54,58 @@ public class ReversePermissionVerifyChain extends FullPermissionVerifyChain {
     }
 
     private void verifyMysqlPermission(Map<String, Object> resultMap, Map<String, Object> databaseMap,
-        Connection mysqlConnection) {
+                                       Connection mysqlConnection) {
         super.verifyMysqlPermission(resultMap, databaseMap, mysqlConnection,
-            new StringBuilder("select ").append(String.join(",", PERMISSION_COLUMN))
-                .append(" from mysql.user where user='")
-                .append(PortalControl.toolsMigrationParametersTable.get(Mysql.USER))
-                .append("';")
-                .toString(), PERMISSION_COLUMN);
+                new StringBuilder("select ").append(String.join(",", PERMISSION_COLUMN))
+                        .append(" from mysql.user where user='")
+                        .append(PortalControl.toolsMigrationParametersTable.get(Mysql.USER))
+                        .append("';")
+                        .toString(), PERMISSION_COLUMN);
     }
 
     private void verifyOpenGaussPermission(Map<String, Object> resultMap, Map<String, Object> databaseMap,
-        PgConnection pgConnection) {
+                                           PgConnection pgConnection) {
         if (pgConnection == null) {
             databaseMap.put(Constants.KEY_OPENGAUSS, Constants.CROSS_BAR);
         } else {
             int result;
-            if (super.judgeSystemAdmin(pgConnection) || hasReplicationRolePermission(pgConnection)) {
+            if (super.judgeSystemAdmin(pgConnection) || (hasReplicationRolePermission(pgConnection)
+                && userSchemaOwnerOk(pgConnection))) {
                 result = Constants.KEY_FLAG_TRUE;
             } else {
                 result = Constants.KEY_FLAG_FALSE;
             }
             databaseMap.put(Constants.KEY_OPENGAUSS, result);
             resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | result);
+                    Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | result);
         }
+    }
+
+    private boolean userSchemaOwnerOk(PgConnection pgConnection) {
+        boolean isOk = false;
+        try {
+            String permissionStr = JdbcUtils.selectStringValue(pgConnection,
+                "select r.rolname from pg_namespace s,pg_roles r where s.nspname='"
+                    + PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME) + "' and s.nspowner=r.oid;",
+                "rolname");
+            LOGGER.info("schema is {}, rolname is {}, actual user is {}",
+                PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME), permissionStr,
+                PortalControl.toolsMigrationParametersTable.get(Opengauss.USER));
+            isOk = permissionStr.equals(PortalControl.toolsMigrationParametersTable.get(Opengauss.USER));
+        } catch (SQLException e) {
+            LOGGER.error("sql execute failed.");
+        }
+        return isOk;
     }
 
     private boolean hasReplicationRolePermission(PgConnection pgConnection) {
         boolean isOk = false;
         try {
-            String permissionStr = JdbcTools.selectStringValue(pgConnection,
-                "select rolreplication from pg_roles where rolname='"
-                    + PortalControl.toolsMigrationParametersTable.get(Opengauss.USER) + "'", "rolreplication");
+            String permissionStr = JdbcUtils.selectStringValue(pgConnection,
+                    "select rolreplication from pg_roles where rolname='"
+                            + PortalControl.toolsMigrationParametersTable.get(Opengauss.USER) + "'", "rolreplication");
             LOGGER.info("rolreplication is {}, user is {}", permissionStr,
-                PortalControl.toolsMigrationParametersTable.get(Opengauss.USER));
+                    PortalControl.toolsMigrationParametersTable.get(Opengauss.USER));
             isOk = permissionStr.equals("1");
         } catch (SQLException e) {
             LOGGER.error("sql execute failed.");

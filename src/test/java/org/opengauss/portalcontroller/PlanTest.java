@@ -15,16 +15,17 @@
 package org.opengauss.portalcontroller;
 
 import org.junit.jupiter.api.Test;
+import org.opengauss.portalcontroller.task.Plan;
+import org.opengauss.portalcontroller.task.RunningTaskThread;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 
 public class PlanTest {
     @Test
-    public void runningThreadListTest(){
+    public void runningThreadListTest() {
         List<RunningTaskThread> list = new ArrayList<>();
-        RunningTaskThread runningTaskThread = new RunningTaskThread("test","testProcess");
+        RunningTaskThread runningTaskThread = new RunningTaskThread("test", "testProcess");
         list.add(runningTaskThread);
         Plan.setRunningTaskThreadsList(list);
         assert Plan.getRunningTaskThreadsList().contains(runningTaskThread);

@@ -31,7 +31,7 @@ public interface MigrationParameters {
      */
     interface Log {
         /**
-         *  GLOBAL_LOG_LEVEL
+         * GLOBAL_LOG_LEVEL
          */
         String GLOBAL_LOG_LEVEL = "global.log.level";
     }

@@ -14,7 +14,7 @@ public class CommandReceiver {
      *
      * @param order the order
      */
-    public void action(String order){
+    public void action(String order) {
         LOGGER.error("Invalid command.");
     }
 }

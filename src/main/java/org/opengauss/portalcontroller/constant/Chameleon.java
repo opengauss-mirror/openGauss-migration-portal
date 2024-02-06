@@ -198,7 +198,8 @@ public interface Chameleon {
         /**
          * The All order list.
          */
-        List<String> ALL_ORDER_LIST = List.of(DROP, CREATE, ADD, INIT, START_TRIGGER, START_VIEW, START_FUNC, START_PROC, DETACH);
+        List<String> ALL_ORDER_LIST = List.of(DROP, CREATE, ADD, INIT, START_TRIGGER, START_VIEW, START_FUNC,
+                START_PROC, DETACH);
 
         /**
          * The Final order list.

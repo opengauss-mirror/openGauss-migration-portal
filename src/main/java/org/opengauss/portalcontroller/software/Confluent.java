@@ -15,10 +15,10 @@
 
 package org.opengauss.portalcontroller.software;
 
-import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.utils.PathUtils;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -32,7 +32,8 @@ public class Confluent implements Software {
         String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "schema-registry-start"));
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "schema-registry-stop"));
-        confluentList.add(PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry.properties"));
+        confluentList.add(PathUtils.combainPath(true, confluentPath + "etc", "schema-registry", "schema-registry"
+                + ".properties"));
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "connect-standalone"));
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "zookeeper-server-start"));
         confluentList.add(PathUtils.combainPath(true, confluentPath + "bin", "zookeeper-server-stop"));

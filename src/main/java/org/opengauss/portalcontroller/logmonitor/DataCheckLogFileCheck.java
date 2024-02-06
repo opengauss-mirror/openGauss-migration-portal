@@ -22,9 +22,9 @@ import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executors;
 
 import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_START_INFO_LIST;
 import static org.opengauss.portalcontroller.constant.Check.CheckLog.DATA_CHECK_STOP_INFO_LIST;
@@ -76,11 +76,11 @@ public class DataCheckLogFileCheck {
         String checkLogPath = PortalControl.toolsConfigParametersTable.get(Check.LOG_PATH);
         String checkResultFile = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT)
                 + "process.pid";
-        sinkLogListener = new LogFileListener(checkSinkLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR));
-        sourceLogListener = new LogFileListener(checkSourceLogPath, List.of(Check.CheckLog.EXCEPTION,
-                Check.CheckLog.ERR));
-        appLogListener = new LogFileListener(checkLogPath, List.of(Check.CheckLog.EXCEPTION, Check.CheckLog.ERR));
+        List<String> checkLogStrs = List.of(Check.CheckLog.EXCEPTION,
+                Check.CheckLog.ERR, Check.CheckLog.ERR_UPPER);
+        sinkLogListener = new LogFileListener(checkSinkLogPath, checkLogStrs);
+        sourceLogListener = new LogFileListener(checkSourceLogPath, checkLogStrs);
+        appLogListener = new LogFileListener(checkLogPath, checkLogStrs);
         List<String> checkList = new ArrayList<>();
         checkList.addAll(DATA_CHECK_START_INFO_LIST);
         checkList.addAll(DATA_CHECK_STOP_INFO_LIST);
@@ -104,11 +104,14 @@ public class DataCheckLogFileCheck {
      */
     public boolean getErrResult() {
         boolean isSinkCheckErr = sinkLogListener.getLogMap().containsKey(Check.CheckLog.EXCEPTION)
-                || sinkLogListener.getLogMap().containsKey(Check.CheckLog.ERR);
+                || sinkLogListener.getLogMap().containsKey(Check.CheckLog.ERR)
+                || sinkLogListener.getLogMap().containsKey(Check.CheckLog.ERR_UPPER);
         boolean isSourceCheckErr = sourceLogListener.getLogMap().containsKey(Check.CheckLog.EXCEPTION)
-                || sourceLogListener.getLogMap().containsKey(Check.CheckLog.ERR);
+                || sourceLogListener.getLogMap().containsKey(Check.CheckLog.ERR)
+                || sourceLogListener.getLogMap().containsKey(Check.CheckLog.ERR_UPPER);
         boolean isAppErrCheck = appLogListener.getLogMap().containsKey(Check.CheckLog.EXCEPTION)
-                || appLogListener.getLogMap().containsKey(Check.CheckLog.ERR);
+                || appLogListener.getLogMap().containsKey(Check.CheckLog.ERR)
+                || appLogListener.getLogMap().containsKey(Check.CheckLog.ERR_UPPER);
         return !(isSinkCheckErr || isSourceCheckErr || isAppErrCheck);
     }
 

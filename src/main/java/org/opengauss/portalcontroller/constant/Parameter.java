@@ -184,7 +184,7 @@ public interface Parameter {
      */
     interface ThirdPartySoftwareInstanceParam {
         /**
-         *  MigrationThirdPartySoftwareInstanceConfig
+         * MigrationThirdPartySoftwareInstanceConfig
          */
         String THIRD_PARTY_SOFTWARE_INSTANCE_PARAM = "MigrationThirdPartySoftwareInstanceConfig";
     }

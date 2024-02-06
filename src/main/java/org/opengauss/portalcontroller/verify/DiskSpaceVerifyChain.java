@@ -17,12 +17,12 @@ package org.opengauss.portalcontroller.verify;
 
 import com.alibaba.fastjson.util.IOUtils;
 import org.opengauss.jdbc.PgConnection;
-import org.opengauss.portalcontroller.JdbcTools;
-import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Mysql;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
+import org.opengauss.portalcontroller.utils.PathUtils;
+import org.opengauss.portalcontroller.utils.YmlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -59,13 +59,13 @@ public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
             diskMap.put(Constants.KEY_RESULT, Constants.CROSS_BAR);
         } else {
             int result = readAndWrite(getMaxTableSpace(mysqlConnection, true), diskMap,
-                "0".equals(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()))
-                ? Constants.KEY_FLAG_TRUE
-                : Constants.KEY_FLAG_FALSE;
+                    "0".equals(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()))
+                    ? Constants.KEY_FLAG_TRUE
+                    : Constants.KEY_FLAG_FALSE;
             ;
             diskMap.put(Constants.KEY_RESULT, result);
             resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | result);
+                    Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | result);
 
             super.transfer(resultMap, mysqlConnection, pgConnection);
         }
@@ -79,9 +79,9 @@ public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
      * @return  single table max capacity
      */
     public static BigDecimal getMaxTableSpace(Connection mysqlConnection, boolean isDefault) {
-        String permissionStr = "0";
+        String permissionStr = "";
         try {
-            permissionStr = JdbcTools.selectStringValue(mysqlConnection,
+            permissionStr = JdbcUtils.selectStringValue(mysqlConnection,
                 "SELECT IFNULL(MAX(DATA_LENGTH + INDEX_LENGTH + DATA_FREE),0) as total from "
                     + "information_schema.tables where TABLE_SCHEMA ='"
                     + PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME) + "'", "total");
@@ -96,13 +96,13 @@ public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
         } else {
             path = PortalControl.toolsConfigParametersTable.get(Chameleon.CONFIG_PATH);
         }
-        HashMap<String, Object> chameleonConfigMap = Tools.getYmlParameters(path);
+        HashMap<String, Object> chameleonConfigMap = YmlUtils.getYmlParameters(path);
         BigDecimal read = new BigDecimal(chameleonConfigMap.get("sources.mysql.readers").toString());
         BigDecimal write = new BigDecimal(chameleonConfigMap.get("sources.mysql.writers").toString());
         LOGGER.info("read:{},write:{}", read, write);
         return new BigDecimal(permissionStr).multiply(read.add(write))
-            .multiply(BigDecimal.valueOf(2))
-            .divide(BigDecimal.valueOf(1024L * 1024 * 1024), 4, RoundingMode.UP);
+                .multiply(BigDecimal.valueOf(2))
+                .divide(BigDecimal.valueOf(1024L * 1024 * 1024), 4, RoundingMode.UP);
     }
 
     /**

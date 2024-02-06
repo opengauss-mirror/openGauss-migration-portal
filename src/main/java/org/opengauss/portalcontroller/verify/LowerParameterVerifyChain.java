@@ -16,7 +16,7 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
-import org.opengauss.portalcontroller.JdbcTools;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +28,10 @@ import java.util.Map;
 /**
  * MigrationParameterVerifyChain
  *
- * @since 1.1
  * @date :2023/11/3 15:22
  * @description: MigrationParameterVerifyChain
  * @version: 1.1
+ * @since 1.1
  */
 public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(LowerParameterVerifyChain.class);
@@ -65,9 +65,9 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
             }
         }
         resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-            Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | (isSame
-                ? Constants.KEY_FLAG_TRUE
-                : Constants.KEY_FLAG_FALSE));
+                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | (isSame
+                        ? Constants.KEY_FLAG_TRUE
+                        : Constants.KEY_FLAG_FALSE));
         super.transfer(resultMap, mysqlConnection, pgConnection);
     }
 
@@ -75,7 +75,7 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
         String result;
         String selectSql = "show variables like '" + key + "'";
         try {
-            result = JdbcTools.selectStringValue(mysqlConnection, selectSql, "Value");
+            result = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "Value");
             LOGGER.info("mysql {} is {}", key, result);
         } catch (SQLException e) {
             result = selectSql + " execute failed";
@@ -88,7 +88,7 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
         String result;
         String selectSql = "show dolphin.lower_case_table_names;";
         try {
-            result = JdbcTools.selectStringValue(pgConnection, selectSql, "dolphin.lower_case_table_names");
+            result = JdbcUtils.selectStringValue(pgConnection, selectSql, "dolphin.lower_case_table_names");
             LOGGER.info("openGauss lower_case_table_names is {}", result);
         } catch (SQLException e) {
             result = selectSql + " execute failed";

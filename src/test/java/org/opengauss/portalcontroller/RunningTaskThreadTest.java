@@ -15,11 +15,12 @@
 package org.opengauss.portalcontroller;
 
 import org.junit.jupiter.api.Test;
+import org.opengauss.portalcontroller.task.RunningTaskThread;
 
 public class RunningTaskThreadTest {
     @Test
-    public void test(){
-        RunningTaskThread runningTaskThread = new RunningTaskThread("testThread","testProcess");
+    public void test() {
+        RunningTaskThread runningTaskThread = new RunningTaskThread("testThread", "testProcess");
         runningTaskThread.setMethodName("testMethod");
         runningTaskThread.setProcessName("testProcess1");
         assert runningTaskThread.getMethodName().equals("testMethod");

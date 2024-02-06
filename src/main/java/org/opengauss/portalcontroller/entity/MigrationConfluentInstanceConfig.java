@@ -21,10 +21,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
-import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.Tools;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.utils.PathUtils;
+import org.opengauss.portalcontroller.utils.PropertitesUtils;
 
 import java.util.Hashtable;
 
@@ -110,10 +110,10 @@ public class MigrationConfluentInstanceConfig {
         MigrationConfluentInstanceConfig migrationConfluentInstanceConfig =
                 MigrationConfluentInstanceConfig.builder().zookeeperPort(System.getProperty("zookeeperPort"))
                         .zkIp(System.getProperty("zkIp"))
-                .kafkaIp(System.getProperty("kafkaIp")).kafkaPort(System.getProperty("kafkaPort"))
-                .schemaRegistryIp(System.getProperty("schemaRegistryIp")).schemaRegistryPort(System.getProperty(
-                        "schemaRegistryPort"))
-                .thirdPartySoftwareConfigType(System.getProperty("thirdPartySoftwareConfigType"))
+                        .kafkaIp(System.getProperty("kafkaIp")).kafkaPort(System.getProperty("kafkaPort"))
+                        .schemaRegistryIp(System.getProperty("schemaRegistryIp")).schemaRegistryPort(System.getProperty(
+                                "schemaRegistryPort"))
+                        .thirdPartySoftwareConfigType(System.getProperty("thirdPartySoftwareConfigType"))
                         .installDir(System.getProperty("installDir")).build();
 
         log.info("get MigrationConfluentInstanceConfig from system param = {}", migrationConfluentInstanceConfig);
@@ -121,9 +121,14 @@ public class MigrationConfluentInstanceConfig {
     }
 
     /**
-     * check necessary params
+     * check Necessary Params
      *
      * @return boolean
+     * @author: www
+     * @date: 2023/12/22 10:15
+     * @description: msg
+     * @since: 1.1
+     * @version: 1.1
      */
     public boolean checkNecessaryParams() {
         if (Strings.isBlank(this.thirdPartySoftwareConfigType)) {
@@ -165,7 +170,7 @@ public class MigrationConfluentInstanceConfig {
     public static MigrationConfluentInstanceConfig getInstanceFromPortalConfig() {
         String configPath = PathUtils.combainPath(true, PortalControl.portalControlPath + "config",
                 "migrationConfig.properties");
-        Hashtable<String, String> portalConfig = Tools.getPropertiesParameters(configPath);
+        Hashtable<String, String> portalConfig = PropertitesUtils.getPropertiesParameters(configPath);
         return MigrationConfluentInstanceConfig.builder().zkIpPort(portalConfig.get(Parameter.Port.ZOOKEEPER))
                 .kafkaIpPort(portalConfig.get(Parameter.Port.KAFKA))
                 .schemaRegistryIpPort(portalConfig.get(Parameter.Port.SCHEMA_REGISTRY)).build();

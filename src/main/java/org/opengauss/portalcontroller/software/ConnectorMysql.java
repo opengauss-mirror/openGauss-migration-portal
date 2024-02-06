@@ -15,10 +15,10 @@
 
 package org.opengauss.portalcontroller.software;
 
-import org.opengauss.portalcontroller.PathUtils;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.utils.PathUtils;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
