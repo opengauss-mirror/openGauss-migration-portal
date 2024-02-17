@@ -43,15 +43,18 @@ public class VerifyChainBuilder {
      */
     public static AbstractPreMigrationVerifyChain getOnlineVerifyChain() {
         return getChainBuilder().addChain(new CommonServiceVerifyChain())
-                .addChain(new DatabaseConnectVerifyChain())
-                .addChain(new FullPermissionVerifyChain())
-                .addChain(new IncrementPermissionVerifyChain())
-                .addChain(new IncrementParameterVerifyChain())
-                .addChain(new ReversePermissionVerifyChain())
-                .addChain(new ReverseParameterVerifyChain())
-                .addChain(new LowerParameterVerifyChain())
-                .addChain(new DiskSpaceVerifyChain())
-                .build();
+            .addChain(new DatabaseConnectVerifyChain())
+            .addChain(new FullPermissionVerifyChain())
+            .addChain(new IncrementPermissionVerifyChain())
+            .addChain(new IncrementParameterVerifyChain())
+            .addChain(new ReversePermissionVerifyChain())
+            .addChain(new ReverseParameterVerifyChain())
+            .addChain(new LowerParameterVerifyChain())
+            .addChain(new DiskSpaceVerifyChain())
+            .addChain(new BdatabaseVerifyChain())
+            .addChain(new DatabaseEncryptionVerifyChain())
+            .addChain(new ReplicationNumberVerifyChain())
+            .build();
     }
 
     /**
@@ -61,11 +64,13 @@ public class VerifyChainBuilder {
      */
     public static AbstractPreMigrationVerifyChain getOfflineVerifyChain() {
         return getChainBuilder().addChain(new CommonServiceVerifyChain())
-                .addChain(new DatabaseConnectVerifyChain())
-                .addChain(new FullPermissionVerifyChain())
-                .addChain(new LowerParameterVerifyChain())
-                .addChain(new DiskSpaceVerifyChain())
-                .build();
+            .addChain(new DatabaseConnectVerifyChain())
+            .addChain(new FullPermissionVerifyChain())
+            .addChain(new LowerParameterVerifyChain())
+            .addChain(new DiskSpaceVerifyChain())
+            .addChain(new BdatabaseVerifyChain())
+            .addChain(new DatabaseEncryptionVerifyChain())
+            .build();
     }
 
     /**
@@ -75,11 +80,13 @@ public class VerifyChainBuilder {
      */
     public static AbstractPreMigrationVerifyChain getReverseVerifyChain() {
         return getChainBuilder().addChain(new CommonServiceVerifyChain())
-                .addChain(new DatabaseConnectVerifyChain())
-                .addChain(new ReversePermissionVerifyChain())
-                .addChain(new ReverseParameterVerifyChain())
-                .addChain(new LowerParameterVerifyChain())
-                .build();
+            .addChain(new DatabaseConnectVerifyChain())
+            .addChain(new ReversePermissionVerifyChain())
+            .addChain(new ReverseParameterVerifyChain())
+            .addChain(new LowerParameterVerifyChain())
+            .addChain(new BdatabaseVerifyChain())
+            .addChain(new ReplicationNumberVerifyChain())
+            .build();
     }
 
     private VerifyChainBuilder addChain(AbstractPreMigrationVerifyChain chain) {
