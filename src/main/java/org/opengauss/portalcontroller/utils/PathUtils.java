@@ -37,7 +37,11 @@ public class PathUtils {
      */
     public static String combainPath(boolean isFile, String... parts) {
         StringBuilder path;
-        path = new StringBuilder(parts[0]);
+        String prePath = parts[0];
+        if (prePath.endsWith(File.separator)) {
+            prePath = prePath.substring(0, prePath.length() - 1);
+        }
+        path = new StringBuilder(prePath);
         for (int i = 1; i < parts.length; i++) {
             path.append(File.separator).append(parts[i]);
         }
