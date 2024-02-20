@@ -561,6 +561,7 @@ public class Task {
         String configPath;
         String jarPath;
         String param;
+
         public String getRunCommamd() {
             StringBuilder builder = new StringBuilder();
             builder.append("nohup java").append(" ")
@@ -569,7 +570,7 @@ public class Task {
                     .append("-Dspring.config.additional-location=").append(configPath).append(" ")
                     .append("-jar").append(" ")
                     .append(jarPath).append(" ")
-                    .append(param).append(" ")
+                    .append(param).append(Strings.isNotBlank(param) ? " " : "")
                     .append("> /dev/null &");
             return builder.toString();
         }

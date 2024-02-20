@@ -89,7 +89,6 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                     toolsMigrationParametersTable.get(Opengauss.PASSWORD));
             String opengaussDatabaseName = toolsMigrationParametersTable.get(Opengauss.DATABASE_NAME);
             configMap.put(Chameleon.Parameters.Opengauss.NAME, opengaussDatabaseName);
-            configMap.put(Chameleon.Parameters.Mysql.MAPPING, null);
             configMap.put(Chameleon.Parameters.Mysql.MAPPING + "." + mysqlDatabaseName,
                     toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA));
         } else {
