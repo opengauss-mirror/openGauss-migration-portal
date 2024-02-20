@@ -45,6 +45,7 @@ public abstract class ParamsConfig {
             }
             log.info("path:{} start change...",
                     toolsConfigParametersTable.get(configChangeParams.getKey()));
+            log.info("changeParamMap = {}", changeParamMap);
             YmlUtils.changeYmlParameters(changeParamMap, toolsConfigParametersTable.get(configChangeParams.getKey()));
         }
         for (Map.Entry<String, Map<String, Object>> configChangeParams
@@ -59,6 +60,7 @@ public abstract class ParamsConfig {
             }
             log.info("path:{} start change...",
                     toolsConfigParametersTable.get(configChangeParams.getKey()));
+            log.info("changeParamMap = {}", changeParamMap);
             PropertitesUtils.changePropertiesParameters(hashtable,
                     toolsConfigParametersTable.get(configChangeParams.getKey()));
         }
@@ -68,6 +70,7 @@ public abstract class ParamsConfig {
         for (Map.Entry<String, List<String>> configDeleteParams : configDeleteParamsMap.entrySet()) {
             String configPath = configDeleteParams.getKey();
             List<String> deleteParams = configDeleteParams.getValue();
+            log.info("deleteParams = {}", deleteParams);
             if (deleteParams.isEmpty()) {
                 continue;
             }
