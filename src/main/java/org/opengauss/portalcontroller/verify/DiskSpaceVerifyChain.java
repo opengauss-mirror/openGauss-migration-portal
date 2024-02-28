@@ -79,7 +79,7 @@ public class DiskSpaceVerifyChain extends AbstractPreMigrationVerifyChain {
      * @return  single table max capacity
      */
     public static BigDecimal getMaxTableSpace(Connection mysqlConnection, boolean isDefault) {
-        String permissionStr = "";
+        String permissionStr = "0";
         try {
             permissionStr = JdbcUtils.selectStringValue(mysqlConnection,
                 "SELECT IFNULL(MAX(DATA_LENGTH + INDEX_LENGTH + DATA_FREE),0) as total from "
