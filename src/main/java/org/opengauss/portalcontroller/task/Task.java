@@ -46,7 +46,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static org.opengauss.portalcontroller.PortalControl.workspaceId;
 
@@ -72,6 +74,18 @@ public class Task {
 
     private static final Tool INCREMENTAL_MIGRATION_TOOL = new IncrementalMigrationTool();
     private static final Tool REVERSE_MIGRATION_TOOL = new ReverseMigrationTool();
+    private static final List<StartCheckFunctional> START_CHECK_FUNCTIONAL_LIST = new LinkedList<>();
+
+    static {
+        START_CHECK_FUNCTIONAL_LIST.add(
+            checkLogListener -> startTaskMethod(Method.Name.CHECK_SOURCE, DATA_CHECK_START_TIME,
+                Check.CheckLog.START_SOURCE_LOG, checkLogListener));
+        START_CHECK_FUNCTIONAL_LIST.add(
+            checkLogListener -> startTaskMethod(Method.Name.CHECK_SINK, DATA_CHECK_START_TIME,
+                Check.CheckLog.START_SINK_LOG, checkLogListener));
+        START_CHECK_FUNCTIONAL_LIST.add(checkLogListener -> startTaskMethod(Method.Name.CHECK, DATA_CHECK_START_TIME,
+            Check.CheckLog.START_CHECK_LOG, checkLogListener));
+    }
 
     /**
      * The constant ALL_TASK_LIST.
@@ -385,7 +399,6 @@ public class Task {
             sleepTime -= METHOD_START_TIME;
         }
     }
-
 
     /**
      * Stop task method.
@@ -760,15 +773,23 @@ public class Task {
      * @param logFileListener DataCheckLogFileCheck
      */
     public static void startDataCheck(LogFileListener logFileListener) {
-        startTaskMethod(Method.Name.CHECK_SOURCE, DATA_CHECK_START_TIME, Check.CheckLog.START_SOURCE_LOG,
-                logFileListener);
-        startTaskMethod(Method.Name.CHECK_SINK, DATA_CHECK_START_TIME, Check.CheckLog.START_SINK_LOG,
-                logFileListener);
-        startTaskMethod(Method.Name.CHECK, DATA_CHECK_START_TIME, Check.CheckLog.START_CHECK_LOG,
-                logFileListener);
+        try {
+            CountDownLatch countDownLatch = new CountDownLatch(START_CHECK_FUNCTIONAL_LIST.size());
+            START_CHECK_FUNCTIONAL_LIST.parallelStream()
+                                       .forEach(checkTask -> {
+                                           checkTask.apply(logFileListener);
+                                           countDownLatch.countDown();
+                                       });
+            countDownLatch.await();
+        } catch (InterruptedException ex) {
+            LOGGER.warn("start data check process interupted.");
+        }
     }
 
-
+    @FunctionalInterface
+    interface StartCheckFunctional {
+        void apply(LogFileListener checkLogListener);
+    }
 
     /**
      * The interface CheckProcess.
