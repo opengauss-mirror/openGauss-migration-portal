@@ -120,7 +120,11 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
      * @throws PortalException the portal exception
      */
     private static void findOffset() throws PortalException {
-        String offsetPath = toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH);
+        LOGGER.info("Find snapshot for full and incremental migration.");
+        Hashtable<String, String> offsetHashtable = new Hashtable<>();
+        offsetHashtable.put(Offset.FILE, "");
+        offsetHashtable.put(Offset.POSITION, "0");
+        offsetHashtable.put(Offset.GTID, "");
         String sql = "select t_binlog_name,i_binlog_position,t_gtid_set from sch_chameleon.t_replica_batch;";
         try (
                 Connection mysqlConnection = JdbcUtils.getMysqlConnection();
@@ -133,15 +137,17 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                 String iBinlogPosition = rs.getString("i_binlog_position");
                 String tGtidSet = rs.getString("t_gtid_set");
                 String offsetGtidSet = changeGtidSet(tGtidSet, uuid);
-                Hashtable<String, String> offsetHashtable = new Hashtable<>();
                 offsetHashtable.put(Offset.FILE, tBinlogName);
                 offsetHashtable.put(Offset.POSITION, iBinlogPosition);
                 offsetHashtable.put(Offset.GTID, offsetGtidSet);
-                PropertitesUtils.changePropertiesParameters(offsetHashtable, offsetPath);
+                LOGGER.info("Find snapshot from mysql full migration, file: {}, position: {}, gitd: {}.",
+                        tBinlogName, iBinlogPosition, tGtidSet);
             }
         } catch (SQLException e) {
-            throw new PortalException("SQL exception", "find offset", e.getMessage());
+            LOGGER.warn("Schema sch_chameleon does not exists, use snapshot when incremental migration start.");
         }
+        String offsetPath = toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH);
+        PropertitesUtils.changePropertiesParameters(offsetHashtable, offsetPath);
     }
 
     /**

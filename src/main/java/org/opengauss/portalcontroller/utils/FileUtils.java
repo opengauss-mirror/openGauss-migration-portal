@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
@@ -166,6 +167,11 @@ public class FileUtils {
      * @return the string
      */
     public static String outputFileString(String path) {
+        if (!Files.exists(Path.of(path))) {
+            String result = String.format("File {} does not exist", path);
+            log.warn(result);
+            return result;
+        }
         StringBuilder str = new StringBuilder();
         try {
             BufferedReader fileReader = new BufferedReader((new InputStreamReader(new FileInputStream(path))));
