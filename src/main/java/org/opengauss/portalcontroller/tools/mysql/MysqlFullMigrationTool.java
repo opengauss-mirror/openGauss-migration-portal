@@ -147,7 +147,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                 LOGGER.info("check chameleon success...");
                 return true;
             }
-            LOGGER.error("first check chameleon failed, start install...");
+            LOGGER.warn("first check chameleon failed, start install...");
             String chameleonPkgSpace = "200MB";
             String chameleonPkgPath = hashtable.get(Chameleon.PKG_PATH) + hashtable.get(Chameleon.PKG_NAME);
             RuntimeExecUtils.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);

@@ -22,6 +22,7 @@ import com.alibaba.fastjson.JSONObject;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
+import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
@@ -279,6 +280,9 @@ public class ChangeStatusTools {
                 Plan.stopPlan, PortalControl.status);
         if (Plan.stopPlan || PortalControl.status >= Status.FULL_MIGRATION_CHECK_FINISHED) {
             if (ThreadStatusController.isReduced()) {
+                return;
+            }
+            if (!PortalControl.taskList.contains(Command.Start.Mysql.FULL)) {
                 return;
             }
             Connection mysqlConnection = null;

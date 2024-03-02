@@ -167,7 +167,7 @@ public class LogViewUtils {
             File file = new File(logPath);
             return file.exists();
         } catch (Exception ex) {
-            LOGGER.error("logPath not exists ", ex);
+            LOGGER.error("logPath {} not exists ", logPath, ex);
             PortalControl.shutDownPortal("logPath not exists :" + logPath);
         }
         return false;

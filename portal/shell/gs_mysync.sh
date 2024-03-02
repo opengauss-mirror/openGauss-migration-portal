@@ -4,7 +4,7 @@ START_ORDER=start_mysql_full_migration
 STOP_ORDER=stop_plan
 INSTALL_ORDER=install_mysql_full_migration_tools
 UNINSTALL_ORDER=uninstall_mysql_full_migration_tools
-SIGN="-Dworkspace.id=1"
+SIGN="workspace.id=1"
 ID=1
 PORTAL_PATH="$PWD/"
 SKIP=true
@@ -12,7 +12,7 @@ SKIP=true
 if [ ! -z $2 ]
   then
            ID=$2
-           SIGN="-Dworkspace.id=$2"
+           SIGN="workspace.id=$2"
 fi
 
 #使用说明，用来提示输入参数
@@ -24,7 +24,7 @@ exit 1
 
 #检查程序是否在运行
 is_exist() {
-pid=`ps -ef|grep $SIGN |grep $APP_NAME |grep -v grep|awk '{print $ID}' `
+pid=`ps -ef|grep $SIGN |grep $APP_NAME |grep -v grep|awk '{print \$2}' `
 #如果不存在返回1，存在返回0
 if [ -z "${pid}" ]; then
 return 1
