@@ -352,7 +352,7 @@ public class PortalControl {
         LOGGER.info("start_plan1 --You can execute plan1 in default plan list.");
         LOGGER.info("start_plan2 --You can execute plan2 in default plan list.");
         LOGGER.info("start_plan3 --You can execute plan3 in default plan list.");
-        LOGGER.info("start_current plan --You can execute current plan in currentPlan.");
+        LOGGER.info("start_current_plan --You can execute current plan in currentPlan.");
         LOGGER.info("show_plans --Show default plans.");
         LOGGER.info("show_status --Show plan status.");
         LOGGER.info("show_information --Show information of migration which include user name,password,host,port,"
