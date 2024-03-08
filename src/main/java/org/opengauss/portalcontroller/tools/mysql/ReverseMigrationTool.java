@@ -236,8 +236,6 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         reverseConnectSourceParams.putAll(connectAvroStandalonePropChangeParam);
         // opengauss-sink.properties文件修改
         reverseSinkParams.put("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort());
-        // opengauss-source.properties文件修改
-        reverseSourceParams.put("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort());
     }
 
     /**
