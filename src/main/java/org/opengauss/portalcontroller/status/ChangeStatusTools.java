@@ -72,8 +72,11 @@ public class ChangeStatusTools {
     public static ArrayList<TableStatus> getChameleonTableStatus(String path) {
         ArrayList<TableStatus> tableStatusList = new ArrayList<>();
         String tableChameleonStatus;
-        if (!(tableChameleonStatus = LogViewUtils.getFullLog(path)).equals("")) {
-            JSONObject root = JSONObject.parseObject(tableChameleonStatus);
+        if (!("".equals(tableChameleonStatus = LogViewUtils.getFullLog(path)))) {
+            JSONObject root = parseJsonStr(tableChameleonStatus);
+            if (root == null) {
+                return new ArrayList<>();
+            }
             JSONArray table = root.getJSONArray("table");
             Iterator<Object> iterator = table.iterator();
             int index = 0;
@@ -141,8 +144,12 @@ public class ChangeStatusTools {
         }
         ArrayList<ObjectStatus> objectStatusList = new ArrayList<>();
         String chameleonStr = LogViewUtils.getFullLogNoSeparator(path);
-        if (!chameleonStr.equals("")) {
-            JSONObject root = JSONObject.parseObject(chameleonStr);
+
+        if (!("".equals(chameleonStr))) {
+            JSONObject root = parseJsonStr(chameleonStr);
+            if (root == null) {
+                return new ArrayList<>();
+            }
             if (root.getJSONArray(name) != null) {
                 JSONArray objects = root.getJSONArray(name);
                 Iterator iterator = objects.iterator();
@@ -463,11 +470,24 @@ public class ChangeStatusTools {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
         String tableChameleonStatus = LogViewUtils.getFullLogNoSeparator(path);
-        if (!tableChameleonStatus.equals("")) {
-            JSONObject root = JSONObject.parseObject(tableChameleonStatus);
+        if (!("".equals(tableChameleonStatus))) {
+            JSONObject root = parseJsonStr(tableChameleonStatus);
+            if (root == null) {
+                return "";
+            }
             return JSONObject.parseObject(root.getString("total"));
         }
         return "";
+    }
+
+    private static JSONObject parseJsonStr(String jsonStr) {
+        JSONObject root = null;
+        try {
+            root = JSONObject.parseObject(jsonStr);
+        } catch (JSONException exp) {
+            LOGGER.warn("not read a complete json string, continue.");
+        }
+        return root;
     }
 
     /**
