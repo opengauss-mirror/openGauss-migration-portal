@@ -151,7 +151,7 @@ public class ThreadStatusController extends Thread {
                 LOGGER.error(e.toString());
                 PortalControl.shutDownPortal(e.toString());
             }
-            ProcessUtils.sleepThread(1000, "writing the status");
+            ProcessUtils.sleepThread(2000, "writing the status");
         }
         isReduced = false;
     }
