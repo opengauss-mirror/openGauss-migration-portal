@@ -177,6 +177,9 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         reverseSourceParams.put("transforms.route.replacement", "opengauss_server_" + workspaceId + "_topic");
         reverseSourceParams.put("source.process.file.path", toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
         reverseSourceParams.put("create.count.info.path", toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
+        if (Plan.slotName == null || "".equals(Plan.slotName.trim())) {
+            Plan.slotName = "slot_" + workspaceId;
+        }
         reverseSourceParams.put("slot.name", Plan.slotName);
         reverseSinkParams.put("topics", "opengauss_server_" + workspaceId + "_topic");
         reverseSinkParams.put("record.breakpoint.kafka.topic", "opengauss_bp_" + workspaceId + "_topic");
@@ -410,8 +413,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean checkStatus(String workspaceId) {
-        checkProcess(Method.Name.REVERSE_CONNECT_SINK);
-        checkProcess(Method.Name.REVERSE_CONNECT_SOURCE);
+        checkProcess(Method.Run.REVERSE_CONNECT_SINK);
+        checkProcess(Method.Run.REVERSE_CONNECT_SOURCE);
         return true;
     }
 
