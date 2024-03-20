@@ -15,6 +15,7 @@
 
 package org.opengauss.portalcontroller.utils;
 
+import org.assertj.core.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -163,6 +164,9 @@ public class LogViewUtils {
     }
 
     private static boolean checkFileExists(String logPath) {
+        if (Strings.isNullOrEmpty(logPath)) {
+            return false;
+        }
         try {
             File file = new File(logPath);
             return file.exists();
