@@ -50,6 +50,7 @@ import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParamet
 import static org.opengauss.portalcontroller.constant.Check.TOOLS_BLACK_LIST_CONFIG_KEY;
 import static org.opengauss.portalcontroller.constant.ToolsParamsLog.KEY_SUB_INDEX;
 import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_PARAM_PREFIX;
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_DESC_PREFIX;
 
 /**
  * ParamsUtils
@@ -164,13 +165,20 @@ public class ParamsUtils {
         Map<String, String> newParamMap = oldParams.entrySet().stream()
                 .filter(migrationParamEntry -> migrationParamEntry.getKey()
                         .startsWith(NEW_PARAM_PREFIX + configEnum.getType().toString()))
-                .filter(migrationParamEntry ->
-                        migrationParamEntry.getKey().startsWith(NEW_PARAM_PREFIX))
+                .filter(migrationParamEntry -> migrationParamEntry.getKey()
+                        .startsWith(NEW_PARAM_PREFIX))
                 .collect(Collectors.toMap(entry -> entry.getKey().substring(NEW_PARAM_PREFIX.length()
-                                + KEY_SUB_INDEX),
-                        Map.Entry::getValue));
+                                + KEY_SUB_INDEX), Map.Entry::getValue));
+        Map<String, String> newDescMap = oldParams.entrySet().stream()
+                .filter(migrationParamEntry -> migrationParamEntry.getKey()
+                        .startsWith(NEW_DESC_PREFIX + configEnum.getType().toString()))
+                .collect(Collectors.toMap(entry -> NEW_DESC_PREFIX + entry.getKey().substring(NEW_DESC_PREFIX.length()
+                                + KEY_SUB_INDEX), Map.Entry::getValue));
         if (!newParamMap.isEmpty()) {
             toolsParams.putAll(newParamMap);
+        }
+        if (!newDescMap.isEmpty()) {
+            toolsParams.putAll(newDescMap);
         }
         LOGGER.info("changeToolsPropsParameters need change toolsParams:{}", toolsParams);
         return toolsParams;
@@ -194,6 +202,9 @@ public class ParamsUtils {
                 } else {
                     migrationConfig.put(keyStr, migrationValue);
                 }
+            }
+            if (keyStr.startsWith(NEW_DESC_PREFIX)) {
+                migrationConfig.put(keyStr, System.getProperty(keyStr));
             }
         });
         String migrationConfigPath = PathUtils.combainPath(true, portalControlPath + "config",
