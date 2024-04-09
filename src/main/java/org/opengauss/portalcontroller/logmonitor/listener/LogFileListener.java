@@ -96,7 +96,7 @@ public class LogFileListener implements Runnable {
                 }
                 for (String checkStr : checkStrList) {
                     if (line.contains(checkStr)) {
-                        log.error("{} find check str... {}....{}", filePath, line, checkStr);
+                        log.info("{} find check str... {}....{}", filePath, line, checkStr);
                         logMap.put(checkStr, line);
                     }
                 }

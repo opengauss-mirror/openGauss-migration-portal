@@ -253,9 +253,7 @@ public class RuntimeExecUtils {
     public static void copyFile(String filePath, String directory, boolean recovery) throws PortalException {
         File file = new File(filePath);
         if (file.exists()) {
-            String fileName = file.getName();
-            String newFilePath = directory + fileName;
-            boolean isExist = new File(newFilePath).exists();
+            boolean isExist = new File(directory).exists();
             if (!isExist || recovery) {
                 String command = "cp -R " + filePath + " " + directory;
                 executeOrder(command, 60000, PortalControl.portalErrorPath);
