@@ -22,9 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,13 +49,17 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
         Map<String, Object> mysqMap = new HashMap<>();
         databaseMap.put(Constants.KEY_MYSQL, mysqMap);
         if (mysqlConnection != null) {
-            List<String> errorPamramList = new ArrayList<>();
+            Map<String, String> errorPamramList = new HashMap<>();
             judgeParam(mysqlConnection, errorPamramList, "log_bin", "ON");
             judgeParam(mysqlConnection, errorPamramList, "binlog_format", "ROW");
             judgeParam(mysqlConnection, errorPamramList, "binlog_row_image", "FULL");
             if (!errorPamramList.isEmpty()) {
                 mysqMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_FALSE);
-                mysqMap.put("binlog_error", errorPamramList);
+                StringBuilder expectedParam = new StringBuilder();
+                StringBuilder actualParam = new StringBuilder();
+                getErrorPamram(expectedParam, actualParam, errorPamramList);
+                mysqMap.put("expectedParam", expectedParam.toString());
+                mysqMap.put("actualParam", actualParam.toString());
             } else {
                 mysqMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_TRUE);
             }
@@ -69,6 +71,29 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
         }
     }
 
+    private void getErrorPamram(StringBuilder expectedParam, StringBuilder actualParam, Map<String, String> errorPamramList) {
+        if (errorPamramList.containsKey("log_bin")) {
+            expectedParam.append("log_bin=ON");
+            actualParam.append("log_bin=").append(errorPamramList.get("log_bin"));
+        }
+        if (errorPamramList.containsKey("binlog_format")) {
+            if (!expectedParam.toString().isEmpty()) {
+                expectedParam.append("、");
+                actualParam.append("、");
+            }
+            expectedParam.append("binlog_format=ROW");
+            actualParam.append("binlog_format=").append(errorPamramList.get("binlog_format"));
+        }
+        if (errorPamramList.containsKey("binlog_row_image")) {
+            if (!expectedParam.toString().isEmpty()) {
+                expectedParam.append("、");
+                actualParam.append("、");
+            }
+            expectedParam.append("binlog_row_image=FULL");
+            actualParam.append("binlog_row_image=").append(errorPamramList.get("binlog_row_image"));
+        }
+    }
+
     /**
      * judge param
      *
@@ -77,16 +102,16 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
      * @param key             param name
      * @param value           param value
      */
-    public void judgeParam(Connection mysqlConnection, List<String> errorParamList, String key, String value) {
+    public void judgeParam(Connection mysqlConnection, Map<String, String> errorParamList, String key, String value) {
         String selectSql = "show variables like '" + key + "'";
         try {
             String permissionStr = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "Value");
             LOGGER.info("parameter {} is {}", key, permissionStr);
             if (!value.equals(permissionStr)) {
-                errorParamList.add(key + "=" + permissionStr);
+                errorParamList.put(key, permissionStr);
             }
         } catch (SQLException e) {
-            errorParamList.add(selectSql + " execute exception");
+            errorParamList.put(key, selectSql + " execute exception");
             LOGGER.error(selectSql + " execute failed.", e);
         }
     }
