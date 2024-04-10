@@ -102,7 +102,6 @@ public class KafkaUtils {
         PropertitesUtils.changePropertiesParameters(migrationConfig,
                 PathUtils.combainPath(true, portalControlPath + "config",
                         "migrationConfig.properties"));
-        PropertitesUtils.changePropertiesParameters(migrationConfig, migrationConfigPath);
         Hashtable<String, String> toolsConfig = new Hashtable<>();
         if (MigrationConfluentInstanceConfig.ThirdPartySoftwareConfigType.BIND.getCode()
                 .equals(confluentInstanceConfig.getThirdPartySoftwareConfigType())) {
