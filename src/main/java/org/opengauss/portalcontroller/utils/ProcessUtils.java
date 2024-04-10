@@ -241,6 +241,12 @@ public class ProcessUtils {
      * @param methodName methodName
      */
     public static void checkProcess(String methodName) {
+        LOGGER.info("methodName = {}", methodName);
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement ele : stackTrace) {
+            LOGGER.info(ele.getClassName() + "." + ele.getMethodName());
+        }
+
         String processName = Task.getTaskProcessMap().get(methodName);
         String errorStr =
                 "Error message: Process " + processName + " exit abnormally or process " + System.lineSeparator();

@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -705,7 +706,7 @@ public class PortalControl {
         if (file.exists() && file.isFile()) {
             Properties pps = new Properties();
             try {
-                pps.load(new FileInputStream(path));
+                pps.load(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
             } catch (IOException e) {
                 PortalException portalException = new PortalException("IO exception", "loading the parameters in file"
                         + " " + path, e.getMessage());

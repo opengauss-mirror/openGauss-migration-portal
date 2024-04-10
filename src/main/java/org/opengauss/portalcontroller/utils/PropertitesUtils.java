@@ -24,15 +24,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
+
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_DESC_PREFIX;
 
 /**
  * PropertitesUtils
@@ -52,18 +58,56 @@ public class PropertitesUtils {
      * @param path       path
      */
     public static void deletePropParameters(List<String> deleteKeys, String path) {
+        BufferedReader bufReader = null;
+        BufferedWriter bufWriter = null;
         try {
-            Properties pps = new Properties();
-            pps.load(new FileInputStream(path));
-            for (String deleteKey : deleteKeys) {
-                pps.remove(deleteKey);
+            bufReader = new BufferedReader(new FileReader(path));
+            LinkedHashMap<String, String> propertiesMap = new LinkedHashMap<>();
+            LinkedHashMap<String, String> comments = new LinkedHashMap<>();
+            String line;
+            String comment = "";
+            while ((line = bufReader.readLine()) != null) {
+                if (!line.trim().startsWith("#") && line.contains("=")) {
+                    String[] parts = line.split("=", 2);
+                    propertiesMap.put(parts[0].trim(), parts[1].trim());
+                    comments.put(parts[0].trim(), comment);
+                    comment = "";
+                    continue;
+                }
+                if (line.trim().startsWith("#")) {
+                    comment += line + System.lineSeparator();
+                }
             }
-            pps.store(new FileWriter(path), "");
+            for (String deleteKey : deleteKeys) {
+                propertiesMap.put(deleteKey, "");
+            }
+            bufWriter = new BufferedWriter(new FileWriter(path));
+            for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
+                if (!"".equals(entry.getValue())) {
+                    if (!"".equals(comments.get(entry.getKey()))) {
+                        bufWriter.write(comments.get(entry.getKey()));
+                        bufWriter.flush();
+                    }
+                    bufWriter.write(entry.getKey() + "=" + entry.getValue() + System.lineSeparator());
+                    bufWriter.flush();
+                }
+            }
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "delete yml parameters",
                     e.getMessage());
             LOGGER.error(portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
+        } finally {
+            try {
+                if (bufReader != null) {
+                    bufReader.close();
+                }
+                if (bufWriter != null) {
+                    bufWriter.close();
+                }
+            } catch (IOException e) {
+                LOGGER.error("close file occur exception, exp is " + e.getMessage());
+            }
         }
     }
 
@@ -163,8 +207,14 @@ public class PropertitesUtils {
             }
             bufferedReader.close();
             for (String key : table.keySet()) {
-                String temp = key + "=" + table.get(key);
-                stringList.add(temp);
+                if (key.startsWith(NEW_DESC_PREFIX) && !path.endsWith("migrationConfig.properties")) {
+                    continue;
+                }
+                String descKey = NEW_DESC_PREFIX + key;
+                if (table.containsKey(descKey)) {
+                    stringList.add("# " + table.get(descKey));
+                }
+                stringList.add(key + "=" + table.get(key));
             }
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file),
                     StandardCharsets.UTF_8));
@@ -219,7 +269,7 @@ public class PropertitesUtils {
         Hashtable<String, String> table = new Hashtable<>();
         try {
             Properties pps = new Properties();
-            pps.load(new FileInputStream(path));
+            pps.load(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8));
             for (Object o : pps.keySet()) {
                 if (o instanceof String) {
                     table.put(o.toString(), pps.getProperty(o.toString()));
