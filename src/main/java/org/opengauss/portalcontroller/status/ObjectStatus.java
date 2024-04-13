@@ -21,6 +21,7 @@ package org.opengauss.portalcontroller.status;
 public class ObjectStatus {
     private String name;
     private int status;
+    private String errorMsg;
 
     /**
      * Gets name.
@@ -59,13 +60,44 @@ public class ObjectStatus {
     }
 
     /**
+     * Gets error msg.
+     *
+     * @return the error msg
+     */
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    /**
+     * Sets error msg.
+     *
+     * @param errorMsg the error msg
+     */
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+
+    /**
      * Instantiates a new Object status.
      *
-     * @param name   the name
+     * @param name the name
      * @param status the status
      */
     public ObjectStatus(String name, int status) {
         this.name = name;
         this.status = status;
+    }
+
+    /**
+     * Instantiates a new Object status.
+     *
+     * @param name the name
+     * @param status the status
+     * @param errorMsg the error message
+     */
+    public ObjectStatus(String name, int status, String errorMsg) {
+        this.name = name;
+        this.status = status;
+        this.errorMsg = errorMsg;
     }
 }
