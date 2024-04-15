@@ -157,7 +157,13 @@ public class ChangeStatusTools {
                 while (iterator.hasNext()) {
                     String objectName = objects.getJSONObject(index).getString("name");
                     int status = objects.getJSONObject(index).getInteger("status");
-                    ObjectStatus objectStatus = new ObjectStatus(objectName, status);
+                    ObjectStatus objectStatus;
+                    if (status == Status.Object.ERROR) {
+                        String errorMsg = objects.getJSONObject(index).getString("error");
+                        objectStatus = new ObjectStatus(objectName, status, errorMsg);
+                    } else {
+                        objectStatus = new ObjectStatus(objectName, status);
+                    }
                     objectStatusList.add(objectStatus);
                     index++;
                     iterator.next();
