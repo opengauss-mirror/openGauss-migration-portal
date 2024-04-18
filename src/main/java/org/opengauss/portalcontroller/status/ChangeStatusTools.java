@@ -26,6 +26,9 @@ import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.entity.RecordVo;
+import org.opengauss.portalcontroller.entity.Total;
+import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
@@ -36,12 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The type Change status tools.
@@ -179,15 +184,83 @@ public class ChangeStatusTools {
      *
      * @return the all chameleon status
      */
-    public static FullMigrationStatus getAllChameleonStatus() {
-        Object total = getChameleonTotalStatus();
-        ArrayList<TableStatus> tableStatusArrayList = getChameleonTableStatus();
-        ArrayList<ObjectStatus> viewStatusArrayList = getChameleonObjectStatus("view", "start_view_replica");
-        ArrayList<ObjectStatus> functionStatusArrayList = getChameleonObjectStatus("function", "start_func_replica");
-        ArrayList<ObjectStatus> triggerStatusArrayList = getChameleonObjectStatus("trigger", "start_trigger_replica");
-        ArrayList<ObjectStatus> procedureStatusArrayList = getChameleonObjectStatus("procedure", "start_proc_replica");
-        return new FullMigrationStatus(total, tableStatusArrayList, viewStatusArrayList, functionStatusArrayList,
-                triggerStatusArrayList, procedureStatusArrayList);
+    public static FullMigrationStatus getAllChameleonStatus() throws IOException {
+        String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
+        RecordVo recordVo = new RecordVo();
+        getChameleonTableStatus(chameleonVenvPath, recordVo);
+        getChameleonViewStatus(chameleonVenvPath, recordVo);
+        getChameleonFuncStatus(chameleonVenvPath, recordVo);
+        getChameleonTriggerStatus(chameleonVenvPath, recordVo);
+        getChameleonProcStatus(chameleonVenvPath, recordVo);
+        List<TableStatus> tableStatusArrayList = recordVo.getTable().stream()
+                .map(tab -> new TableStatus(tab.getName(), tab.getStatus(), tab.getPercent(), tab.getError()))
+                .collect(Collectors.toList());
+        List<ObjectStatus> viewStatusArrayList = recordVo.getView().stream()
+                .map(view -> new ObjectStatus(view.getName(), view.getStatus()))
+                .collect(Collectors.toList());
+        List<ObjectStatus> functionStatusArrayList = recordVo.getFunction().stream()
+                .map(func -> new ObjectStatus(func.getName(), func.getStatus()))
+                .collect(Collectors.toList());
+        List<ObjectStatus> procedureStatusArrayList = recordVo.getProcedure().stream()
+                .map(proc -> new ObjectStatus(proc.getName(), proc.getStatus()))
+                .collect(Collectors.toList());
+        List<ObjectStatus> triggerStatusArrayList = recordVo.getTrigger().stream()
+                .map(trigger -> new ObjectStatus(trigger.getName(), trigger.getStatus()))
+                .collect(Collectors.toList());
+        return new FullMigrationStatus(recordVo.getTotal(), new ArrayList<>(tableStatusArrayList), new ArrayList<>(viewStatusArrayList), new ArrayList<>(functionStatusArrayList),
+                new ArrayList<>(triggerStatusArrayList), new ArrayList<>(procedureStatusArrayList));
+    }
+
+    private static void getChameleonProcStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
+        Path procPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_proc_replica.json");
+        if (procPath.toFile().exists()) {
+            RecordVo proc = JSONObject.parseObject(Files.readString(procPath), RecordVo.class);
+            recordVo.setProcedure(proc.getProcedure());
+        } else {
+            recordVo.setProcedure(List.of());
+        }
+    }
+
+    private static void getChameleonTriggerStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
+        Path triggerPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_trigger_replica.json");
+        if (triggerPath.toFile().exists()) {
+            RecordVo trigger = JSONObject.parseObject(Files.readString(triggerPath), RecordVo.class);
+            recordVo.setTrigger(trigger.getTrigger());
+        } else {
+            recordVo.setTrigger(List.of());
+        }
+    }
+
+    private static void getChameleonFuncStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
+        Path funcPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_func_replica.json");
+        if (funcPath.toFile().exists()) {
+            RecordVo func = JSONObject.parseObject(Files.readString(funcPath), RecordVo.class);
+            recordVo.setFunction(func.getFunction());
+        } else {
+            recordVo.setFunction(List.of());
+        }
+    }
+
+    private static void getChameleonViewStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
+        Path viewPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_view_replica.json");
+        if (viewPath.toFile().exists()) {
+            RecordVo view = JSONObject.parseObject(Files.readString(viewPath), RecordVo.class);
+            recordVo.setView(view.getView());
+        } else {
+            recordVo.setView(List.of());
+        }
+    }
+
+    private static void getChameleonTableStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
+        Path tablePath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json");
+        if (tablePath.toFile().exists()) {
+            RecordVo table = JSONObject.parseObject(Files.readString(tablePath), RecordVo.class);
+            recordVo.setTotal(table.getTotal());
+            recordVo.setTable(table.getTable());
+        } else {
+            recordVo.setTotal(new Total());
+            recordVo.setTable(List.of());
+        }
     }
 
     /**
@@ -197,7 +270,7 @@ public class ChangeStatusTools {
         FullMigrationStatus tempFullMigrationStatus;
         try {
             tempFullMigrationStatus = getAllChameleonStatus();
-        } catch (JSONException e) {
+        } catch (JSONException | IOException e) {
             LOGGER.error("", e);
             tempFullMigrationStatus = ThreadStatusController.fullMigrationStatus;
         }
