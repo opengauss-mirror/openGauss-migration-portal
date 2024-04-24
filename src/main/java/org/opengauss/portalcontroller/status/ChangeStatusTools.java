@@ -26,9 +26,9 @@ import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.entity.ObjectEntry;
 import org.opengauss.portalcontroller.entity.RecordVo;
 import org.opengauss.portalcontroller.entity.Total;
-import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
@@ -46,6 +46,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -192,23 +193,25 @@ public class ChangeStatusTools {
         getChameleonFuncStatus(chameleonVenvPath, recordVo);
         getChameleonTriggerStatus(chameleonVenvPath, recordVo);
         getChameleonProcStatus(chameleonVenvPath, recordVo);
-        List<TableStatus> tableStatusArrayList = recordVo.getTable().stream()
-                .map(tab -> new TableStatus(tab.getName(), tab.getStatus(), tab.getPercent(), tab.getError()))
-                .collect(Collectors.toList());
-        List<ObjectStatus> viewStatusArrayList = recordVo.getView().stream()
-                .map(view -> new ObjectStatus(view.getName(), view.getStatus()))
-                .collect(Collectors.toList());
-        List<ObjectStatus> functionStatusArrayList = recordVo.getFunction().stream()
-                .map(func -> new ObjectStatus(func.getName(), func.getStatus()))
-                .collect(Collectors.toList());
-        List<ObjectStatus> procedureStatusArrayList = recordVo.getProcedure().stream()
-                .map(proc -> new ObjectStatus(proc.getName(), proc.getStatus()))
-                .collect(Collectors.toList());
-        List<ObjectStatus> triggerStatusArrayList = recordVo.getTrigger().stream()
-                .map(trigger -> new ObjectStatus(trigger.getName(), trigger.getStatus()))
-                .collect(Collectors.toList());
+        List<TableStatus> tableStatusArrayList = translateMigrationStatusObject(recordVo.getTable(), translateMigrationTableStatusObject());
+        List<ObjectStatus> viewStatusArrayList = translateMigrationStatusObject(recordVo.getView(), translateMigrationStatusObject());
+        List<ObjectStatus> functionStatusArrayList = translateMigrationStatusObject(recordVo.getFunction(), translateMigrationStatusObject());
+        List<ObjectStatus> procedureStatusArrayList = translateMigrationStatusObject(recordVo.getProcedure(), translateMigrationStatusObject());
+        List<ObjectStatus> triggerStatusArrayList = translateMigrationStatusObject(recordVo.getTrigger(), translateMigrationStatusObject());
         return new FullMigrationStatus(recordVo.getTotal(), new ArrayList<>(tableStatusArrayList), new ArrayList<>(viewStatusArrayList), new ArrayList<>(functionStatusArrayList),
                 new ArrayList<>(triggerStatusArrayList), new ArrayList<>(procedureStatusArrayList));
+    }
+
+    private static <T> List<T> translateMigrationStatusObject(List<ObjectEntry> list, Function<ObjectEntry, T> function) {
+        return list.stream().map(function).collect(Collectors.toList());
+    }
+
+    private static Function<ObjectEntry, ObjectStatus> translateMigrationStatusObject() {
+        return entry -> new ObjectStatus(entry.getName(), entry.getStatus(), entry.getError());
+    }
+
+    private static Function<ObjectEntry, TableStatus> translateMigrationTableStatusObject() {
+        return tab -> new TableStatus(tab.getName(), tab.getStatus(), tab.getPercent(), tab.getError());
     }
 
     private static void getChameleonProcStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
