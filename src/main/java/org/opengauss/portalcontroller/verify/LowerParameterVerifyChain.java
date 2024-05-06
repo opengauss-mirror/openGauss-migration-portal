@@ -35,6 +35,7 @@ import java.util.Map;
  */
 public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(LowerParameterVerifyChain.class);
+    private StringBuilder stringBuilder = new StringBuilder();
 
     @Override
     public void verify(Map<String, Object> resultMap, Connection mysqlConnection, PgConnection pgConnection) {
@@ -63,6 +64,9 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
             if (!"".equals(openGausslLowerParam)) {
                 paramMap.put(Constants.KEY_OPENGAUSS, "lower_case_table_names=" + openGausslLowerParam);
             }
+            if (stringBuilder.length()!=0){
+                paramMap.put("SQLException", stringBuilder.toString());
+            }
         }
         resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
                 Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | (isSame
@@ -80,6 +84,8 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
         } catch (SQLException e) {
             result = selectSql + " execute failed";
             LOGGER.error(result, e);
+            int index=e.getMessage().indexOf("ERROR");
+            stringBuilder.append(e.getMessage().substring(index) + System.lineSeparator());
         }
         return result;
     }
@@ -93,6 +99,8 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
         } catch (SQLException e) {
             result = selectSql + " execute failed";
             LOGGER.error(result, e);
+            int index=e.getMessage().indexOf("ERROR");
+            stringBuilder.append(e.getMessage().substring(index) + System.lineSeparator());
         }
         return result;
     }
