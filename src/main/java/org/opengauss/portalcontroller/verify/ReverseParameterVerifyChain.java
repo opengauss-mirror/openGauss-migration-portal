@@ -49,9 +49,12 @@ public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
             super.judgeParam(pgConnection, errorPamramList, "wal_level", "logical");
             if (!errorPamramList.isEmpty()) {
                 openGaussMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_FALSE);
-                openGaussMap.put("binlog_error", errorPamramList);
+                openGaussMap.put("binlog_error", "wal_level=" + errorPamramList.get("wal_level"));
                 String binlog = "wal_level=logical";
                 openGaussMap.put("binlog", binlog);
+                if (super.stringBuilder.length() != 0){
+                    openGaussMap.put("SQLException", stringBuilder.toString());
+                }
             } else {
                 openGaussMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_TRUE);
             }

@@ -35,6 +35,7 @@ import java.util.Map;
  */
 public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyChain {
     private static final Logger LOGGER = LoggerFactory.getLogger(IncrementParameterVerifyChain.class);
+    public StringBuilder stringBuilder = new StringBuilder();
 
     @Override
     public void verify(Map<String, Object> resultMap, Connection mysqlConnection, PgConnection pgConnection) {
@@ -60,6 +61,9 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
                 getErrorPamram(expectedParam, actualParam, errorPamramList);
                 mysqMap.put("expectedParam", expectedParam.toString());
                 mysqMap.put("actualParam", actualParam.toString());
+                if (stringBuilder.length() != 0){
+                    mysqMap.put("SQLException", stringBuilder.toString());
+                }
             } else {
                 mysqMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_TRUE);
             }
@@ -113,6 +117,8 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
         } catch (SQLException e) {
             errorParamList.put(key, selectSql + " execute exception");
             LOGGER.error(selectSql + " execute failed.", e);
+            int index=e.getMessage().indexOf("ERROR");
+            stringBuilder.append(e.getMessage().substring(index) + System.lineSeparator());
         }
     }
 }
