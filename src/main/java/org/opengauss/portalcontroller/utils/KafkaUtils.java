@@ -29,10 +29,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Hashtable;
 
-import static org.opengauss.portalcontroller.PortalControl.migrationConfigPath;
 import static org.opengauss.portalcontroller.PortalControl.portalControlPath;
 import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
-import static org.opengauss.portalcontroller.PortalControl.toolsConfigPath;
 
 /**
  * KafkaUtils
@@ -131,5 +129,37 @@ public class KafkaUtils {
         RuntimeExecUtils.runShell(cleanFileName, workDirectory);
         String buildFileName = "build.sh";
         RuntimeExecUtils.runShell(buildFileName, workDirectory);
+    }
+
+    /**
+     * modify kafka jvm param
+     */
+    public static void modifyConnectStandaloneParam(String path) {
+        if (Strings.isBlank(path)) {
+            LOGGER.error("path is null or empty...");
+            return;
+        }
+        try {
+            StringBuilder result = new StringBuilder();
+            String temp;
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
+            while ((temp = bufferedReader.readLine()) != null) {
+                if (temp.contains("-Xms") && !temp.contains("-XX:+HeapDumpOnOutOfMemoryError")) {
+                    temp = temp.substring(0, temp.lastIndexOf("\"")) + " -XX:+HeapDumpOnOutOfMemoryError "
+                            + "-XX:HeapDumpPath=$base_dir/../logs/heap_source.hprof\"";
+                }
+                result.append(temp).append(System.lineSeparator());
+            }
+            bufferedReader.close();
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path));
+            bufferedWriter.write(result.toString());
+            bufferedWriter.flush();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            PortalException portalException = new PortalException("IO exception", "changing file parameters",
+                    e.getMessage());
+            LOGGER.error(portalException.toString());
+            PortalControl.shutDownPortal(portalException.toString());
+        }
     }
 }

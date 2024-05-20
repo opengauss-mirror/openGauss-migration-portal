@@ -35,6 +35,7 @@ import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.utils.FileUtils;
+import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
@@ -256,6 +257,8 @@ public class Task {
         Task task = new Task();
         String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
         String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
+        KafkaUtils.modifyConnectStandaloneParam(PathUtils.combainPath(true, confluentPath + "bin/"
+                + "connect-standalone"));
         runTaskHandlerHashMap.put(Method.Run.ZOOKEEPER, (event) -> task.runZookeeper(confluentPath));
         runTaskHandlerHashMap.put(Method.Run.KAFKA, (event) -> task.runKafka(confluentPath));
         runTaskHandlerHashMap.put(Method.Run.REGISTRY, (event) -> task.runSchemaRegistry(confluentPath));
@@ -271,7 +274,6 @@ public class Task {
     }
 
     /**
-     *
      * initCheckProcessMap
      */
     public static void initCheckProcessMap() {
@@ -420,7 +422,6 @@ public class Task {
         }
         Plan.setRunningTaskThreadsList(runningTaskThreadThreadList);
     }
-
 
 
     /**
@@ -588,6 +589,7 @@ public class Task {
             return builder.toString();
         }
     }
+
     /**
      * Run data check sink.
      *
