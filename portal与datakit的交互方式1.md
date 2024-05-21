@@ -2,7 +2,7 @@
 
 1. 安装部分：
 
-   Datakit在安装完portal之后，先配置portal_home/config/toolspath.properties中各迁移工具的位置，通过调用java -Dorder=install_mysql_all_migration_tools -Dskip=true -jar portalControl-6.0.0rc1-exec.jar安装全部迁移工具。
+   Datakit在安装完portal之后，先配置portal_home/config/toolspath.properties中各迁移工具的位置，通过调用java -Dorder=install_mysql_all_migration_tools -Dskip=true -jar portalControl-6.0.0-exec.jar安装全部迁移工具。
 
    toolspath.properties需要配置的路径：
 
@@ -29,7 +29,7 @@
 
    datakit通过-Dparameter=value的形式将参数传给portal（这里需要全部参数文档）
 
-   比如java -Dparameter=value -jar  portalControl-6.0.0rc1-exec.jar
+   比如java -Dparameter=value -jar  portalControl-6.0.0-exec.jar
 
    迁移进度获取：
 
@@ -44,7 +44,7 @@
 
 3. 交互方式：
 
-   java -Dworkspace.id=1 -Dorder=start_plan3 -Dskip=true -jar portalControl-6.0.0rc1-exec.jar
+   java -Dworkspace.id=1 -Dorder=start_plan3 -Dskip=true -jar portalControl-6.0.0-exec.jar
 
    | 指令        | 说明                                                         |
    | ----------- | ------------------------------------------------------------ |
@@ -53,7 +53,7 @@
 
    如果执行在线迁移，那么直接启动plan3即可，如果想要追加操作，比如停止增量迁移，就需要另起一个进程向之前的进程传递信号。
 
-   java -Dworkspace.id=1 -Dorder=stop_incremental_migration -Dskip=true -jar portalControl-6.0.0rc1-exec.jar
+   java -Dworkspace.id=1 -Dorder=stop_incremental_migration -Dskip=true -jar portalControl-6.0.0-exec.jar
 
    以上命令代表停止workspaceid为1的任务的增量迁移指令。
 
