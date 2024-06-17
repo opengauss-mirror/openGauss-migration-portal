@@ -50,7 +50,6 @@ public class VerifyChainBuilder {
             .addChain(new ReversePermissionVerifyChain())
             .addChain(new ReverseParameterVerifyChain())
             .addChain(new LowerParameterVerifyChain())
-            .addChain(new DiskSpaceVerifyChain())
             .addChain(new BdatabaseVerifyChain())
             .addChain(new DatabaseEncryptionVerifyChain())
             .addChain(new ReplicationNumberVerifyChain())
@@ -67,7 +66,6 @@ public class VerifyChainBuilder {
             .addChain(new DatabaseConnectVerifyChain())
             .addChain(new FullPermissionVerifyChain())
             .addChain(new LowerParameterVerifyChain())
-            .addChain(new DiskSpaceVerifyChain())
             .addChain(new BdatabaseVerifyChain())
             .addChain(new DatabaseEncryptionVerifyChain())
             .build();
