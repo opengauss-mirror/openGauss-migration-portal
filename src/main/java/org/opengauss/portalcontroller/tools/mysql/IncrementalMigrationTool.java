@@ -157,14 +157,14 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
      * @param mysqlUuid  the mysql uuid
      * @return the string
      */
-    private static String changeGtidSet(String oldGtidSet, String mysqlUuid) {
+    public static String changeGtidSet(String oldGtidSet, String mysqlUuid) {
         StringBuilder newGtidSet = new StringBuilder();
         String[] gtidSetParts = oldGtidSet.replaceAll(System.lineSeparator(), "").split(",");
         for (String tGtidSet : gtidSetParts) {
             int uuidIndex = tGtidSet.lastIndexOf(":");
             String uuid = tGtidSet.substring(0, uuidIndex);
-            if (uuid.equals(mysqlUuid) && (tGtidSet.contains("-"))) {
-                int offsetIndex = tGtidSet.lastIndexOf("-") + 1;
+            int offsetIndex = tGtidSet.lastIndexOf("-") + 1;
+            if (uuid.equals(mysqlUuid) && (tGtidSet.contains("-")) && offsetIndex > uuidIndex) {
                 long offset = Long.parseLong(tGtidSet.substring(offsetIndex));
                 LOGGER.info("Offset: {}", offset);
                 offset--;
