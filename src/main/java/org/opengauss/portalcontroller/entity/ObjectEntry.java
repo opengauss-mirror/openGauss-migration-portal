@@ -33,7 +33,7 @@ public class ObjectEntry {
     /**
      * 迁移进度（小于1时处于正常范围，status为6时可以是大于1的值）
      */
-    private float percent;
+    private double percent;
     /**
      * 错误信息，如果对象迁移失败，会输出错误信息，默认为""
      */

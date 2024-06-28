@@ -19,6 +19,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -37,6 +39,7 @@ import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.verify.DiskSpaceVerifyChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +49,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,7 +58,8 @@ import java.util.stream.Collectors;
  */
 public class ChangeStatusTools {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeStatusTools.class);
-
+    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static Map<String, ObjectEntry> tableStatusMap = new ConcurrentHashMap<>();
     private static int lastStatus = 1;
 
 
@@ -188,11 +193,7 @@ public class ChangeStatusTools {
     public static FullMigrationStatus getAllChameleonStatus() throws IOException {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         RecordVo recordVo = new RecordVo();
-        getChameleonTableStatus(chameleonVenvPath, recordVo);
-        getChameleonViewStatus(chameleonVenvPath, recordVo);
-        getChameleonFuncStatus(chameleonVenvPath, recordVo);
-        getChameleonTriggerStatus(chameleonVenvPath, recordVo);
-        getChameleonProcStatus(chameleonVenvPath, recordVo);
+        parseChameleonStatus(chameleonVenvPath, recordVo);
         List<TableStatus> tableStatusArrayList = translateMigrationStatusObject(recordVo.getTable(), translateMigrationTableStatusObject());
         List<ObjectStatus> viewStatusArrayList = translateMigrationStatusObject(recordVo.getView(), translateMigrationStatusObject());
         List<ObjectStatus> functionStatusArrayList = translateMigrationStatusObject(recordVo.getFunction(), translateMigrationStatusObject());
@@ -214,50 +215,61 @@ public class ChangeStatusTools {
         return tab -> new TableStatus(tab.getName(), tab.getStatus(), tab.getPercent(), tab.getError());
     }
 
-    private static void getChameleonProcStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
-        Path procPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_proc_replica.json");
-        if (procPath.toFile().exists()) {
-            RecordVo proc = JSONObject.parseObject(Files.readString(procPath), RecordVo.class);
-            recordVo.setProcedure(proc.getProcedure());
-        } else {
-            recordVo.setProcedure(List.of());
+
+    private static void parseChameleonStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
+        String fileName = chameleonVenvPath + "data_default_" + Plan.workspaceId;
+        Path tablePath = Path.of(fileName + "_init_replica.json");
+        Path viewPath = Path.of(fileName + "_start_view_replica.json");
+        Path funcPath = Path.of(fileName + "_start_func_replica.json");
+        Path triggerPath = Path.of(fileName + "_start_trigger_replica.json");
+        Path procPath = Path.of(fileName + "_start_proc_replica.json");
+
+        if (!Files.exists(tablePath) && !Files.exists(viewPath) && !Files.exists(funcPath)
+                && !Files.exists(triggerPath) && !Files.exists(procPath)) {
+            initRecordVo(recordVo);
+            return;
         }
+
+        RecordVo table = parseRecord(tablePath);
+        RecordVo view = parseRecord(viewPath);
+        RecordVo func = parseRecord(funcPath);
+        RecordVo trigger = parseRecord(triggerPath);
+        RecordVo proc = parseRecord(procPath);
+
+        initFunctionRecordVo(recordVo, func);
+        initViewRecordVo(recordVo, view);
+        initTableRecordVo(recordVo, table);
+        initTriggerRecordVo(recordVo, trigger);
+        initProcedureRecordVo(recordVo, proc);
     }
 
-    private static void getChameleonTriggerStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
-        Path triggerPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_trigger_replica.json");
-        if (triggerPath.toFile().exists()) {
-            RecordVo trigger = JSONObject.parseObject(Files.readString(triggerPath), RecordVo.class);
-            recordVo.setTrigger(trigger.getTrigger());
-        } else {
-            recordVo.setTrigger(List.of());
-        }
+    private static void initRecordVo(RecordVo recordVo) {
+        recordVo.setTrigger(List.of());
+        recordVo.setProcedure(List.of());
+        recordVo.setFunction(List.of());
+        recordVo.setView(List.of());
+        recordVo.setTable(List.of());
+        recordVo.setTotal(new Total());
     }
 
-    private static void getChameleonFuncStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
-        Path funcPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_func_replica.json");
-        if (funcPath.toFile().exists()) {
-            RecordVo func = JSONObject.parseObject(Files.readString(funcPath), RecordVo.class);
+    private static void initFunctionRecordVo(RecordVo recordVo, RecordVo func) {
+        if (func != null) {
             recordVo.setFunction(func.getFunction());
         } else {
             recordVo.setFunction(List.of());
         }
     }
 
-    private static void getChameleonViewStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
-        Path viewPath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_start_view_replica.json");
-        if (viewPath.toFile().exists()) {
-            RecordVo view = JSONObject.parseObject(Files.readString(viewPath), RecordVo.class);
+    private static void initViewRecordVo(RecordVo recordVo, RecordVo view) {
+        if (view != null) {
             recordVo.setView(view.getView());
         } else {
             recordVo.setView(List.of());
         }
     }
 
-    private static void getChameleonTableStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
-        Path tablePath = Path.of(chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json");
-        if (tablePath.toFile().exists()) {
-            RecordVo table = JSONObject.parseObject(Files.readString(tablePath), RecordVo.class);
+    private static void initTableRecordVo(RecordVo recordVo, RecordVo table) {
+        if (table != null) {
             recordVo.setTotal(table.getTotal());
             recordVo.setTable(table.getTable());
         } else {
@@ -266,6 +278,37 @@ public class ChangeStatusTools {
         }
     }
 
+    private static void initTriggerRecordVo(RecordVo recordVo, RecordVo trigger) {
+        if (trigger != null) {
+            recordVo.setTrigger(trigger.getTrigger());
+        } else {
+            recordVo.setTrigger(List.of());
+        }
+    }
+
+    private static void initProcedureRecordVo(RecordVo recordVo, RecordVo proc) {
+        if (proc != null) {
+            recordVo.setProcedure(proc.getProcedure());
+        } else {
+            recordVo.setProcedure(List.of());
+        }
+    }
+
+    private static RecordVo parseRecord(Path filePath) {
+        String text = "";
+        try {
+            if (Files.exists(filePath)) {
+                text = Files.readString(filePath);
+            }
+            if (StringUtils.isEmpty(text)) {
+                return null;
+            }
+            return objectMapper.readValue(text, RecordVo.class);
+        } catch (IOException e) {
+            LOGGER.warn("read or parse status ", e.getMessage());
+            return null;
+        }
+    }
     /**
      * Change full status.
      */

@@ -119,7 +119,7 @@ public class TableStatus {
     public TableStatus(String name, int status) {
         this.name = name;
         this.status = status;
-        this.percent = 1;
+        this.percent = 1.0;
     }
 
     /**
