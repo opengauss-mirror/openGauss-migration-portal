@@ -6,6 +6,7 @@ public interface Mysql {
     String DATABASE_HOST = "mysql.database.host";
     String DATABASE_PORT = "mysql.database.port";
     String DATABASE_NAME = "mysql.database.name";
+    String DATABASE_TABLE= "mysql.database.table";
 
     interface Default {
         String USER = "";

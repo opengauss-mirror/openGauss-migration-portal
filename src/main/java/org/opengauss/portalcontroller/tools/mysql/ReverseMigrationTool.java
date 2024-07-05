@@ -138,6 +138,19 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         String mysqlDatabaseName = toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
         String openGaussSchema = toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA);
         reverseSinkParams.put(Debezium.Sink.SCHEMA_MAPPING, openGaussSchema + ":" + mysqlDatabaseName);
+        setSourceTables();
+    }
+
+    /**
+     * set database tables.
+     */
+    private void setSourceTables() {
+        String tables = toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE);
+        if (!Plan.isRuleEnable(tables)) {
+            return;
+        }
+        reverseSourceParams.put(Debezium.Source.TABLELIST, tables);
+        reverseSinkParams.put(Debezium.Sink.TABLELIST, tables);
     }
 
     /**
