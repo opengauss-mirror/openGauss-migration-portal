@@ -24,6 +24,7 @@ import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.status.CheckColumnRule;
@@ -64,8 +65,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
 /**
  * Plan.
@@ -170,6 +174,11 @@ public final class Plan {
      * The constant slotName.
      */
     public static String slotName = "";
+
+    /**
+     * The index of table in schema.table.
+     */
+    public static Integer INDEX_TABLE = 1;
 
     /**
      * Gets instance.
@@ -305,19 +314,49 @@ public final class Plan {
     private static void writeCheckRules() {
         String path = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
         HashMap<String, Object> checkConfigHashMap = YmlUtils.getYmlParameters(path);
-        RuleParameter tableRuleParameter = new RuleParameter(Check.Rules.Table.AMOUNT, Check.Rules.Table.NAME,
-                Check.Rules.Table.TEXT, "");
         RuleParameter rowRuleParameter = new RuleParameter(Check.Rules.Row.AMOUNT, Check.Rules.Row.NAME,
                 Check.Rules.Row.TEXT, "");
         RuleParameter columnRuleParameter = new RuleParameter(Check.Rules.Column.AMOUNT, Check.Rules.Column.NAME,
                 Check.Rules.Column.TEXT, Check.Rules.Column.ATTRIBUTE);
-        String rulesEnableParameter = ParamsUtils.getOrDefault(Check.Rules.ENABLE,
-                String.valueOf(checkConfigHashMap.get(Check.Rules.ENABLE)));
-        checkConfigHashMap.put(Check.Rules.ENABLE, Boolean.valueOf(rulesEnableParameter));
-        getCheckRulesFromCommandLine(checkConfigHashMap, tableRuleParameter, false);
+        checkConfigHashMap.put(Check.Rules.ENABLE, isRuleEnable(toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE)));
+        getTableRuleParameter(checkConfigHashMap, Check.Rules.Table.AMOUNT, toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE));
         getCheckRulesFromCommandLine(checkConfigHashMap, rowRuleParameter, false);
         getCheckRulesFromCommandLine(checkConfigHashMap, columnRuleParameter, true);
         YmlUtils.changeYmlParameters(checkConfigHashMap, path);
+    }
+
+    /**
+     * Gets table white
+     *
+     */
+    private static void getTableRuleParameter(HashMap<String, Object> hashMap, String ruleAmount, String tableWhite) {
+        ArrayList<CheckRule> checkRules = new ArrayList<>();
+        if (!Plan.isRuleEnable(tableWhite)) {
+            return;
+        }
+        String[] dbTables = tableWhite.split(",");
+        for (String dt : dbTables) {
+            CheckRule checkRule;
+            String[] schemaTable = dt.trim().split("\\.");
+            if (schemaTable.length == 2) {
+                checkRule = new CheckRule("white", schemaTable[INDEX_TABLE].trim());
+                checkRules.add(checkRule);
+            }
+        }
+        changeCheckRules(hashMap, ruleAmount, checkRules);
+    }
+
+    /**
+     * Gets rule enable
+     *
+     * @param dbTable
+     * @return
+     */
+    public static boolean isRuleEnable(String dbTable) {
+        if (dbTable == null || dbTable.isBlank() || dbTable.equals("null")) {
+            return false;
+        }
+        return true;
     }
 
     /**

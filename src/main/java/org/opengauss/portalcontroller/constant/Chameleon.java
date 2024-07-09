@@ -88,6 +88,11 @@ public interface Chameleon {
              * The constant MAPPING.
              */
             String MAPPING = "sources.mysql.schema_mappings";
+
+            /**
+             * The constant TABLES.
+             */
+            String TABLES = "sources.mysql.limit_tables";
         }
 
         /**

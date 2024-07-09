@@ -100,6 +100,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         sourceMap.put(Debezium.Source.PASSWORD, mysqlUserPassword);
         String mysqlDatabaseName = toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
         sourceMap.put(Debezium.Source.WHITELIST, mysqlDatabaseName);
+        setSourceTables();
         String openGaussSchemaName = toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA);
         sinkMap.put(Debezium.Sink.SCHEMA_MAPPING, mysqlDatabaseName + ":" + openGaussSchemaName);
         String opengaussUserName = toolsMigrationParametersTable.get(Opengauss.USER);
@@ -112,6 +113,17 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         String opengaussDebeziumUrl =
                 "jdbc:opengauss://" + opengaussDatabaseHost + ":" + opengaussDatabasePort + "/" + opengaussDatabaseName + "?loggerLevel=OFF";
         sinkMap.put(Debezium.Sink.Opengauss.URL, opengaussDebeziumUrl);
+    }
+
+    /**
+     * set database tables.
+     */
+    private void setSourceTables() {
+        String tables = toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE);
+        if (!Plan.isRuleEnable(tables)) {
+            return;
+        }
+        sourceMap.put(Debezium.Source.TABLELIST, tables);
     }
 
     /**

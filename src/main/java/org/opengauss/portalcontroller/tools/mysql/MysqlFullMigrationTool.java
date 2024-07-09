@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
@@ -91,9 +92,22 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             configMap.put(Chameleon.Parameters.Opengauss.NAME, opengaussDatabaseName);
             configMap.put(Chameleon.Parameters.Mysql.MAPPING + "." + mysqlDatabaseName,
                     toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA));
+            setTables();
         } else {
             LOGGER.error("Invalid parameters.");
         }
+    }
+
+    /**
+     * set database tables.
+     */
+    private void setTables() {
+        String tableStr = toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE);
+        if (!Plan.isRuleEnable(tableStr)) {
+            return;
+        }
+        String[] tableArr = tableStr.split(",");
+        configMap.put(Chameleon.Parameters.Mysql.TABLES, Arrays.asList(tableArr));
     }
 
     /**

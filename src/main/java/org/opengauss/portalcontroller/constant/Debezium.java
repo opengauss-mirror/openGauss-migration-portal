@@ -258,6 +258,11 @@ public interface Debezium {
         String WHITELIST = "database.include.list";
 
         /**
+         * The constant TABLELIST.
+         */
+        String TABLELIST = "table.include.list";
+
+        /**
          * The constant NAME.
          */
         String NAME = "database.dbname";
@@ -311,6 +316,11 @@ public interface Debezium {
          * The constant SCHEMA_MAPPING.
          */
         String SCHEMA_MAPPING = "schema.mappings";
+
+        /**
+         * The constant TABLELIST.
+         */
+        String TABLELIST = "table.include.list";
 
         /**
          * The constant CONNECTOR_PATH.
