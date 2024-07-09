@@ -21,13 +21,21 @@ import org.opengauss.portalcontroller.utils.CommandUtils;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The type Install command receiver.
  */
 public class InstallCommandReceiver extends CommandReceiver {
-    public void action(String order) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstallCommandReceiver.class);
 
+    public void action(String order) {
+        if (InstallMigrationUtils.checkSudoPermission()) {
+            InstallMigrationUtils.installDependencies("portal");
+        } else {
+            LOGGER.error("The sudo command cannot be used. Skip installation of dependencies required by portal.");
+        }
         if (CommandUtils.containString(order, Command.ALL)) {
             InstallMigrationUtils.runAllInstallOrder(order);
         } else {

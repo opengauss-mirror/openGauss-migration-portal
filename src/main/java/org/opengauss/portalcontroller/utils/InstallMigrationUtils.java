@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -213,5 +214,54 @@ public class InstallMigrationUtils {
             }
         }
         LogViewUtils.outputResult(true, Parameter.INSTALL_ALL_MIGRATION_TOOLS);
+    }
+
+    /**
+     * install dependencies
+     *
+     * @param scriptParam script param
+     */
+    public static void installDependencies(String scriptParam) {
+        String installScript = "install_dependencies.sh";
+        String workDirectory = PathUtils.combainPath(false, PortalControl.portalControlPath
+                + "pkg", "dependencies");
+        if (!new File(workDirectory + installScript).isFile()) {
+            LOGGER.error("The " + workDirectory + installScript
+                    + " does not point to a regular file or the file does not exist.");
+            return;
+        }
+
+        LOGGER.info("Start to install " + scriptParam + " dependencies.");
+        String command = String.format("sh %s %s", installScript, scriptParam);
+        String logPath = PathUtils.combainPath(true, PortalControl.portalControlPath
+                + "logs", "dependencies_install.log");
+        try {
+            RuntimeExecUtils.executeOrder(command, 3000, workDirectory, logPath, true, new ArrayList<>());
+        } catch (PortalException e) {
+            LOGGER.error(e.getMessage());
+        }
+
+        ProcessUtils.sleepThread(1000, "run shell: " + command);
+        LOGGER.info("The dependencies of " + scriptParam + " installation is complete."
+                + " Logs are recorded in " + logPath + ".");
+    }
+
+    /**
+     * check sudo permission
+     *
+     * @return boolean
+     */
+    public static boolean checkSudoPermission() {
+        String command = "sudo -n true";
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            if (process.waitFor() == 0) {
+                return true;
+            }
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Error checking sudo permission. Error massage: {}", e.getMessage());
+        }
+        LOGGER.error("The installation user does not have the sudo permission, or a password is required.");
+        return false;
     }
 }

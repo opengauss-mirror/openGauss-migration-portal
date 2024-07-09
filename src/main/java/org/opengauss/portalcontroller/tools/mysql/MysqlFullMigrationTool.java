@@ -148,6 +148,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                 return true;
             }
             LOGGER.warn("first check chameleon failed, start install...");
+            preInstall();
             String chameleonPkgSpace = "200MB";
             String chameleonPkgPath = hashtable.get(Chameleon.PKG_PATH) + hashtable.get(Chameleon.PKG_NAME);
             RuntimeExecUtils.unzipFile(chameleonPkgPath, chameleonPkgSpace, chameleonInstallPath);
@@ -210,6 +211,32 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             return false;
         }
         return true;
+    }
+
+    /**
+     * prepare install
+     */
+    private void preInstall() throws PortalException {
+        if (InstallMigrationUtils.checkSudoPermission()) {
+            InstallMigrationUtils.installDependencies("chameleon");
+        } else {
+            LOGGER.error("The sudo command cannot be used. Skip installation of dependencies required by chameleon.");
+        }
+        checkPython3Availability();
+    }
+
+    /**
+     * check python3 availability
+     */
+    private void checkPython3Availability() throws PortalException {
+        String command = "python3 --version";
+        int waitTime = 3000;
+        String commandResult = RuntimeExecUtils.executeOrder(command, waitTime);
+        if (commandResult.trim().startsWith("Python 3")) {
+            LOGGER.info("Python 3 is available on the server.");
+        } else {
+            LOGGER.error("Python 3 is not available on the server.");
+        }
     }
 
     /**

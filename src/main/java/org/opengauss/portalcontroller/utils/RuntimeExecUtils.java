@@ -87,9 +87,9 @@ public class RuntimeExecUtils {
             process.waitFor(time, TimeUnit.MILLISECONDS);
             result = getInputStreamString(process.getInputStream());
         } catch (IOException e) {
-            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
+            throw new PortalException("IO exception", String.format("executing command {%s}", command), e.getMessage());
         } catch (InterruptedException e) {
-            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
+            throw new PortalException("Interrupted exception", String.format("executing command {%s}", command), e.getMessage());
         }
         return result;
     }
