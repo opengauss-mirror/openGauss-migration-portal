@@ -238,6 +238,21 @@ public interface Debezium {
         String PORT = "database.port";
 
         /**
+         * The constant ISCLUSTER
+         */
+        String ISCLUSTER = "database.iscluster";
+
+        /**
+         * The constant STANDBY_HOSTNAMES
+         */
+        String STANDBY_HOSTS = "database.standby.hostnames";
+
+        /**
+         * The constant STANDBY_PORTS
+         */
+        String STANDBY_PORTS = "database.standby.ports";
+
+        /**
          * The constant USER.
          */
         String USER = "database.user";

@@ -149,19 +149,40 @@ public class JdbcUtils {
     public static PgConnection getPgConnection() {
         PgConnection conn = null;
         Hashtable<String, String> hashtable = PortalControl.toolsMigrationParametersTable;
-        String opengaussDatabaseHost = hashtable.get(Opengauss.DATABASE_HOST);
-        String opengaussDatabasePort = hashtable.get(Opengauss.DATABASE_PORT);
-        String opengaussDatabaseName = hashtable.get(Opengauss.DATABASE_NAME);
-        String opengaussUserName = hashtable.get(Opengauss.USER);
-        String opengaussUserPassword = hashtable.get(Opengauss.PASSWORD);
-        String opengaussUrl = "jdbc:opengauss://" + opengaussDatabaseHost + ":"
-                + opengaussDatabasePort + "/" + opengaussDatabaseName;
         try {
-            conn = (PgConnection) DriverManager.getConnection(opengaussUrl, opengaussUserName, opengaussUserPassword);
+            conn = (PgConnection) DriverManager.getConnection(
+                    getOpengaussJdbcUrl(), hashtable.get(Opengauss.USER), hashtable.get(Opengauss.PASSWORD));
         } catch (SQLException e) {
             LOGGER.error(e.getMessage());
         }
         return conn;
+    }
+
+    /**
+     * get openGauss jdbc url
+     *
+     * @return String
+     */
+    public static String getOpengaussJdbcUrl() {
+        Hashtable<String, String> hashtable = PortalControl.toolsMigrationParametersTable;
+        String opengaussDatabaseHost = hashtable.get(Opengauss.DATABASE_HOST);
+        String opengaussDatabasePort = hashtable.get(Opengauss.DATABASE_PORT);
+        String opengaussDatabaseName = hashtable.get(Opengauss.DATABASE_NAME);
+
+        StringBuilder urlBuilder = new StringBuilder("jdbc:opengauss://");
+        urlBuilder.append(opengaussDatabaseHost).append(":").append(opengaussDatabasePort);
+        if (Opengauss.isOpengaussClusterAvailable()) {
+            Map<String, String[]> standbyInformationMap = Opengauss.getStandbyInformationMap();
+            String[] standbyHosts = standbyInformationMap.get(Opengauss.DATABASE_STANDBY_HOSTS);
+            String[] standbyPorts = standbyInformationMap.get(Opengauss.DATABASE_STANDBY_PORTS);
+            for (int i = 0; i < standbyHosts.length; i++) {
+                urlBuilder.append(",").append(standbyHosts[i]).append(":").append(standbyPorts[i]);
+            }
+            urlBuilder.append("/").append(opengaussDatabaseName).append("?targetServerType=master");
+        } else {
+            urlBuilder.append("/").append(opengaussDatabaseName);
+        }
+        return urlBuilder.toString();
     }
 
     /**
