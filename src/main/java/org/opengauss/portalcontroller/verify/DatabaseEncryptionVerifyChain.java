@@ -43,7 +43,12 @@ public class DatabaseEncryptionVerifyChain extends AbstractPreMigrationVerifyCha
         if (mysqlConnection == null) {
             encryptionMap.put(Constants.KEY_MYSQL, Constants.CROSS_BAR);
         } else {
-            mysqlEncryption = getMysqlEncryption(mysqlConnection);
+            boolean checkEncryption = checkMysqlVersion(mysqlConnection);
+            if (checkEncryption) {
+                mysqlEncryption = getMysqlEncryption(mysqlConnection);
+            } else {
+                mysqlEncryption = Constants.ENCRYPTION_MYSQL;
+            }
         }
         boolean isSame = mysqlEncryption.equals(Constants.ENCRYPTION_MYSQL);
         if (isSame) {
@@ -73,5 +78,25 @@ public class DatabaseEncryptionVerifyChain extends AbstractPreMigrationVerifyCha
             LOGGER.error(result, e);
         }
         return result;
+    }
+
+    /**
+     * Verify encryption methods for versions 8 and above, because the default
+     * encryption method for version 8 does not support migration
+     */
+    private boolean checkMysqlVersion(Connection mysqlConnection) {
+        String result;
+        String selectSql = "select version();";
+        try {
+            result = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "version()");
+            LOGGER.info("mysql version is {}", result);
+            if (result.startsWith("8")) {
+                return true;
+            }
+        } catch (SQLException e) {
+            result = selectSql + " execute failed";
+            LOGGER.error(result, e);
+        }
+        return false;
     }
 }
