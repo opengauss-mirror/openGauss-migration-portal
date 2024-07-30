@@ -130,6 +130,16 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         reverseSourceParams.put(Debezium.Source.USER, toolsMigrationParametersTable.get(Opengauss.USER));
         reverseSourceParams.put(Debezium.Source.PASSWORD, toolsMigrationParametersTable.get(Opengauss.PASSWORD));
         reverseSourceParams.put(Debezium.Source.NAME, toolsMigrationParametersTable.get(Opengauss.DATABASE_NAME));
+        reverseSourceParams.put(Debezium.Source.ISCLUSTER, Opengauss.getDatabaseIsClusterDefaultValue());
+        if (Opengauss.isOpengaussClusterAvailable()) {
+            reverseSourceParams.put(Debezium.Source.ISCLUSTER,
+                    toolsMigrationParametersTable.get(Opengauss.DATABASE_ISCLUSTER));
+            reverseSourceParams.put(Debezium.Source.STANDBY_HOSTS,
+                    toolsMigrationParametersTable.get(Opengauss.DATABASE_STANDBY_HOSTS));
+            reverseSourceParams.put(Debezium.Source.STANDBY_PORTS,
+                    toolsMigrationParametersTable.get(Opengauss.DATABASE_STANDBY_PORTS));
+        }
+
         reverseSinkParams.put(Debezium.Sink.Mysql.USER, toolsMigrationParametersTable.get(Mysql.USER));
         reverseSinkParams.put(Debezium.Sink.Mysql.PASSWORD, toolsMigrationParametersTable.get(Mysql.PASSWORD));
         reverseSinkParams.put(Debezium.Sink.Mysql.NAME, toolsMigrationParametersTable.get(Mysql.DATABASE_NAME));
