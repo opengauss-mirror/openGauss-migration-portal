@@ -85,6 +85,11 @@ public class Constants {
     public static final int KEY_FLAG_FALSE = 1;
 
     /**
+     * error
+     */
+    public static final int KEY_FLAG_ERROR = 2;
+
+    /**
      * permission select
      */
     public static final String PERMISSION_SELECT = "select_priv";
