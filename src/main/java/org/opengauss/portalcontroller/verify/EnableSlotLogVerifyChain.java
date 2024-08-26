@@ -71,7 +71,7 @@ public class EnableSlotLogVerifyChain extends AbstractPreMigrationVerifyChain {
 
     private String getEnableSlotLog(PgConnection pgConnection) {
         String result;
-        String selectSql = "show enable_slot_log;";
+        String selectSql = String.format(Constants.SHOW_OPENGAUSS_GUC_PARAM, "enable_slot_log");
         try {
             result = JdbcUtils.selectStringValue(pgConnection, selectSql, "enable_slot_log");
             LOGGER.info("openGauss enable_slot_log is {}", result);

@@ -84,7 +84,7 @@ public class ReplicationNumberVerifyChain extends AbstractPreMigrationVerifyChai
 
     private String getMaxReplicationNumber(PgConnection pgConnection) {
         String result;
-        String selectSql = "show max_replication_slots;";
+        String selectSql = String.format(Constants.SHOW_OPENGAUSS_GUC_PARAM, "max_replication_slots");
         try {
             result = JdbcUtils.selectStringValue(pgConnection, selectSql, "max_replication_slots");
             LOGGER.info("max_replication_slots number is {}", result);
