@@ -314,12 +314,18 @@ public final class Plan {
     private static void writeCheckRules() {
         String path = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
         HashMap<String, Object> checkConfigHashMap = YmlUtils.getYmlParameters(path);
+        RuleParameter tableRuleParameter = new RuleParameter(Check.Rules.Table.AMOUNT, Check.Rules.Table.NAME,
+                Check.Rules.Table.TEXT, "");
         RuleParameter rowRuleParameter = new RuleParameter(Check.Rules.Row.AMOUNT, Check.Rules.Row.NAME,
                 Check.Rules.Row.TEXT, "");
         RuleParameter columnRuleParameter = new RuleParameter(Check.Rules.Column.AMOUNT, Check.Rules.Column.NAME,
                 Check.Rules.Column.TEXT, Check.Rules.Column.ATTRIBUTE);
-        checkConfigHashMap.put(Check.Rules.ENABLE, isRuleEnable(toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE)));
-        getTableRuleParameter(checkConfigHashMap, Check.Rules.Table.AMOUNT, toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE));
+        String rulesEnableParameter = ParamsUtils.getOrDefault(Check.Rules.ENABLE,
+                String.valueOf(checkConfigHashMap.get(Check.Rules.ENABLE)));
+        checkConfigHashMap.put(Check.Rules.ENABLE, Boolean.valueOf(rulesEnableParameter));
+        getCheckRulesFromCommandLine(checkConfigHashMap, tableRuleParameter, false);
+        addTableRuleParameter(checkConfigHashMap, tableRuleParameter,
+                toolsMigrationParametersTable.get(Mysql.DATABASE_TABLE));
         getCheckRulesFromCommandLine(checkConfigHashMap, rowRuleParameter, false);
         getCheckRulesFromCommandLine(checkConfigHashMap, columnRuleParameter, true);
         YmlUtils.changeYmlParameters(checkConfigHashMap, path);
@@ -328,22 +334,29 @@ public final class Plan {
     /**
      * Gets table white
      *
+     * @param hashMap        check config
+     * @param ruleParameter  table rule parameter
+     * @param tableWhite     table white list
      */
-    private static void getTableRuleParameter(HashMap<String, Object> hashMap, String ruleAmount, String tableWhite) {
-        ArrayList<CheckRule> checkRules = new ArrayList<>();
+    private static void addTableRuleParameter(HashMap<String, Object> hashMap,
+                                              RuleParameter ruleParameter, String tableWhite) {
         if (!Plan.isRuleEnable(tableWhite)) {
             return;
         }
-        String[] dbTables = tableWhite.split(",");
-        for (String dt : dbTables) {
-            CheckRule checkRule;
-            String[] schemaTable = dt.trim().split("\\.");
-            if (schemaTable.length == 2) {
-                checkRule = new CheckRule("white", schemaTable[INDEX_TABLE].trim());
-                checkRules.add(checkRule);
+        if (!hashMap.containsKey(ruleParameter.getAmount())) {
+            String[] dbTables = tableWhite.split(",");
+            ArrayList<Object> objectArrayList = new ArrayList<>();
+            for (String dt : dbTables) {
+                CheckRule checkRule;
+                String[] schemaTable = dt.trim().split("\\.");
+                if (schemaTable.length == 2) {
+                    checkRule = new CheckRule("white", schemaTable[INDEX_TABLE].trim());
+                    Object jsonObject = JSON.toJSON(checkRule);
+                    objectArrayList.add(jsonObject);
+                }
             }
+            hashMap.put(ruleParameter.getAmount(), objectArrayList);
         }
-        changeCheckRules(hashMap, ruleAmount, checkRules);
     }
 
     /**
