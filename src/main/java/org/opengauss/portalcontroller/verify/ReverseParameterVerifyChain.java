@@ -16,8 +16,12 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +36,8 @@ import java.util.Map;
  * @since 1.1
  */
 public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReverseParameterVerifyChain.class);
+
     @Override
     public void verify(Map<String, Object> resultMap, Connection mysqlConnection, PgConnection pgConnection) {
         Map<String, Object> paramMap = new HashMap<>();
@@ -45,11 +51,11 @@ public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
         Map<String, Object> openGaussMap = new HashMap<>();
         databaseMap.put(Constants.KEY_OPENGAUSS, openGaussMap);
         if (pgConnection != null) {
-            Map<String, String> errorPamramList = new HashMap<>();
-            super.judgeParam(pgConnection, errorPamramList, "wal_level", "logical");
-            if (!errorPamramList.isEmpty()) {
+            Map<String, String> errorPamramMap = new HashMap<>();
+            judgeParam(pgConnection, errorPamramMap, "wal_level", "logical");
+            if (!errorPamramMap.isEmpty()) {
                 openGaussMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_FALSE);
-                openGaussMap.put("binlog_error", "wal_level=" + errorPamramList.get("wal_level"));
+                openGaussMap.put("binlog_error", "wal_level=" + errorPamramMap.get("wal_level"));
                 String binlog = "wal_level=logical";
                 openGaussMap.put("binlog", binlog);
                 if (super.stringBuilder.length() != 0){
@@ -63,6 +69,24 @@ public class ReverseParameterVerifyChain extends IncrementParameterVerifyChain {
                             openGaussMap.get(Constants.KEY_RESULT).toString()));
         } else {
             openGaussMap.put(Constants.KEY_RESULT, Constants.CROSS_BAR);
+        }
+    }
+
+    @Override
+    public void judgeParam(
+            Connection opengaussConnection, Map<String, String> errorParamMap, String key, String value) {
+        String selectSql = String.format(Constants.SHOW_OPENGAUSS_GUC_PARAM, key);
+        try {
+            String permissionStr = JdbcUtils.selectStringValue(opengaussConnection, selectSql, key);
+            LOGGER.info("parameter {} is {}", key, permissionStr);
+            if (!value.equals(permissionStr)) {
+                errorParamMap.put(key, permissionStr);
+            }
+        } catch (SQLException e) {
+            errorParamMap.put(key, selectSql + " execute exception");
+            LOGGER.error(selectSql + " execute failed.", e);
+            int index = e.getMessage().indexOf("ERROR");
+            super.stringBuilder.append(e.getMessage().substring(index)).append(System.lineSeparator());
         }
     }
 }

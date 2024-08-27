@@ -128,4 +128,14 @@ public class Constants {
      * permission replication slave
      */
     public static final String PERMISSION_DELETE = "delete_priv";
+
+    /**
+     * openGauss sql model, used to show openGauss guc param
+     */
+    public static final String SHOW_OPENGAUSS_GUC_PARAM = "show %s;";
+
+    /**
+     * MySQL sql model, used to show MySQL system param
+     */
+    public static final String SHOW_MYSQL_SYSTEM_PARAM = "show variables like '%s';";
 }

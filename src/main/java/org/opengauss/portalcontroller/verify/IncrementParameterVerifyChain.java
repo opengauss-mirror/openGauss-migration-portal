@@ -107,7 +107,7 @@ public class IncrementParameterVerifyChain extends AbstractPreMigrationVerifyCha
      * @param value           param value
      */
     public void judgeParam(Connection mysqlConnection, Map<String, String> errorParamList, String key, String value) {
-        String selectSql = "show variables like '" + key + "'";
+        String selectSql = String.format(Constants.SHOW_MYSQL_SYSTEM_PARAM, key);
         try {
             String permissionStr = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "Value");
             LOGGER.info("parameter {} is {}", key, permissionStr);

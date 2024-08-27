@@ -65,7 +65,7 @@ public class BdatabaseVerifyChain extends AbstractPreMigrationVerifyChain {
 
     private String getOpenGaussCompatibility(PgConnection pgConnection) {
         String result;
-        String selectSql = "show sql_compatibility;";
+        String selectSql = String.format(Constants.SHOW_OPENGAUSS_GUC_PARAM, "sql_compatibility");
         try {
             result = JdbcUtils.selectStringValue(pgConnection, selectSql, "sql_compatibility");
             LOGGER.info("openGauss sql_compatibility is {}", result);

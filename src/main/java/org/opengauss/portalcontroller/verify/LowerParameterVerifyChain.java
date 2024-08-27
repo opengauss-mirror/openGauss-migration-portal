@@ -77,7 +77,7 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
 
     private String getMysqlLowParam(Connection mysqlConnection, String key) {
         String result;
-        String selectSql = "show variables like '" + key + "'";
+        String selectSql = String.format(Constants.SHOW_MYSQL_SYSTEM_PARAM, key);
         try {
             result = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "Value");
             LOGGER.info("mysql {} is {}", key, result);
@@ -92,7 +92,7 @@ public class LowerParameterVerifyChain extends AbstractPreMigrationVerifyChain {
 
     private String getOpenGausslLowParam(PgConnection pgConnection) {
         String result;
-        String selectSql = "show dolphin.lower_case_table_names;";
+        String selectSql = String.format(Constants.SHOW_OPENGAUSS_GUC_PARAM, "dolphin.lower_case_table_names");
         try {
             result = JdbcUtils.selectStringValue(pgConnection, selectSql, "dolphin.lower_case_table_names");
             LOGGER.info("openGauss lower_case_table_names is {}", result);
