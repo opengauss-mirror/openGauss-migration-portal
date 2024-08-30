@@ -358,7 +358,7 @@ public class RuntimeExecUtils {
      */
     public static void copyFileStartWithWord(File file, String workDirectory, String criticalWord, String replaceWord,
                                              boolean recovery) throws PortalException {
-        if (file.getName().startsWith(criticalWord)) {
+        if (file.getName().equals(criticalWord)) {
             RuntimeExecUtils.copyFile(file.getAbsolutePath(), workDirectory + replaceWord, recovery);
         }
     }
