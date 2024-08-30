@@ -239,6 +239,16 @@ sh gs_rep_portal.sh start_kafka a
 | install_mysql_datacheck_tools                     | 安装mysql数据校验工具（安装方式由配置文件指定）   |
 | install_mysql_all_migration_tools                 | 安装mysql迁移工具（各工具安装方式由配置文件指定） |
 
+#### 离线安装特性说明
+
+由于全量迁移工具chameleon是python语言编写，对于不同的安装环境，需要依赖环境中的mariadb-devel（或mysql-devel，mysql5-devel），python-devel，python3-devel软件。当环境中无上述软件，且安装环境无法联网时，可能会导致chameleon安装失败。
+
+为了优化用户安装体验，并且在无法联网环境下也能安装成功，portal将chameleon所依赖的软件打包到了安装包中，用户在使用portal安装chameleon前，只需要给予portal安装用户sudo且不需要输入密码的权限。安装时，portal会自动在安装chameleon前，安装其所依赖的软件，然后自动安装chameleon。安装成功后，可以将portal安装用户的sudo权限取消，后续迁移无需用到sudo权限。
+
+用户根据安装环境的系统及架构，从此文档上方提供的下载链接下载portal安装包，便可使用此特性进行安装。
+
+当portal安装用户没有sudo权限时，使用portal安装chameleon时，会自动跳过安装其依赖的软件，直接安装chameleon，如果环境上已存在其所依赖的软件，仍然可以安装chameleon成功。因此，安装用户没有sudo权限时，并不会阻塞portal安装各迁移工具。
+
 ### 配置参数
 
 用户可以在/ops/portal/config目录的migrationConfig.properties文件中修改迁移所用参数。
