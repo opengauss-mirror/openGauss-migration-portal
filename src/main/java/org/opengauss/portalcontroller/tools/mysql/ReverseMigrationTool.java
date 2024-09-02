@@ -258,6 +258,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
                 schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
         connectAvroStandalonePropChangeParam.put("value.converter.schema.registry.url",
                 schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+        connectAvroStandalonePropChangeParam.put("connector.client.config.override.policy", "All");
         reverseConnectSinkParams.putAll(connectAvroStandalonePropChangeParam);
         reverseConnectSourceParams.putAll(connectAvroStandalonePropChangeParam);
         // opengauss-sink.properties文件修改

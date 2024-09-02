@@ -412,6 +412,16 @@ public interface Debezium {
          */
         interface Opengauss {
             /**
+             * The constant STANDBY_HOSTNAMES
+             */
+            String STANDBY_HOSTS = "database.standby.hostnames";
+
+            /**
+             * The constant STANDBY_PORTS
+             */
+            String STANDBY_PORTS = "database.standby.ports";
+
+            /**
              * The constant USER.
              */
             String USER = "opengauss.username";

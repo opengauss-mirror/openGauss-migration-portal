@@ -113,6 +113,13 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         String opengaussDebeziumUrl =
                 "jdbc:opengauss://" + opengaussDatabaseHost + ":" + opengaussDatabasePort + "/" + opengaussDatabaseName + "?loggerLevel=OFF";
         sinkMap.put(Debezium.Sink.Opengauss.URL, opengaussDebeziumUrl);
+
+        if (Opengauss.isOpengaussClusterAvailable()) {
+            sinkMap.put(Debezium.Sink.Opengauss.STANDBY_HOSTS,
+                    toolsMigrationParametersTable.get(Opengauss.DATABASE_STANDBY_HOSTS));
+            sinkMap.put(Debezium.Sink.Opengauss.STANDBY_PORTS,
+                    toolsMigrationParametersTable.get(Opengauss.DATABASE_STANDBY_PORTS));
+        }
     }
 
     /**
@@ -202,6 +209,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                 schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
         connectAvroStandalonePropChangeParam.put("value.converter.schema.registry.url",
                 schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+        connectAvroStandalonePropChangeParam.put("connector.client.config.override.policy", "All");
         sourceConnectMap.putAll(connectAvroStandalonePropChangeParam);
         sinkConnectMap.putAll(connectAvroStandalonePropChangeParam);
         // mysql-sink.properties文件修改
