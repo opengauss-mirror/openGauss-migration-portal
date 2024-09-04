@@ -146,7 +146,7 @@ public class KafkaUtils {
             while ((temp = bufferedReader.readLine()) != null) {
                 if (temp.contains("-Xms") && !temp.contains("-XX:+HeapDumpOnOutOfMemoryError")) {
                     temp = temp.substring(0, temp.lastIndexOf("\"")) + " -XX:+HeapDumpOnOutOfMemoryError "
-                            + "-XX:HeapDumpPath=$base_dir/../logs/heap_source.hprof\"";
+                            + "-XX:HeapDumpPath=$base_dir/../logs/heap_source.hprof -Dfile.encoding=UTF-8\"";
                 }
                 result.append(temp).append(System.lineSeparator());
             }
