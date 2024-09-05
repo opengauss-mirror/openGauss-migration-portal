@@ -249,7 +249,7 @@ public class ProcessUtils {
 
         String processName = Task.getTaskProcessMap().get(methodName);
         String errorStr =
-                "Error message: Process " + processName + " exit abnormally or process " + System.lineSeparator();
+                "Error message: Process " + processName + " exit abnormally." + System.lineSeparator();
         String logPath = Task.getTaskLogMap().get(methodName);
         errorStr += LogViewUtils.getErrorMsg(logPath) + System.lineSeparator();
         errorStr += "Please read " + logPath + " or error.log to get information.";
