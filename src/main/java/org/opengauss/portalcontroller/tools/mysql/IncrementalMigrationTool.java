@@ -466,8 +466,8 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean checkStatus(String workspaceId) {
-        checkProcess(Method.Name.CONNECT_SINK);
-        checkProcess(Method.Name.CONNECT_SOURCE);
+        checkProcess(Method.Run.CONNECT_SINK);
+        checkProcess(Method.Run.CONNECT_SOURCE);
         return false;
     }
 
