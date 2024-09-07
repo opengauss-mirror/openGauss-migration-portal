@@ -628,7 +628,14 @@ public final class Plan {
      * @return the boolean
      */
     public static boolean checkRunningThreads() {
-        boolean flag = true;
+        boolean isAlive = isKafkaAlive();
+        if (!isAlive) {
+            PortalControl.status = Status.ERROR;
+            PortalControl.errorMsg = "During the task, the processes of Kafka or it's components are interrupted.";
+            LOGGER.error(PortalControl.errorMsg);
+            Plan.stopPlan = true;
+            return false;
+        }
         if (!runningTaskThreadsList.isEmpty()) {
             boolean cleanFullDataCheck = false;
             for (RunningTaskThread thread : runningTaskThreadsList) {
@@ -644,7 +651,7 @@ public final class Plan {
                     } else {
                         Task.getCheckProcessMap().get(thread.getName()).checkStatus();
                         Plan.stopPlan = true;
-                        flag = false;
+                        isAlive = false;
                     }
                 }
             }
@@ -661,7 +668,26 @@ public final class Plan {
                 Plan.checkFullDatacheckRunning();
             }
         }
-        return flag;
+        return isAlive;
+    }
+
+    /**
+     * Check kafka and it's components' processes
+     *
+     * @return true if the kafka, zookeeper and schema registry is running
+     */
+    public static boolean isKafkaAlive() {
+        ArrayList<String> stringArrayList = new ArrayList<>();
+        stringArrayList.add(Method.Run.ZOOKEEPER);
+        stringArrayList.add(Method.Run.KAFKA);
+        stringArrayList.add(Method.Run.REGISTRY);
+        for (String methodName : stringArrayList) {
+            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(methodName)) == -1) {
+                LOGGER.error("Start methond={} failed.", methodName);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

@@ -20,6 +20,7 @@ import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.RunningTaskThread;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
@@ -28,7 +29,6 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.opengauss.portalcontroller.utils.RuntimeExecUtils;
 
-import java.util.ArrayList;
 import java.util.Hashtable;
 
 import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
@@ -197,17 +197,7 @@ public final class MqTool implements Tool {
      */
     @Override
     public boolean checkStatus(String workspaceId) {
-        ArrayList<String> stringArrayList = new ArrayList<>();
-        stringArrayList.add(Method.Run.ZOOKEEPER);
-        stringArrayList.add(Method.Run.KAFKA);
-        stringArrayList.add(Method.Run.REGISTRY);
-        for (String methodName : stringArrayList) {
-            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(methodName)) == -1) {
-                log.error("Start methond={} failed.", methodName);
-                return false;
-            }
-        }
-        return true;
+        return Plan.isKafkaAlive();
     }
 
     /**
