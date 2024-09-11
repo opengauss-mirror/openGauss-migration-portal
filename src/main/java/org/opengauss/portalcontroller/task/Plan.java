@@ -65,7 +65,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.StringJoiner;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -179,6 +179,11 @@ public final class Plan {
      * The index of table in schema.table.
      */
     public static Integer INDEX_TABLE = 1;
+
+    /**
+     * the indcex of schema in schema.table
+     */
+    private static Integer indexSchema = 0;
 
     /**
      * Gets instance.
@@ -334,28 +339,41 @@ public final class Plan {
     /**
      * Gets table white
      *
-     * @param hashMap        check config
-     * @param ruleParameter  table rule parameter
-     * @param tableWhite     table white list
+     * @param hashMap       check config
+     * @param ruleParameter table rule parameter
+     * @param tableWhite    table white list
      */
     private static void addTableRuleParameter(HashMap<String, Object> hashMap,
                                               RuleParameter ruleParameter, String tableWhite) {
         if (!Plan.isRuleEnable(tableWhite)) {
             return;
         }
-        if (!hashMap.containsKey(ruleParameter.getAmount())) {
-            String[] dbTables = tableWhite.split(",");
-            ArrayList<Object> objectArrayList = new ArrayList<>();
-            for (String dt : dbTables) {
-                CheckRule checkRule;
-                String[] schemaTable = dt.trim().split("\\.");
-                if (schemaTable.length == 2) {
-                    checkRule = new CheckRule("white", schemaTable[INDEX_TABLE].trim());
-                    Object jsonObject = JSON.toJSON(checkRule);
-                    objectArrayList.add(jsonObject);
-                }
-            }
+        if (hashMap.containsKey(ruleParameter.getAmount())) {
+            return;
+        }
+        String[] dbTables = tableWhite.split(",");
+        ArrayList<Object> objectArrayList = new ArrayList<>();
+        String schema = toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
+        for (String dt : dbTables) {
+            addCheckRule(schema, dt, objectArrayList);
+        }
+        if (!objectArrayList.isEmpty()) {
             hashMap.put(ruleParameter.getAmount(), objectArrayList);
+        }
+    }
+
+    private static void addCheckRule(String schema, String dt, ArrayList<Object> objectArrayList) {
+        CheckRule checkRule;
+        String[] schemaTable = dt.trim().split("\\.");
+        if (schemaTable.length != 2) {
+            return;
+        }
+        if (schemaTable[indexSchema].equalsIgnoreCase(schema)) {
+            checkRule = new CheckRule("white", schemaTable[INDEX_TABLE].trim());
+            Object jsonObject = JSON.toJSON(checkRule);
+            if (Objects.nonNull(jsonObject)) {
+                objectArrayList.add(jsonObject);
+            }
         }
     }
 
