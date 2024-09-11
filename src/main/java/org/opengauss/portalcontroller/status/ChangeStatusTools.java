@@ -390,9 +390,13 @@ public class ChangeStatusTools {
                     PortalControl.errorMsg);
             ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
         } else if (PortalControl.status > lastStatus) {
-            portalStatusWriter = new PortalStatusWriter(lastStatus, System.currentTimeMillis());
-            lastStatus++;
-            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+            while (PortalControl.status >= lastStatus) {
+                portalStatusWriter = new PortalStatusWriter(lastStatus, System.currentTimeMillis());
+                if (PortalControl.status > lastStatus) {
+                    lastStatus++;
+                }
+                ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+            }
         } else if (PortalControl.status == lastStatus
                 && list.get(list.size() - 1).getStatus() != PortalControl.status) {
             portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
