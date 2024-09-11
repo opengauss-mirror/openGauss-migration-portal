@@ -27,6 +27,7 @@ import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
+import org.opengauss.portalcontroller.status.ChangeStatusTools;
 import org.opengauss.portalcontroller.status.CheckColumnRule;
 import org.opengauss.portalcontroller.status.CheckRule;
 import org.opengauss.portalcontroller.status.RuleParameter;
@@ -542,6 +543,7 @@ public final class Plan {
                     }
                 }
             }
+            ChangeStatusTools.writePortalStatus();
             Plan.stopPlan = true;
             Plan.stopPlanThreads();
             if (PortalControl.status == Status.ERROR) {
