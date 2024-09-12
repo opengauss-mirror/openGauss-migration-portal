@@ -392,10 +392,12 @@ public class ChangeStatusTools {
         } else if (PortalControl.status > lastStatus) {
             while (PortalControl.status >= lastStatus) {
                 portalStatusWriter = new PortalStatusWriter(lastStatus, System.currentTimeMillis());
+                ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
                 if (PortalControl.status > lastStatus) {
                     lastStatus++;
+                } else {
+                    break;
                 }
-                ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
             }
         } else if (PortalControl.status == lastStatus
                 && list.get(list.size() - 1).getStatus() != PortalControl.status) {
