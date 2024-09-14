@@ -98,20 +98,16 @@ public class ThreadStatusController extends Thread {
         Thread.currentThread().setUncaughtExceptionHandler(new ThreadExceptionHandler());
         while (!exit) {
             ChangeStatusTools.reduceDiskSpace();
-            ChangeStatusTools.writePortalStatus();
 
-            String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-            String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
-            if (new File(path).exists()) {
-                mysqlFullMigrationTool.reportProgress(workspaceId);
-                fullDatacheckTool.reportProgress(workspaceId);
-            }
+            fullMigrationAndDatacheckProgressReport();
             if (PortalControl.status < Status.START_REVERSE_MIGRATION && PortalControl.status > Status.FULL_MIGRATION_CHECK_FINISHED) {
                 incrementalMigrationTool.reportProgress(workspaceId);
             }
             if (PortalControl.status >= Status.START_REVERSE_MIGRATION && PortalControl.status != Status.ERROR) {
                 reverseMigrationTool.reportProgress(workspaceId);
             }
+            ChangeStatusTools.writePortalStatus();
+
             try {
                 String confluentPath = PortalControl.toolsConfigParametersTable.get(Debezium.Confluent.PATH);
                 Hashtable<String, String> toolsConfigHashtable = PortalControl.toolsConfigParametersTable;
@@ -154,6 +150,18 @@ public class ThreadStatusController extends Thread {
             ProcessUtils.sleepThread(2000, "writing the status");
         }
         isReduced = false;
+    }
+
+    /**
+     * Reports the progress of full migration and full migration data check.
+     */
+    public void fullMigrationAndDatacheckProgressReport() {
+        String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
+        String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
+        if (new File(path).exists()) {
+            mysqlFullMigrationTool.reportProgress(workspaceId);
+            fullDatacheckTool.reportProgress(workspaceId);
+        }
     }
 
     public static boolean isReduced() {

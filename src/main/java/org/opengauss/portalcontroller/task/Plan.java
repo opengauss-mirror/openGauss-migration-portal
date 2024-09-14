@@ -561,6 +561,7 @@ public final class Plan {
                     }
                 }
             }
+            PortalControl.threadStatusController.fullMigrationAndDatacheckProgressReport();
             ChangeStatusTools.writePortalStatus();
             Plan.stopPlan = true;
             Plan.stopPlanThreads();
