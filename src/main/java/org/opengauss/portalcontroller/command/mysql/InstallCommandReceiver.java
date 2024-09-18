@@ -33,8 +33,6 @@ public class InstallCommandReceiver extends CommandReceiver {
     public void action(String order) {
         if (InstallMigrationUtils.checkSudoPermission()) {
             InstallMigrationUtils.installDependencies("portal");
-        } else {
-            LOGGER.error("The sudo command cannot be used. Skip installation of dependencies required by portal.");
         }
         if (CommandUtils.containString(order, Command.ALL)) {
             InstallMigrationUtils.runAllInstallOrder(order);

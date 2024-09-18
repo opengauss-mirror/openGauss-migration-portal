@@ -49,6 +49,7 @@ import java.util.Map;
 public class InstallMigrationUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstallMigrationUtils.class);
     private static final Map<String, Tool> MIGRATION_SERVICES = new HashMap<>();
+    private static boolean hasSudoPermission = false;
 
     static {
         MIGRATION_SERVICES.put(MigrationParameters.Type.FULL, new MysqlFullMigrationTool());
@@ -78,6 +79,10 @@ public class InstallMigrationUtils {
                 Command.Install.Mysql.ReverseMigration.DEFAULT, Command.Install.Mysql.Check.DEFAULT,
         });
     }};
+
+    public static boolean hasSudoPermission() {
+        return hasSudoPermission;
+    }
 
     /**
      * Install package boolean.
@@ -256,12 +261,13 @@ public class InstallMigrationUtils {
         try {
             Process process = Runtime.getRuntime().exec(command);
             if (process.waitFor() == 0) {
+                hasSudoPermission = true;
                 return true;
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Error checking sudo permission. Error massage: {}", e.getMessage());
         }
-        LOGGER.error("The installation user does not have the sudo permission, or a password is required.");
+        LOGGER.warn("The installation user does not have the sudo permission, or a password is required.");
         return false;
     }
 }
