@@ -231,10 +231,8 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
      * prepare install
      */
     private void preInstall() throws PortalException {
-        if (InstallMigrationUtils.checkSudoPermission()) {
+        if (InstallMigrationUtils.hasSudoPermission()) {
             InstallMigrationUtils.installDependencies("chameleon");
-        } else {
-            LOGGER.error("The sudo command cannot be used. Skip installation of dependencies required by chameleon.");
         }
         checkPython3Availability();
     }
