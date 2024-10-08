@@ -16,6 +16,8 @@
 package org.opengauss.portalcontroller.thread;
 
 import lombok.extern.slf4j.Slf4j;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.task.Plan;
 
 /**
  * some msg
@@ -30,5 +32,9 @@ public class ThreadExceptionHandler implements Thread.UncaughtExceptionHandler {
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         log.error("thread {} occur excetion: ", t.getName(), e);
+        PortalControl.shutDownPortal(e.getMessage());
+        Plan.getInstance(PortalControl.workspaceId).stopPlan();
+        PortalControl.threadStatusController.exit = true;
+        PortalControl.threadGetOrder.exit = true;
     }
 }

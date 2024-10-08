@@ -561,17 +561,7 @@ public final class Plan {
                     }
                 }
             }
-            PortalControl.threadStatusController.fullMigrationAndDatacheckProgressReport();
-            ChangeStatusTools.writePortalStatus();
-            Plan.stopPlan = true;
-            Plan.stopPlanThreads();
-            if (PortalControl.status == Status.ERROR) {
-                LOGGER.error("Plan failed.");
-            } else {
-                LOGGER.info("Plan finished.");
-            }
-            restoreKernelParam();
-            threadCheckProcess.exit = true;
+            stopPlan();
         } else {
             LOGGER.error("There is a plan running.Please stop current plan or wait.");
         }
@@ -626,6 +616,27 @@ public final class Plan {
             JdbcUtils.closeConnection(pgConnection);
         }
         LOGGER.info("restore kernel parameter end.");
+    }
+
+    /**
+     * Stop plan
+     */
+    public void stopPlan() {
+        try {
+            PortalControl.threadStatusController.fullMigrationAndDatacheckProgressReport();
+            ChangeStatusTools.writePortalStatus();
+            Plan.stopPlan = true;
+            Plan.stopPlanThreads();
+            if (PortalControl.status == Status.ERROR) {
+                LOGGER.error("Plan failed.");
+            } else {
+                LOGGER.info("Plan finished.");
+            }
+            restoreKernelParam();
+            threadCheckProcess.exit = true;
+        } catch (Exception e) {
+            LOGGER.error("Stop plan failed. Error: ", e);
+        }
     }
 
     /**
