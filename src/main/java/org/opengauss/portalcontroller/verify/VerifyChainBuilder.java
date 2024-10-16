@@ -54,6 +54,7 @@ public class VerifyChainBuilder {
             .addChain(new DatabaseEncryptionVerifyChain())
             .addChain(new ReplicationNumberVerifyChain())
             .addChain(new EnableSlotLogVerifyChain())
+            .addChain(new HbaConfVerifyChain())
             .build();
     }
 
@@ -86,6 +87,7 @@ public class VerifyChainBuilder {
             .addChain(new BdatabaseVerifyChain())
             .addChain(new ReplicationNumberVerifyChain())
             .addChain(new EnableSlotLogVerifyChain())
+            .addChain(new HbaConfVerifyChain())
             .build();
     }
 
