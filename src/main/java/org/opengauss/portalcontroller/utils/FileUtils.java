@@ -15,14 +15,15 @@ package org.opengauss.portalcontroller.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.springframework.util.ObjectUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +31,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -75,7 +78,8 @@ public class FileUtils {
             if (!file.exists()) {
                 createFile(inputOrderPath, true);
             }
-            writeFile(command, inputOrderPath, false);
+            String orderWithTimestamp = generateOrderWithTimestamp(command);
+            writeFile(orderWithTimestamp, inputOrderPath, false);
         } catch (PortalException e) {
             e.setRequestInformation("Write input order failed");
             log.error(e.toString());
@@ -84,24 +88,62 @@ public class FileUtils {
     }
 
     /**
+     * generate order with timestamp
+     *
+     * @param command order
+     * @return order with time stamp
+     */
+    public static String generateOrderWithTimestamp(String command) {
+        String orderInvokedTimestamp = System.getProperty(Parameter.ORDER_INVOKED_TIMESTAMP);
+        if (ObjectUtils.isEmpty(orderInvokedTimestamp)) {
+            orderInvokedTimestamp = String.valueOf(System.currentTimeMillis());
+        }
+
+        return String.format("%s:%s", command, orderInvokedTimestamp);
+    }
+
+    /**
+     * parse order with timestamp
+     *
+     * @param orderWithTimestamp order with timestamp
+     * @return Map
+     */
+    public static Map<String, String> parseOrderWithTimestamp(String orderWithTimestamp) {
+        HashMap<String, String> result = new HashMap<>();
+
+        int index = orderWithTimestamp.indexOf(":");
+        String order = index != -1 ? orderWithTimestamp.substring(0, index) : orderWithTimestamp;
+        String orderInvokedTimestamp = index != -1 ? orderWithTimestamp.substring(index + 1) : "0";
+
+        result.put(Command.Parameters.ORDER, order);
+        result.put(Parameter.ORDER_INVOKED_TIMESTAMP, orderInvokedTimestamp);
+        return result;
+    }
+
+    /**
      * Clean input order.
      */
     public static void cleanInputOrder() {
-        File file = new File(PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH));
-        if (file.exists()) {
-            try {
-                FileWriter fileWriter = new FileWriter(file);
-                fileWriter.write("");
-                fileWriter.flush();
-                fileWriter.close();
-            } catch (IOException e) {
-                PortalException portalException = new PortalException("IO exception", "clean input order",
-                        e.getMessage());
-                portalException.setRequestInformation("Clean input order failed");
-                log.error(portalException.toString());
-                PortalControl.shutDownPortal(portalException.toString());
-            }
+        String path = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
+        File file = new File(path);
+        String fullLog = LogViewUtils.getFullLog(path);
+
+        if (!file.exists() || fullLog.isEmpty()) {
+            return;
         }
+
+        String[] strParts = fullLog.split(System.lineSeparator());
+        Map<String, String> orderMap = FileUtils.parseOrderWithTimestamp(strParts[0].trim());
+        String oldOrder = orderMap.get(Command.Parameters.ORDER);
+        long oldOrderInvokedTimestamp = Long.parseLong(orderMap.get(Parameter.ORDER_INVOKED_TIMESTAMP));
+
+        if (oldOrder.equals(Command.Stop.PLAN)
+                && !ObjectUtils.isEmpty(System.getProperty(Parameter.ORDER_INVOKED_TIMESTAMP))
+                && Long.parseLong(System.getProperty(Parameter.ORDER_INVOKED_TIMESTAMP)) < oldOrderInvokedTimestamp) {
+            return;
+        }
+
+        writeFile("", path, false);
     }
 
     /**

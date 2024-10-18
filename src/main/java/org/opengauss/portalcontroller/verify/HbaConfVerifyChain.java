@@ -59,6 +59,7 @@ public class HbaConfVerifyChain extends AbstractPreMigrationVerifyChain {
             resultMap.put(verifyParamKey, paramMap);
             doVerify(pgConnection);
         } else {
+            isValid = true;
             LOGGER.info("Skip hba conf verify.");
         }
 

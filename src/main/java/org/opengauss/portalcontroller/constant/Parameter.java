@@ -94,6 +94,11 @@ public interface Parameter {
     String INPUT_ORDER_PATH = "input.order.path";
 
     /**
+     * The constant ORDER_INVOKED_TIMESTAMP.
+     */
+    String ORDER_INVOKED_TIMESTAMP = "order.invoked.timestamp";
+
+    /**
      * The constant TOOLS_VERSION.
      */
     String TOOL_VERSION = "tools.version";
