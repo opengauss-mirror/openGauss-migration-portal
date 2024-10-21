@@ -19,6 +19,7 @@ import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.task.Plan;
+import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.slf4j.Logger;
@@ -43,11 +44,12 @@ public class ThreadGetOrder extends Thread {
         String fullLog = LogViewUtils.getFullLog(path);
         if (!fullLog.isEmpty()) {
             String[] strParts = fullLog.split(System.lineSeparator());
-            String str = strParts[0].trim();
-            if (!PortalControl.latestCommand.equals(str)) {
-                LOGGER.info(str);
-                PortalControl.latestCommand = str;
-                changeMigrationStatus(str);
+            String order = FileUtils.parseOrderWithTimestamp(strParts[0].trim()).get(Command.Parameters.ORDER);
+
+            if (!PortalControl.latestCommand.equals(order)) {
+                LOGGER.info(order);
+                PortalControl.latestCommand = order;
+                changeMigrationStatus(order);
             }
         }
     }
