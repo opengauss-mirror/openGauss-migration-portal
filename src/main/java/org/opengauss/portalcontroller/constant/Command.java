@@ -336,6 +336,16 @@ public interface Command {
          * The constant ORDER.
          */
         String ORDER = "order";
+
+        /**
+         * The constant MYSQL_PWD.
+         */
+        String MYSQL_PWD = "mysql.user.password";
+
+        /**
+         * The constant OPENGAUSS_PWD.
+         */
+        String OPENGAUSS_PWD = "opengauss.user.password";
     }
 
     /**
