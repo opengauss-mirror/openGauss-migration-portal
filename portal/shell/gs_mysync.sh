@@ -1,5 +1,5 @@
 #!/bin/bash
-APP_NAME=portalControl-6.0.0-exec.jar
+APP_NAME=portalControl-7.0.0rc1-exec.jar
 START_ORDER=start_mysql_full_migration
 STOP_ORDER=stop_plan
 INSTALL_ORDER=install_mysql_full_migration_tools

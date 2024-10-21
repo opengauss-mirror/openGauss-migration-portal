@@ -1,5 +1,5 @@
 #!/bin/bash
-APP_NAME=portalControl-6.0.0-exec.jar
+APP_NAME=portalControl-7.0.0rc1-exec.jar
 ORDER=$1
 SIGN="workspace.id=1"
 ID=1
