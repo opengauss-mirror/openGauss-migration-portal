@@ -318,7 +318,13 @@ public class ParamsUtils {
                 return Integer.parseInt(String.valueOf(value));
             }
             if (paramType.equals(TaskParamType.TYPE_BOOLEAN.getCode())) {
-                return Boolean.parseBoolean(value);
+                if (value.equalsIgnoreCase("yes")) {
+                    return true;
+                } else if (value.equalsIgnoreCase("no")) {
+                    return false;
+                } else {
+                    return Boolean.parseBoolean(value);
+                }
             }
             if (paramType.equals(TaskParamType.TYPE_LIST.getCode())) {
                 return List.of(value.split(","));
