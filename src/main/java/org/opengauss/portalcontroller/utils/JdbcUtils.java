@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * JdbcUtils
@@ -305,8 +307,14 @@ public class JdbcUtils {
                 if (isReplicationSlotExists) {
                     slotName += "_" + System.currentTimeMillis();
                 }
+                Set<String> pluginNameMap = PortalControl.toolsMigrationParametersTable.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith("8") && entry.getKey().substring(4)
+                        .equals("plugin.name"))
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toSet());
+                String pluginName = pluginNameMap.iterator().next();
                 String createSlotSql = "SELECT * FROM pg_create_logical_replication_slot('" + slotName + "', " +
-                        "'pgoutput')";
+                    "'" + pluginName + "')";
                 statement.execute(createSlotSql);
                 Plan.slotName = slotName;
                 LOGGER.info("Create logical replication slot " + slotName + " finished.");
