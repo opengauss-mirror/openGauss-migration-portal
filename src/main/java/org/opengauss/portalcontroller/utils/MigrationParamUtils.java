@@ -16,6 +16,7 @@
 package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class MigrationParamUtils {
         if (colonIndex != -1) {
             return kafkaPort.substring(0, colonIndex);
         }
-        LOGGER.error("Failed to parse the kafka ip address.");
+        LOGGER.error("{}Failed to parse the kafka ip address.", ErrorCode.LOAD_CONFIGURATION_ERROR);
         return "";
     }
 }

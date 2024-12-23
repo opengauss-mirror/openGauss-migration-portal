@@ -24,10 +24,12 @@
         <fastjson.version>1.2.75</fastjson.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
-        <slf4j.log.version>2.0.16</slf4j.log.version>
+        <log4j2.version>2.24.2</log4j2.version>
+        <disruptor.version>3.4.4</disruptor.version>
         <common.io.version>2.14.0</common.io.version>
         <jdom.version>2.0.6.1</jdom.version>
         <mockito-inline.version>3.12.4</mockito-inline.version>
+        <kafka.version>3.0.0</kafka.version>
     </properties>
 
     <build>
@@ -74,10 +76,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <exclusions>
-
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -97,14 +102,24 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.log.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.log.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>${disruptor.version}</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -140,6 +155,11 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
             <version>${mockito-inline.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
         </dependency>
     </dependencies>
 

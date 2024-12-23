@@ -16,6 +16,7 @@
 package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +60,7 @@ public class RuntimeExecUtils {
             String errorStr = getInputStreamString(process.getErrorStream());
             if (!errorStr.equals("")) {
                 LOGGER.warn("Error command:" + command);
-                LOGGER.error(errorStr);
+                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
             }
             FileUtils.writeFile(errorStr, errorFilePath, true);
         } catch (IOException e) {
@@ -127,7 +128,7 @@ public class RuntimeExecUtils {
                 } else {
                     String errorStr = getInputStreamString(process.getErrorStream());
                     if (!errorStr.equals("")) {
-                        LOGGER.error(errorStr);
+                        LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
                     }
                 }
             } else {
@@ -144,6 +145,34 @@ public class RuntimeExecUtils {
             throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
             throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
+        }
+    }
+
+    /**
+     * Execute order by bash.
+     *
+     * @param command       the command
+     * @param time          the time
+     * @param errorFilePath the error file path
+     * @throws PortalException the portal exception
+     */
+    public static void executeOrderByBash(
+            String command, int time, String errorFilePath) throws PortalException {
+        ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
+        try {
+            Process process = processBuilder.start();
+            process.waitFor(time, TimeUnit.MILLISECONDS);
+            String errorStr = getInputStreamString(process.getErrorStream());
+            if (!errorStr.isEmpty()) {
+                LOGGER.warn("Error command:" + command);
+                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
+            }
+            FileUtils.writeFile(errorStr, errorFilePath, true);
+        } catch (IOException e) {
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
+        } catch (InterruptedException e) {
+            throw new PortalException("Interrupted exception",
+                    "executing command " + command, e.getMessage());
         }
     }
 
@@ -166,7 +195,7 @@ public class RuntimeExecUtils {
                 if (retCode == 0) {
                     LOGGER.info("Execute order finished.");
                 } else {
-                    LOGGER.error(errorStr);
+                    LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
                 }
             } else {
                 process.waitFor(time, TimeUnit.MILLISECONDS);
@@ -176,7 +205,7 @@ public class RuntimeExecUtils {
                 if (str != null && !str.equals("")) {
                     FileUtils.writeFile(str, outputFilePath, true);
                 } else {
-                    LOGGER.error(errorLog);
+                    LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorLog);
                 }
                 FileUtils.writeFile(errorStr, outputFilePath, true);
             }
@@ -386,7 +415,28 @@ public class RuntimeExecUtils {
             LOGGER.info(information + ".");
         } catch (PortalException e) {
             e.setRequestInformation(information + " failed");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            PortalControl.shutDownPortal(e.toString());
+        }
+    }
+
+    /**
+     * Execute connect standalone order.
+     *
+     * @param command            the command
+     * @param time               the time
+     * @param errorFilePath      the error file path
+     * @param information        the information
+     */
+    public static void executeConnectStandaloneOrder(
+            String command, int time, String errorFilePath, String information) {
+        LOGGER.info("start connect standalone = {}", command);
+        try {
+            executeOrderByBash(command, time, errorFilePath);
+            LOGGER.info("{}.", information);
+        } catch (PortalException e) {
+            e.setRequestInformation(information + " failed");
+            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -404,7 +454,7 @@ public class RuntimeExecUtils {
                 String command = "sh " + name;
                 RuntimeExecUtils.executeOrder(command, 3000, workDirectory, errorFilePath, true, new ArrayList<>());
             } catch (PortalException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.getMessage());
             }
         }
         ProcessUtils.sleepThread(1000, "run shell");

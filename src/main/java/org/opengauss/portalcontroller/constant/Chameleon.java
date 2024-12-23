@@ -152,6 +152,26 @@ public interface Chameleon {
     }
 
     /**
+     * alert log collection params key
+     */
+    interface AlertLogCollection {
+        /**
+         * configuration key to enable or disable alert log collection
+         */
+        String ENABLE = "alert_log_collection_enable";
+
+        /**
+         * configuration key for Kafka server
+         */
+        String KAFKA_SERVER = "alert_log_kafka_server";
+
+        /**
+         * configuration key for Kafka topic
+         */
+        String KAFKA_TOPIC = "alert_log_kafka_topic";
+    }
+
+    /**
      * The interface Order.
      */
     interface Order {

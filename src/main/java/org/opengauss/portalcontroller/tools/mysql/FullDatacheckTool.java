@@ -26,14 +26,14 @@ import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Software;
-import org.opengauss.portalcontroller.status.ThreadStatusController;
+import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
@@ -309,9 +309,9 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean reportProgress(String workspaceId) {
-        ThreadStatusController.fullMigrationStatus.setTable(
-                getdataCheckTableStatus(ThreadStatusController.fullMigrationStatus.getTable()));
-        String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.fullMigrationStatus);
+        ThreadStatusController.getFullMigrationStatus().setTable(
+                getdataCheckTableStatus(ThreadStatusController.getFullMigrationStatus().getTable()));
+        String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.getFullMigrationStatus());
         FileUtils.writeFile(fullMigrationStatusString,
                 PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH), false);
         return true;

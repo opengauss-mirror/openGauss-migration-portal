@@ -19,9 +19,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
@@ -32,6 +32,7 @@ import org.opengauss.portalcontroller.entity.ObjectEntry;
 import org.opengauss.portalcontroller.entity.RecordVo;
 import org.opengauss.portalcontroller.entity.Total;
 import org.opengauss.portalcontroller.task.Plan;
+import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
@@ -317,12 +318,12 @@ public class ChangeStatusTools {
         try {
             tempFullMigrationStatus = getAllChameleonStatus();
         } catch (JSONException | IOException e) {
-            LOGGER.error("", e);
-            tempFullMigrationStatus = ThreadStatusController.fullMigrationStatus;
+            LOGGER.error("{}", ErrorCode.IO_EXCEPTION, e);
+            tempFullMigrationStatus = ThreadStatusController.getFullMigrationStatus();
         }
-        ThreadStatusController.fullMigrationStatus = tempFullMigrationStatus;
+        ThreadStatusController.setFullMigrationStatus(tempFullMigrationStatus);
 
-        String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.fullMigrationStatus);
+        String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.getFullMigrationStatus());
         FileUtils.writeFile(fullMigrationStatusString,
                 PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH), false);
     }
@@ -384,15 +385,15 @@ public class ChangeStatusTools {
      */
     public static void writePortalStatus() {
         PortalStatusWriter portalStatusWriter;
-        ArrayList<PortalStatusWriter> list = ThreadStatusController.portalStatusWriterArrayList;
+        ArrayList<PortalStatusWriter> list = ThreadStatusController.getPortalStatusWriterArrayList();
         if (PortalControl.status == Status.ERROR) {
             portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(),
                     PortalControl.errorMsg);
-            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+            ThreadStatusController.getPortalStatusWriterArrayList().add(portalStatusWriter);
         } else if (PortalControl.status > lastStatus) {
             while (PortalControl.status >= lastStatus) {
                 portalStatusWriter = new PortalStatusWriter(lastStatus, System.currentTimeMillis());
-                ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+                ThreadStatusController.getPortalStatusWriterArrayList().add(portalStatusWriter);
                 if (PortalControl.status > lastStatus) {
                     lastStatus++;
                 } else {
@@ -402,11 +403,11 @@ public class ChangeStatusTools {
         } else if (PortalControl.status == lastStatus
                 && list.get(list.size() - 1).getStatus() != PortalControl.status) {
             portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
-            ThreadStatusController.portalStatusWriterArrayList.add(portalStatusWriter);
+            ThreadStatusController.getPortalStatusWriterArrayList().add(portalStatusWriter);
         } else {
             LOGGER.debug("No portal status to update.");
         }
-        String str = JSON.toJSONString(ThreadStatusController.portalStatusWriterArrayList);
+        String str = JSON.toJSONString(ThreadStatusController.getPortalStatusWriterArrayList());
         FileUtils.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
     }
 
@@ -436,7 +437,7 @@ public class ChangeStatusTools {
                         mysqlConnection.close();
                     }
                 } catch (SQLException e) {
-                    LOGGER.error("close PgConnection fail.");
+                    LOGGER.error("{}close PgConnection fail.", ErrorCode.SQL_EXCEPTION);
                 }
             }
         }

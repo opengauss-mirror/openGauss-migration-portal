@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.io.FileUtils;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -41,6 +42,7 @@ import org.opengauss.portalcontroller.tools.mysql.ReverseDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
+import org.opengauss.portalcontroller.utils.Log4jUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
@@ -474,7 +476,7 @@ public final class Plan {
             fileInputStream.close();
             randomAccessFile.close();
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error("Error massage: Get lock failed.", e);
+            LOGGER.error("{}Error massage: Get lock failed.", ErrorCode.IO_EXCEPTION, e);
         }
         return portId;
     }
@@ -563,7 +565,8 @@ public final class Plan {
             }
             stopPlan();
         } else {
-            LOGGER.error("There is a plan running.Please stop current plan or wait.");
+            LOGGER.error("{}There is a plan running.Please stop current plan or wait.",
+                    ErrorCode.MIGRATION_CONDITIONS_NOT_MET);
         }
     }
 
@@ -664,7 +667,7 @@ public final class Plan {
         if (!isAlive) {
             PortalControl.status = Status.ERROR;
             PortalControl.errorMsg = "During the task, the processes of Kafka or it's components are interrupted.";
-            LOGGER.error(PortalControl.errorMsg);
+            LOGGER.error("{}{}", ErrorCode.KAFKA_SERVER_EXCEPTION, PortalControl.errorMsg);
             Plan.stopPlan = true;
             return false;
         }
@@ -740,6 +743,7 @@ public final class Plan {
             org.opengauss.portalcontroller.utils.FileUtils.createFile(workspacePath.getWorkspaceLogPath(), false);
             RuntimeExecUtils.copyFileIfNotExist(PathUtils.combainPath(false, PortalControl.portalControlPath
                     + "config"), path);
+            Log4jUtils.removeLog4jXmlInWorkspace(path);
             PortalControl.initHashTable();
             Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
             org.opengauss.portalcontroller.utils.FileUtils.createFile(hashtable.get(Status.FOLDER), false);
@@ -771,7 +775,7 @@ public final class Plan {
             changeCommandLineParameters();
         } catch (PortalException e) {
             e.setRequestInformation("Create workspace failed");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
             Plan.stopPlan = true;
         }
     }
@@ -790,7 +794,7 @@ public final class Plan {
                 JdbcUtils.changeAllTable(conn);
                 JdbcUtils.dropLogicalReplicationSlot(conn);
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
         }
     }

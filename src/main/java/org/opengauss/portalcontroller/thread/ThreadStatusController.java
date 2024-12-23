@@ -1,27 +1,22 @@
 /*
- * Copyright (c) 2022-2022 Huawei Technologies Co.,Ltd.
- *
- * openGauss is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *
- *           http://license.coscl.org.cn/MulanPSL2
- *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
  */
 
-package org.opengauss.portalcontroller.status;
+package org.opengauss.portalcontroller.thread;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
+import org.opengauss.portalcontroller.status.ChangeStatusTools;
+import org.opengauss.portalcontroller.status.FullMigrationStatus;
+import org.opengauss.portalcontroller.status.PortalStatusWriter;
 import org.opengauss.portalcontroller.task.Plan;
-import org.opengauss.portalcontroller.thread.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalMigrationTool;
@@ -39,68 +34,49 @@ import java.util.Hashtable;
 
 /**
  * The type Thread status controller.
+ *
+ * @since 2024/12/24
  */
 public class ThreadStatusController extends Thread {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadStatusController.class);
-
-    /**
-     * capacity reduced flag
-     */
-    private static boolean isReduced = false;
-
-    private String workspaceId;
-
-    /**
-     * Gets workspace id.
-     *
-     * @return the workspace id
-     */
-    public String getWorkspaceId() {
-        return workspaceId;
-    }
-
-    /**
-     * Sets workspace id.
-     *
-     * @param workspaceId the workspace id
-     */
-    public void setWorkspaceId(String workspaceId) {
-        this.workspaceId = workspaceId;
-    }
-
-    /**
-     * The Exit.
-     */
-    public boolean exit = false;
-
-    /**
-     * The constant fullMigrationStatus.
-     */
-    public static FullMigrationStatus fullMigrationStatus = new FullMigrationStatus();
-
     private static final Tool mysqlFullMigrationTool = new MysqlFullMigrationTool();
     private static final Tool fullDatacheckTool = new FullDatacheckTool();
     private static final Tool incrementalMigrationTool = new IncrementalMigrationTool();
     private static final Tool reverseMigrationTool = new ReverseMigrationTool();
 
     /**
-     * The constant portalStatusWriterArrayList.
+     * capacity reduced flag
      */
-    public static ArrayList<PortalStatusWriter> portalStatusWriterArrayList = new ArrayList<>();
+    private static boolean isReduced = false;
+
+    @Getter
+    @Setter
+    private static FullMigrationStatus fullMigrationStatus = new FullMigrationStatus();
+
+    @Getter
+    private static ArrayList<PortalStatusWriter> portalStatusWriterArrayList = new ArrayList<>();
 
     static {
         PortalStatusWriter psw = new PortalStatusWriter(Status.START_FULL_MIGRATION, System.currentTimeMillis());
         portalStatusWriterArrayList.add(psw);
     }
 
+    @Setter
+    @Getter
+    private String workspaceId;
+
+    @Setter
+    private boolean isExit = false;
+
     @Override
     public void run() {
         Thread.currentThread().setUncaughtExceptionHandler(new ThreadExceptionHandler());
-        while (!exit) {
+        while (!isExit) {
             ChangeStatusTools.reduceDiskSpace();
 
             fullMigrationAndDatacheckProgressReport();
-            if (PortalControl.status < Status.START_REVERSE_MIGRATION && PortalControl.status > Status.FULL_MIGRATION_CHECK_FINISHED) {
+            if (PortalControl.status < Status.START_REVERSE_MIGRATION
+                    && PortalControl.status > Status.FULL_MIGRATION_CHECK_FINISHED) {
                 incrementalMigrationTool.reportProgress(workspaceId);
             }
             if (PortalControl.status >= Status.START_REVERSE_MIGRATION && PortalControl.status != Status.ERROR) {
@@ -144,7 +120,7 @@ public class ThreadStatusController extends Thread {
                 }
             } catch (PortalException e) {
                 e.setRequestInformation("Cannot find logs.");
-                LOGGER.error(e.toString());
+                LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, e.toString());
                 PortalControl.shutDownPortal(e.toString());
             }
             ProcessUtils.sleepThread(2000, "writing the status");

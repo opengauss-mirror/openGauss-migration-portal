@@ -17,10 +17,11 @@ import com.alibaba.fastjson.JSONObject;
 import org.apache.logging.log4j.util.Strings;
 import org.jdom2.Document;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.MigrationParameters;
-import org.opengauss.portalcontroller.constant.TaskParamType;
-import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.enums.TaskParamType;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.WorkspacePath;
@@ -121,7 +122,7 @@ public class ParamsUtils {
             PortalException portalException = new PortalException("Unknown host exception", "checking port is "
                     + "available", e.getMessage());
             portalException.setRequestInformation("Unknown host address.Cannot get available ports");
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.UNKNOWN_HOST, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             LOGGER.info("The port " + host + ":" + port + " is available.");
@@ -452,7 +453,7 @@ public class ParamsUtils {
             randomAccessFile = new RandomAccessFile(file, "rw");
             randomAccessFile.write(JSONObject.toJSONString(resultMap).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            LOGGER.error("writeJsonToFile create file failed.");
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, "writeJsonToFile create file failed.");
         } finally {
             try {
                 if (randomAccessFile != null) {
@@ -478,7 +479,7 @@ public class ParamsUtils {
         try (OutputStream fos = new FileOutputStream(propertiesPath)) {
             properties.store(fos, properties.toString());
         } catch (IOException e) {
-            LOGGER.error("writeMapToProperties failed", e);
+            LOGGER.error("{}writeMapToProperties failed", ErrorCode.IO_EXCEPTION, e);
         }
     }
 }

@@ -15,6 +15,7 @@ package org.opengauss.portalcontroller.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -82,7 +83,7 @@ public class FileUtils {
             writeFile(orderWithTimestamp, inputOrderPath, false);
         } catch (PortalException e) {
             e.setRequestInformation("Write input order failed");
-            log.error(e.toString());
+            log.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -197,7 +198,7 @@ public class FileUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
-            log.error(portalException.toString());
+            log.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -226,7 +227,7 @@ public class FileUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "output strings in file " + path,
                     e.getMessage());
-            log.error(portalException.toString());
+            log.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         return str.toString();
@@ -273,7 +274,7 @@ public class FileUtils {
             Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND,
                     StandardOpenOption.CREATE);
         } catch (IOException e) {
-            log.error("file write error:", e);
+            log.error("{}{}", ErrorCode.IO_EXCEPTION, "file write error:", e);
         }
     }
 
@@ -288,7 +289,23 @@ public class FileUtils {
             Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
-            log.error("file write error:", e);
+            log.error("{}{}", ErrorCode.IO_EXCEPTION, "file write error:", e);
         }
+    }
+
+    /**
+     * delete a specified file or directory
+     *
+     * @param path file path
+     * @return delete result: true/false
+     */
+    public static boolean deleteFileOrDirectory(String path) {
+        File file = new File(path);
+
+        if (!file.exists()) {
+            return false;
+        }
+
+        return file.delete();
     }
 }
