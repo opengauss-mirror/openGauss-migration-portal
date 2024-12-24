@@ -14,6 +14,7 @@
 package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +96,7 @@ public class PropertitesUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "delete yml parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         } finally {
             try {
@@ -123,7 +124,7 @@ public class PropertitesUtils {
         try {
             ArrayList<String> stringList = new ArrayList<>();
             if (!file.exists()) {
-                LOGGER.error("No such file whose path is " + path);
+                LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, "No such file whose path is " + path);
                 return;
             }
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file),
@@ -159,7 +160,7 @@ public class PropertitesUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing single properties "
                     + "parameter", e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -177,7 +178,7 @@ public class PropertitesUtils {
         File file = new File(path);
         ArrayList<String> stringList = new ArrayList<>();
         if (!file.exists()) {
-            LOGGER.error("No such file whose path is " + path);
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, "No such file whose path is " + path);
             return;
         }
         try {
@@ -226,7 +227,7 @@ public class PropertitesUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing properties parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -247,12 +248,12 @@ public class PropertitesUtils {
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "getting single "
                     + "properties parameter " + key, e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "getting single properties "
                     + "parameter " + key, e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         pps.clear();
@@ -279,12 +280,12 @@ public class PropertitesUtils {
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "getting properties "
                     + "parameters", e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "getting properties parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         return table;

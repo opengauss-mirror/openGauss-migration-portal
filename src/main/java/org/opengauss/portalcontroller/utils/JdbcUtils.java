@@ -17,6 +17,7 @@ package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -66,7 +67,7 @@ public class JdbcUtils {
             Class.forName(driver);
             connection = DriverManager.getConnection(url, user, password);
         } catch (SQLException | ClassNotFoundException e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
         }
         return connection;
     }
@@ -137,7 +138,7 @@ public class JdbcUtils {
                     }
                 }
             } catch (SQLException e) {
-                LOGGER.error("execute {} failed", selectSql);
+                LOGGER.error("{}execute {} failed", ErrorCode.SQL_EXCEPTION, selectSql);
             }
         }
         return resultMap;
@@ -155,7 +156,7 @@ public class JdbcUtils {
             conn = (PgConnection) DriverManager.getConnection(
                     getOpengaussJdbcUrl(), hashtable.get(Opengauss.USER), hashtable.get(Opengauss.PASSWORD));
         } catch (SQLException e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
         }
         return conn;
     }
@@ -207,14 +208,14 @@ public class JdbcUtils {
                         + "please alter system set " + columnName + " to " + defaultValue + " "
                         + "and restart openGauss to make it work.";
                 ReverseMigrationTool.refuseReverseMigrationReason = reason;
-                LOGGER.error(reason);
+                LOGGER.error("{}{}", ErrorCode.INCORRECT_CONFIGURATION, reason);
             }
         } catch (SQLException e) {
             PortalException portalException = new PortalException("SQL exception", "select global variable",
                     e.getMessage());
             portalException.setRequestInformation("Select global variable " + columnName + " failed.");
             ReverseMigrationTool.refuseReverseMigrationReason = portalException.getMessage();
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, portalException.toString());
         }
         return flag;
     }
@@ -270,7 +271,7 @@ public class JdbcUtils {
             try {
                 connection.setSchema(schema);
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
             String selectSql = "SELECT distinct(tablename) FROM pg_tables WHERE SCHEMANAME = '" + schema + "';";
             try (Statement selectTableStatement = connection.createStatement(); ResultSet rs =
@@ -287,7 +288,7 @@ public class JdbcUtils {
                 }
                 LOGGER.info("Alter all table replica identity full finished.");
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
         }
     }
@@ -331,7 +332,7 @@ public class JdbcUtils {
                     LOGGER.info("Create publication dbz_publication finished.");
                 }
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
         }
     }
@@ -358,7 +359,7 @@ public class JdbcUtils {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
         }
         return flag;
     }
@@ -395,7 +396,7 @@ public class JdbcUtils {
                     LOGGER.info("PUBLICATION " + publicationName + " does not exist.");
                 }
             } catch (SQLException e) {
-                LOGGER.error(e.getMessage());
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
         }
     }
@@ -411,7 +412,7 @@ public class JdbcUtils {
                 connection.close();
             }
         } catch (SQLException e) {
-            LOGGER.error("close connection fail.");
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, "close connection fail.");
         }
     }
 
@@ -434,7 +435,7 @@ public class JdbcUtils {
                 resultMap.put(key, paramValue);
             }
         } catch (SQLException e) {
-            LOGGER.error("queryParam failed.", e);
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, "queryParam failed.", e);
         }
         return resultMap;
     }
@@ -463,7 +464,7 @@ public class JdbcUtils {
             try (Statement statement = connection.createStatement()) {
                 statement.execute(sql);
             } catch (SQLException e) {
-                LOGGER.error("execute {} failed.", sql, e);
+                LOGGER.error("{}execute {} failed.", ErrorCode.SQL_EXCEPTION, sql, e);
             }
         }
     }

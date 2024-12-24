@@ -18,6 +18,7 @@ package org.opengauss.portalcontroller.thread;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;

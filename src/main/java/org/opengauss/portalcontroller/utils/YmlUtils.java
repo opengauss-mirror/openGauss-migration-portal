@@ -15,7 +15,8 @@ package org.opengauss.portalcontroller.utils;
 
 import com.alibaba.fastjson.JSONObject;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.alert.ErrorCode;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "changing single yml parameter " + key, e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -121,7 +122,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "delete yml parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -158,7 +159,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing yml parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -196,7 +197,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting single yml parameter " + key, e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         return value;
@@ -228,7 +229,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "getting yml parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         return hashMap;

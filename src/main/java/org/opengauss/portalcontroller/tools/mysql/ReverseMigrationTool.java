@@ -16,6 +16,7 @@ package org.opengauss.portalcontroller.tools.mysql;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
@@ -23,7 +24,7 @@ import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
@@ -114,7 +115,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
             PortalException portalException = new PortalException("IO exception",
                     "checking reverse migration is runnable", e.getMessage());
             refuseReverseMigrationReason = portalException.getMessage();
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, portalException.toString());
         }
         allowReverseMigration = isReverseRunnable;
         return isReverseRunnable;
@@ -236,7 +237,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "reading xlog.path in file " + file.getAbsolutePath(), e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
             return;
         }
@@ -274,7 +275,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     @Override
     public boolean init(String workspaceId) {
         if (!allowReverseMigration) {
-            LOGGER.error("Can not run reverse migration" + refuseReverseMigrationReason);
+            LOGGER.error("{}Can not run reverse migration{}",
+                    ErrorCode.MIGRATION_CONDITIONS_NOT_MET, refuseReverseMigrationReason);
             Plan.stopPlan = true;
             PortalControl.status = Status.ERROR;
             PortalControl.errorMsg = refuseReverseMigrationReason;
@@ -342,8 +344,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     @Override
     public boolean start(String workspaceId) {
         if (checkAnotherConnectExists()) {
-            LOGGER.error("Another connector is running.Cannot run reverse migration with workspaceId is "
-                    + workspaceId + " .");
+            LOGGER.error("{}Another connector is running.Cannot run reverse migration with workspaceId is {}.",
+                    ErrorCode.MIGRATION_CONDITIONS_NOT_MET, workspaceId);
             return false;
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;

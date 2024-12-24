@@ -19,6 +19,9 @@ import lombok.Builder;
 import lombok.Getter;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
+import org.opengauss.portalcontroller.alert.AlertLogConstants;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalDatacheckTool;
@@ -79,13 +82,13 @@ public class Task {
 
     static {
         START_CHECK_FUNCTIONAL_LIST.add(
-            checkLogListener -> startTaskMethod(Method.Name.CHECK_SOURCE, DATA_CHECK_START_TIME,
-                Check.CheckLog.START_SOURCE_LOG, checkLogListener));
+                checkLogListener -> startTaskMethod(Method.Name.CHECK_SOURCE, DATA_CHECK_START_TIME,
+                        Check.CheckLog.START_SOURCE_LOG, checkLogListener));
         START_CHECK_FUNCTIONAL_LIST.add(
-            checkLogListener -> startTaskMethod(Method.Name.CHECK_SINK, DATA_CHECK_START_TIME,
-                Check.CheckLog.START_SINK_LOG, checkLogListener));
+                checkLogListener -> startTaskMethod(Method.Name.CHECK_SINK, DATA_CHECK_START_TIME,
+                        Check.CheckLog.START_SINK_LOG, checkLogListener));
         START_CHECK_FUNCTIONAL_LIST.add(checkLogListener -> startTaskMethod(Method.Name.CHECK, DATA_CHECK_START_TIME,
-            Check.CheckLog.START_CHECK_LOG, checkLogListener));
+                Check.CheckLog.START_CHECK_LOG, checkLogListener));
     }
 
     /**
@@ -391,7 +394,7 @@ public class Task {
                     break;
                 }
             } catch (PortalException e) {
-                LOGGER.error(e.toString());
+                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
                 break;
             }
             if (sleepTime <= 0) {
@@ -436,7 +439,7 @@ public class Task {
         } catch (PortalException e) {
             e.setRequestInformation("Create file failed.Please ensure the file " + log + " is available to check "
                     + "whether the curl order finishes successfully.");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
             PortalControl.shutDownPortal(e.toString());
             return;
         }
@@ -448,7 +451,7 @@ public class Task {
             RuntimeExecUtils.executeOrderCurrentRuntime(cmdParts, METHOD_START_TIME, log, "Run curl failed.");
         } catch (PortalException e) {
             e.setRequestInformation("Run curl failed.");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -500,7 +503,6 @@ public class Task {
     public void runKafkaConnectSource(String path) {
         String connectConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.CONNECTOR_PATH);
         String sourceConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.INCREMENTAL_CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         runCurl(PortalControl.portalWorkSpacePath + "curl.log", connectConfigPath);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
         String numaParams =
@@ -509,7 +511,18 @@ public class Task {
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, "", errorPath, false, "Start mysql connector source");
+
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            String javaToolOptions = String.format("export JAVA_TOOL_OPTIONS=\"-Denable.alert.log.collection=true"
+                            + " -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s\"",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.CONNECT_SOURCE);
+            order = String.format("%s && %s", javaToolOptions, order);
+        }
+
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        RuntimeExecUtils.executeConnectStandaloneOrder(
+                order, PROCESS_START_TIME, errorPath, "Start mysql connector source");
     }
 
     /**
@@ -520,14 +533,24 @@ public class Task {
     public void runKafkaConnectSink(String path) {
         String connectConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.CONNECTOR_PATH);
         String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.INCREMENTAL_CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
         String numaParams = PortalControl.toolsMigrationParametersTable.get(Debezium.Sink.INCREMENTAL_SINK_NUMA_PARAMS);
         String order = executeFile + " -daemon " + connectConfigPath + " " + sinkConfigPath;
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, "", errorPath, false, "Start mysql connector sink");
+
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            String javaToolOptions = String.format("export JAVA_TOOL_OPTIONS=\"-Denable.alert.log.collection=true"
+                            + " -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s\"",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.CONNECT_SINK);
+            order = String.format("%s && %s", javaToolOptions, order);
+        }
+
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        RuntimeExecUtils.executeConnectStandaloneOrder(
+                order, PROCESS_START_TIME, errorPath, "Start mysql connector sink");
     }
 
     /**
@@ -538,7 +561,6 @@ public class Task {
     public void runReverseKafkaConnectSource(String path) {
         String connectConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.REVERSE_CONNECTOR_PATH);
         String sourceConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Source.REVERSE_CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         runCurl(PortalControl.portalWorkSpacePath + "curl-reverse.log", connectConfigPath);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
         String numaParams = PortalControl.toolsMigrationParametersTable.get(Debezium.Source.REVERSE_SOURCE_NUMA_PARAMS);
@@ -546,7 +568,18 @@ public class Task {
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, REVERSE_START_TIME, "", errorPath, false, "Start opengauss connector source");
+
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            String javaToolOptions = String.format("export JAVA_TOOL_OPTIONS=\"-Denable.alert.log.collection=true"
+                            + " -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s\"",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.REVERSE_CONNECT_SOURCE);
+            order = String.format("%s && %s", javaToolOptions, order);
+        }
+
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        RuntimeExecUtils.executeConnectStandaloneOrder(
+                order, REVERSE_START_TIME, errorPath, "Start opengauss connector source");
     }
 
 
@@ -558,20 +591,31 @@ public class Task {
     public void runReverseKafkaConnectSink(String path) {
         String connectConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH);
         String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Debezium.Sink.REVERSE_CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
         String executeFile = PathUtils.combainPath(true, path + "bin", "connect-standalone");
         String numaParams = PortalControl.toolsMigrationParametersTable.get(Debezium.Sink.REVERSE_SINK_NUMA_PARAMS);
         String order = executeFile + " -daemon " + connectConfigPath + " " + sinkConfigPath;
         if (Strings.isNotBlank(numaParams)) {
             order = numaParams + " " + order;
         }
-        RuntimeExecUtils.executeStartOrder(order, REVERSE_START_TIME, "", errorPath, false, "Start opengauss connector sink");
+
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            String javaToolOptions = String.format("export JAVA_TOOL_OPTIONS=\"-Denable.alert.log.collection=true"
+                            + " -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s\"",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.REVERSE_CONNECT_SINK);
+            order = String.format("%s && %s", javaToolOptions, order);
+        }
+
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        RuntimeExecUtils.executeConnectStandaloneOrder(
+                order, REVERSE_START_TIME, errorPath, "Start opengauss connector sink");
     }
 
     @Builder
     static class DataCheckRunCommand {
         String jvmParameter;
         String loaderPath;
+        String otherSystemParams;
         String configPath;
         String jarPath;
         String param;
@@ -581,6 +625,7 @@ public class Task {
             builder.append("nohup java").append(" ")
                     .append(jvmParameter).append(" ")
                     .append("-Dloader.path=").append(loaderPath).append("lib").append(" ")
+                    .append(Strings.isNotBlank(otherSystemParams) ? otherSystemParams + " " : "")
                     .append("-Dspring.config.additional-location=").append(configPath).append(" ")
                     .append("-jar").append(" ")
                     .append(jarPath).append(" ")
@@ -596,20 +641,35 @@ public class Task {
      * @param path the path
      */
     public void runDataCheckSink(String path) {
-        String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
-        String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
         String jvmParameter;
         if (PortalControl.status < Status.START_INCREMENTAL_MIGRATION) {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.FULL_EXTRACT_SINK_JVM);
         } else {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_EXTRACT_SINK_JVM);
         }
-        String order = DataCheckRunCommand.builder().jvmParameter(jvmParameter).loaderPath(datacheckPath).configPath(sinkConfigPath)
-                .jarPath(path+extractName).param("--sink").build().getRunCommamd();
-        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
-                + "datacheck sink");
+        String otherSystemParams = "";
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            otherSystemParams = String.format(
+                    "-Denable.alert.log.collection=true -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.DATA_CHECK_SINK);
+        }
+
+        String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
+        String sinkConfigPath = PortalControl.toolsConfigParametersTable.get(Check.Sink.CONFIG_PATH);
+        String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        String order = DataCheckRunCommand.builder()
+                .jvmParameter(jvmParameter)
+                .loaderPath(datacheckPath)
+                .configPath(sinkConfigPath)
+                .otherSystemParams(otherSystemParams)
+                .jarPath(path + extractName)
+                .param("--sink")
+                .build()
+                .getRunCommamd();
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath,
+                errorPath, false, "Start datacheck sink");
     }
 
     /**
@@ -618,20 +678,36 @@ public class Task {
      * @param path the path
      */
     public void runDataCheckSource(String path) {
-        String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
-        String sourceConfigPath = PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
         String jvmParameter;
         if (PortalControl.status < Status.START_INCREMENTAL_MIGRATION) {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.FULL_EXTRACT_SOURCE_JVM);
         } else {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_EXTRACT_SOURCE_JVM);
         }
-        String order = DataCheckRunCommand.builder().jvmParameter(jvmParameter).loaderPath(datacheckPath).configPath(sourceConfigPath)
-                .jarPath(path+extractName).param("--source").build().getRunCommamd();
-        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
-                + "datacheck source");
+
+        String otherSystemParams = "";
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            otherSystemParams = String.format(
+                    "-Denable.alert.log.collection=true -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.DATA_CHECK_SOURCE);
+        }
+
+        String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
+        String sourceConfigPath = PortalControl.toolsConfigParametersTable.get(Check.Source.CONFIG_PATH);
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        String extractName = PortalControl.toolsConfigParametersTable.get(Check.EXTRACT_NAME);
+        String order = DataCheckRunCommand.builder()
+                .jvmParameter(jvmParameter)
+                .loaderPath(datacheckPath)
+                .configPath(sourceConfigPath)
+                .otherSystemParams(otherSystemParams)
+                .jarPath(path + extractName)
+                .param("--source")
+                .build()
+                .getRunCommamd();
+        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath,
+                errorPath, false, "Start datacheck source");
     }
 
     /**
@@ -640,20 +716,35 @@ public class Task {
      * @param path the path
      */
     public void runDataCheck(String path) {
-        String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
-        String checkConfigPath = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
-        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        String checkName = PortalControl.toolsConfigParametersTable.get(Check.CHECK_NAME);
         String jvmParameter;
         if (PortalControl.status < Status.START_INCREMENTAL_MIGRATION) {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.FULL_CHECK_JVM);
         } else {
             jvmParameter = PortalControl.toolsMigrationParametersTable.get(Check.INCREMENTAL_CHECK_JVM);
         }
-        String order = DataCheckRunCommand.builder().jvmParameter(jvmParameter).loaderPath(datacheckPath).configPath(checkConfigPath)
-                .jarPath(path + checkName).param("").build().getRunCommamd();
-        RuntimeExecUtils.executeStartOrder(order, METHOD_START_TIME, PortalControl.portalWorkSpacePath, errorPath, false, "Start "
-                + "datacheck");
+        String otherSystemParams = "";
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            otherSystemParams = String.format(
+                    "-Denable.alert.log.collection=true -Dkafka.bootstrapServers=%s -Dkafka.topic=%s -Dkafka.key=%s",
+                    AlertLogCollectionManager.getKafkaServer(), AlertLogCollectionManager.getKafkaTopic(),
+                    AlertLogConstants.AlertLogSources.DATA_CHECK_CHECK);
+        }
+
+        String datacheckPath = PortalControl.toolsConfigParametersTable.get(Check.PATH);
+        String checkConfigPath = PortalControl.toolsConfigParametersTable.get(Check.CONFIG_PATH);
+        String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
+        String checkName = PortalControl.toolsConfigParametersTable.get(Check.CHECK_NAME);
+        String order = DataCheckRunCommand.builder()
+                .jvmParameter(jvmParameter)
+                .loaderPath(datacheckPath)
+                .configPath(checkConfigPath)
+                .otherSystemParams(otherSystemParams)
+                .jarPath(path + checkName)
+                .param("")
+                .build()
+                .getRunCommamd();
+        RuntimeExecUtils.executeStartOrder(order, METHOD_START_TIME, PortalControl.portalWorkSpacePath,
+                errorPath, false, "Start datacheck");
     }
 
     /**
@@ -664,12 +755,12 @@ public class Task {
      */
     public static boolean checkPlan(List<String> taskList) {
         if (taskList != null) {
-            if (taskList.size() == 0) {
-                LOGGER.error("No task in plan.Please check the plan.");
+            if (taskList.isEmpty()) {
+                LOGGER.error("{}No task in plan. Please check the plan.", ErrorCode.INVALID_COMMAND);
                 return false;
             } else if (taskList.size() == 1) {
                 if (!ALL_TASK_LIST.contains(taskList.get(0))) {
-                    LOGGER.error("The task is not valid.");
+                    LOGGER.error("{}The task is not valid.", ErrorCode.INVALID_COMMAND);
                     return false;
                 } else {
                     return true;
@@ -678,27 +769,28 @@ public class Task {
                 List<String> existingTaskList = new ArrayList<>();
                 for (String task : taskList) {
                     if (!ALL_TASK_LIST.contains(task)) {
-                        LOGGER.error("The task is not valid.");
+                        LOGGER.error("{}The task is not valid.", ErrorCode.INVALID_COMMAND);
                         return false;
                     }
                     if (existingTaskList.contains(task)) {
-                        LOGGER.error("The task already exists.");
+                        LOGGER.error("{}The task already exists.", ErrorCode.INVALID_COMMAND);
                         return false;
                     }
                     if (!checkDatacheckType(taskList, task)) {
-                        LOGGER.error("There must be the same type of migration before datacheck.");
+                        LOGGER.error("{}There must be the same type of migration before datacheck.",
+                                ErrorCode.INVALID_COMMAND);
                         return false;
                     }
                     existingTaskList.add(task);
                 }
             }
             if (!checkMigrationSequence(taskList)) {
-                LOGGER.error("Please set tasks in a particular sequence.");
+                LOGGER.error("{}Please set tasks in a particular sequence.", ErrorCode.INVALID_COMMAND);
                 return false;
             }
             addCheckTask(taskList);
         } else {
-            LOGGER.error("The taskList is null.");
+            LOGGER.error("{}The taskList is null.", ErrorCode.INVALID_COMMAND);
             return false;
         }
         return true;

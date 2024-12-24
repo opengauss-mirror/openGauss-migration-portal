@@ -15,6 +15,7 @@ package org.opengauss.portalcontroller.utils;
 
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
@@ -73,7 +74,7 @@ public class KafkaUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -158,7 +159,7 @@ public class KafkaUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
     }

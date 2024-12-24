@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="PATH">${sys:path}</Property>
+        <Property name="WORKSPACE_ID">${sys:workspace.id:-1}</Property>
+        <Property name="KAFKA_SERVER">${sys:kafka.bootstrapServers:-127.0.0.1:9092}</Property>
+    </Properties>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %c{1.} - %msg%n"/>
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </Console>
+        <File name="file" fileName="${PATH}/logs/portal_${WORKSPACE_ID}.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %c{1.} - %msg%n"/>
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </File>
+        <Kafka name="kafka" topic="alert_log_${WORKSPACE_ID}" key="portal">
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="NEUTRAL" onMismatch="DENY"/>
+                <RegexFilter regex="&lt;CODE:\d{4}> [\s\S]+" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <Property name="bootstrap.servers">${KAFKA_SERVER}</Property>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %c{1.}:() - %msg%n"/>
+        </Kafka>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="console"/>
+            <AppenderRef ref="file"/>
+            <AppenderRef ref="kafka"/>
+        </Root>
+        <logger name="org.apache.kafka" level="ERROR"/>
+    </Loggers>
+</Configuration>

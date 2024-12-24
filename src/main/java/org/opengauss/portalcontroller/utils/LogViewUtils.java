@@ -17,6 +17,7 @@ package org.opengauss.portalcontroller.utils;
 
 import org.assertj.core.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
@@ -92,7 +93,7 @@ public class LogViewUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting error message in file " + logPath, e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         return stringBuilder.toString();
@@ -130,7 +131,7 @@ public class LogViewUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting error message in file " + logPath, e.getMessage());
-            LOGGER.error("", e);
+            LOGGER.error("{}", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return stringBuilder.toString();
@@ -157,7 +158,7 @@ public class LogViewUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting error message in file " + logPath, e.getMessage());
-            LOGGER.error("", e);
+            LOGGER.error("{}", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return stringBuilder.toString();
@@ -171,7 +172,7 @@ public class LogViewUtils {
             File file = new File(logPath);
             return file.exists();
         } catch (Exception ex) {
-            LOGGER.error("logPath {} not exists ", logPath, ex);
+            LOGGER.error("{}logPath {} not exists ", ErrorCode.IO_EXCEPTION, logPath, ex);
             PortalControl.shutDownPortal("logPath not exists :" + logPath);
         }
         return false;
@@ -241,12 +242,12 @@ public class LogViewUtils {
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "reading last line in " +
                     "file " + path, e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "reading last line in file " + path
                     , e.getMessage());
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
         }
         return builder.reverse().toString();

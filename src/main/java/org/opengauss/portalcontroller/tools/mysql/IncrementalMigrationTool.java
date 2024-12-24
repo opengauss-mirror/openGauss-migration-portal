@@ -16,6 +16,7 @@ package org.opengauss.portalcontroller.tools.mysql;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
@@ -25,7 +26,7 @@ import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
@@ -267,7 +268,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         } catch (PortalException e) {
             e.setRequestInformation("Create incremental migration folder status folder failed.Please ensure the "
                     + "config folder " + incrementalFolder + " is available");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
             return;
         }
         sinkMap.put("sink.process.file.path", incrementalFolder);
@@ -314,14 +315,14 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
     @Override
     public boolean init(String workspaceId) {
         if (checkAnotherConnectExists()) {
-            LOGGER.error("Another connector is running.Cannot run incremental migration whose workspace id is "
-                    + workspaceId + " .");
+            LOGGER.error("{}Another connector is running.Cannot run incremental migration whose workspace id is {}.",
+                    ErrorCode.MIGRATION_CONDITIONS_NOT_MET, workspaceId);
             return false;
         }
         try {
             findOffset();
         } catch (PortalException e) {
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.LOAD_CONFIGURATION_ERROR, e.toString());
             PortalControl.shutDownPortal(e.toString());
             return false;
         }
@@ -524,7 +525,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                         e.getMessage());
                 portalException.setRequestInformation("Create slot failed.");
                 ReverseMigrationTool.refuseReverseMigrationReason = portalException.getMessage();
-                LOGGER.error(portalException.toString());
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, portalException.toString());
             }
         }
         for (String taskThread : taskThreadList) {

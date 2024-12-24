@@ -15,6 +15,8 @@ package org.opengauss.portalcontroller.tools.mysql;
 
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.MigrationParameters;
@@ -23,7 +25,7 @@ import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.constant.ToolsConfigEnum;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.status.ChangeStatusTools;
 import org.opengauss.portalcontroller.task.Plan;
@@ -94,7 +96,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                     toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA));
             setTables();
         } else {
-            LOGGER.error("Invalid parameters.");
+            LOGGER.error("{}Invalid parameters.", ErrorCode.INCORRECT_CONFIGURATION);
         }
     }
 
@@ -247,7 +249,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         if (commandResult.trim().startsWith("Python 3")) {
             LOGGER.info("Python 3 is available on the server.");
         } else {
-            LOGGER.error("Python 3 is not available on the server.");
+            LOGGER.error("{}Python 3 is not available on the server.", ErrorCode.MIGRATION_ENVIRONMENT_NOT_MET);
         }
     }
 
@@ -332,7 +334,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             writeChameleonOverrideType();
             copyConfigFiles(workspaceId);
         } catch (PortalException e) {
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
             PortalControl.shutDownPortal(e.toString());
             return false;
         }
@@ -392,7 +394,15 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     void initKafkaParams() {
+        initAlertLogCollectionParams();
+    }
 
+    private void initAlertLogCollectionParams() {
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            configMap.put(Chameleon.AlertLogCollection.ENABLE, true);
+            configMap.put(Chameleon.AlertLogCollection.KAFKA_SERVER, AlertLogCollectionManager.getKafkaServer());
+            configMap.put(Chameleon.AlertLogCollection.KAFKA_TOPIC, AlertLogCollectionManager.getKafkaTopic());
+        }
     }
 
     /**
@@ -519,7 +529,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                         + "chameleon replica order", errMsg);
                 e.setRequestInformation("Run chameleon order " + order + " failed");
                 e.setRepairTips("read " + logPath + " or error.log to get detailed information");
-                LOGGER.error(e.toString());
+                LOGGER.error("{}{}", ErrorCode.PROCESS_EXITS_ABNORMALLY, e.toString());
                 PortalControl.shutDownPortal(e.toString());
                 return false;
             }
@@ -588,7 +598,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             RuntimeExecUtils.executeOrder(chameleonOrder, 2000, chameleonVenvPath, logPath, true, orderList);
         } catch (PortalException e) {
             e.setRequestInformation("Start chameleon order " + order + " failed");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
             PortalControl.shutDownPortal(e.toString());
         }
     }

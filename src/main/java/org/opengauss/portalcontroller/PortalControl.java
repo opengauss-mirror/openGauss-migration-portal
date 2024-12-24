@@ -15,6 +15,8 @@
 
 package org.opengauss.portalcontroller;
 
+import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.command.ConcreteCommand;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -28,11 +30,11 @@ import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.status.ChangeStatusTools;
-import org.opengauss.portalcontroller.status.ThreadStatusController;
+import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.task.WorkspacePath;
-import org.opengauss.portalcontroller.thread.ThreadExceptionHandler;
+import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.thread.ThreadGetOrder;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 
@@ -189,13 +191,15 @@ public class PortalControl {
             ConcreteCommand concreteCommand = new ConcreteCommand();
             concreteCommand.execute(standardOrder);
         } else {
-            LOGGER.error("Invalid command.");
+            LOGGER.error("{}Invalid command.", ErrorCode.INVALID_COMMAND);
         }
         threadGetOrder.exit = true;
+        AlertLogCollectionManager.stopCollection();
     }
 
     private static void init() {
         Thread.currentThread().setUncaughtExceptionHandler(new ThreadExceptionHandler());
+        AlertLogCollectionManager.startCollection();
         initPlanList();
         initParametersRegexMap();
         decryptPassword();
@@ -261,7 +265,7 @@ public class PortalControl {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "read current plan", e.getMessage());
             portalException.setRequestInformation("Read current plan failed");
-            LOGGER.error(portalException.toString());
+            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             shutDownPortal(portalException.toString());
         }
         return taskArrayList;
@@ -413,7 +417,7 @@ public class PortalControl {
         threadStatusController.start();
         generatePlanHistory(taskList);
         if (!Task.checkPlan(taskList)) {
-            LOGGER.error("Invalid plan.");
+            LOGGER.error("{}Invalid plan.", ErrorCode.INVALID_COMMAND);
             return;
         }
         if (taskList.contains("start mysql reverse migration")) {
@@ -423,7 +427,7 @@ public class PortalControl {
         }
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
         Plan.getInstance(workspaceId).execPlan(taskList);
-        threadStatusController.exit = true;
+        threadStatusController.setExit(true);
     }
 
     /**
@@ -679,7 +683,7 @@ public class PortalControl {
     public static void initPortalPath() {
         String path = commandLineParameterStringMap.get(Command.Parameters.PATH);
         if (!new File(path).exists() || new File(path).isFile()) {
-            LOGGER.error("portalControlPath not exist");
+            LOGGER.error("{}portalControlPath not exist", ErrorCode.INCORRECT_CONFIGURATION);
             return;
         }
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
@@ -745,7 +749,7 @@ public class PortalControl {
             } catch (IOException e) {
                 PortalException portalException = new PortalException("IO exception",
                     "loading the parameters in file" + " " + path, e.getMessage());
-                LOGGER.error(portalException.toString());
+                LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
                 shutDownPortal(portalException.toString());
                 return;
             }

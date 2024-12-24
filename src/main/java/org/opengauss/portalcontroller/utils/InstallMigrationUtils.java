@@ -17,7 +17,7 @@ package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Command;
-import org.opengauss.portalcontroller.constant.InstallWay;
+import org.opengauss.portalcontroller.enums.InstallWay;
 import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.exception.PortalException;

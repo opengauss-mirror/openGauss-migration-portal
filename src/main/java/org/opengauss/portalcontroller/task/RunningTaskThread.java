@@ -16,6 +16,7 @@
 package org.opengauss.portalcontroller.task;
 
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -199,7 +200,7 @@ public class RunningTaskThread {
             }
         } catch (PortalException e) {
             e.setRequestInformation("Stop " + name + " failed.");
-            LOGGER.error(e.toString());
+            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
             PortalControl.shutDownPortal(e.toString());
         }
         LOGGER.info("Stop {}.", name);
