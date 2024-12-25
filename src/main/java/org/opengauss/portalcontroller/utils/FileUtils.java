@@ -297,15 +297,13 @@ public class FileUtils {
      * delete a specified file or directory
      *
      * @param path file path
-     * @return delete result: true/false
      */
-    public static boolean deleteFileOrDirectory(String path) {
-        File file = new File(path);
-
-        if (!file.exists()) {
-            return false;
+    public static void removeFileOrDirectory(String path) {
+        String command = String.format("rm -rf %s", path);
+        try {
+            RuntimeExecUtils.executeOrder(command, 1000);
+        } catch (PortalException e) {
+            log.error("{}Remove file '{}' failed.", ErrorCode.IO_EXCEPTION, path, e);
         }
-
-        return file.delete();
     }
 }
