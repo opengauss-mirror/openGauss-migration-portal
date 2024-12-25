@@ -56,7 +56,8 @@ public class AlertLogCollectionManager {
     }
 
     private static void loadConfig() {
-        if (getSystemProperty(AlertLogConstants.Params.ENABLE_ALERT_LOG_COLLECTION, false).equals("true")) {
+        if (getSystemProperty(AlertLogConstants.Params.ENABLE_ALERT_LOG_COLLECTION, false).equals("true")
+                && getSystemProperty("order", true).contains(Command.Type.START)) {
             isAlertLogCollectionEnabled = true;
             kafkaServer = getSystemProperty(AlertLogConstants.Params.KAFKA_SEVER, true);
             kafkaTopic = String.format(AlertLogConstants.KAFKA_TOPIC_MODEL,
@@ -70,7 +71,7 @@ public class AlertLogCollectionManager {
 
     private static void initAlertFileHome() {
         try {
-            FileUtils.deleteFileOrDirectory(alertFileHome);
+            FileUtils.removeFileOrDirectory(alertFileHome);
             FileUtils.createFile(alertFileHome, false);
         } catch (PortalException e) {
             LOGGER.error("Filed to initialize alert file home.", e);

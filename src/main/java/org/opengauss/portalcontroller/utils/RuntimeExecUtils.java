@@ -60,7 +60,7 @@ public class RuntimeExecUtils {
             String errorStr = getInputStreamString(process.getErrorStream());
             if (!errorStr.equals("")) {
                 LOGGER.warn("Error command:" + command);
-                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
+                LOGGER.error(errorStr);
             }
             FileUtils.writeFile(errorStr, errorFilePath, true);
         } catch (IOException e) {
@@ -128,7 +128,7 @@ public class RuntimeExecUtils {
                 } else {
                     String errorStr = getInputStreamString(process.getErrorStream());
                     if (!errorStr.equals("")) {
-                        LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
+                        LOGGER.error(errorStr);
                     }
                 }
             } else {
@@ -165,7 +165,7 @@ public class RuntimeExecUtils {
             String errorStr = getInputStreamString(process.getErrorStream());
             if (!errorStr.isEmpty()) {
                 LOGGER.warn("Error command:" + command);
-                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
+                LOGGER.error(errorStr);
             }
             FileUtils.writeFile(errorStr, errorFilePath, true);
         } catch (IOException e) {
@@ -195,7 +195,7 @@ public class RuntimeExecUtils {
                 if (retCode == 0) {
                     LOGGER.info("Execute order finished.");
                 } else {
-                    LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorStr);
+                    LOGGER.error(errorStr);
                 }
             } else {
                 process.waitFor(time, TimeUnit.MILLISECONDS);

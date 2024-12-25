@@ -58,6 +58,6 @@ public class Log4jUtils {
      */
     public static void removeLog4jXmlInWorkspace(String workspacePath) {
         String xmlPath = PathUtils.combainPath(true, workspacePath, "config", "log4j2.xml");
-        FileUtils.deleteFileOrDirectory(xmlPath);
+        FileUtils.removeFileOrDirectory(xmlPath);
     }
 }

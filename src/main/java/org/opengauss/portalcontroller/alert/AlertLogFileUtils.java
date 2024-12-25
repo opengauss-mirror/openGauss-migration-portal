@@ -37,11 +37,12 @@ public class AlertLogFileUtils {
      *
      * @param alertLogs alert log entity list
      */
-    public static void writeAlertLogsToFile(List<AlertLogEntity> alertLogs) {
+    public static synchronized void writeAlertLogsToFile(List<AlertLogEntity> alertLogs) {
         for (AlertLogEntity alertLog : alertLogs) {
-            alertLogNumbers += 1;
             generateAlertFilePath();
+            alertLogNumbers += 1;
             writeLogToFile(alertLog);
+            LOGGER.info("One alert log has been write to alert file. Alert log numbers is {}", alertLogNumbers);
         }
     }
 
@@ -49,6 +50,7 @@ public class AlertLogFileUtils {
         if (alertLogNumbers / ALERT_FILE_SIZE + 1 > alertFileNumbers) {
             alertFileNumbers = alertLogNumbers / ALERT_FILE_SIZE + 1;
             alertFilePath = String.format(AlertLogCollectionManager.getAlertFilePathModel(), alertFileNumbers);
+            LOGGER.info("Generate a new alert file.");
         }
     }
 
@@ -79,6 +81,32 @@ public class AlertLogFileUtils {
     }
 
     /**
+     * print error to alert file
+     *
+     * @param clazz class
+     * @param errorMsg error msg
+     * @param errorCode error code
+     */
+    public static void printErrorToAlertFile(Class<?> clazz, String errorMsg, ErrorCode errorCode) {
+        AlertLogEntity alertLog = AlertLogEntity.builder()
+                .message(errorMsg)
+                .thread(Thread.currentThread().getName())
+                .className(clazz.getName())
+                .migrationPhase(AlertLogMigrationPhaseEnum.getPhaseIdByStatus(
+                        AlertLogMessageProcessor.getRecentMigrationStatus()))
+                .logSource(AlertLogSourceEnum.PORTAL.getSourceId())
+                .logCode(String.valueOf(errorCode.getCode()))
+                .causeCn(errorCode.getCauseCn())
+                .causeEn(errorCode.getCauseEn())
+                .logLevel("ERROR")
+                .build();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+        alertLog.setDateTime(LocalDateTime.now().format(formatter));
+
+        writeAlertLogsToFile(List.of(alertLog));
+    }
+
+    /**
      * print uncaught error to alert file
      *
      * @param alertLog alert log entity
@@ -102,7 +130,8 @@ public class AlertLogFileUtils {
         }
         alertLog.setMessage(message.toString().trim());
 
-        alertLog.setMigrationPhase(AlertLogMessageProcessor.getRecentMigrationStatus());
+        alertLog.setMigrationPhase(AlertLogMigrationPhaseEnum.getPhaseIdByStatus(
+                AlertLogMessageProcessor.getRecentMigrationStatus()));
         alertLog.setLogSource(AlertLogSourceEnum.PORTAL.getSourceId());
         alertLog.setCauseCn(ErrorCode.UNKNOWN.getCauseCn());
         alertLog.setCauseEn(ErrorCode.UNKNOWN.getCauseEn());

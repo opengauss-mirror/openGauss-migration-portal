@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.io.FileUtils;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.AlertLogFileUtils;
 import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
@@ -72,6 +73,7 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
+import static org.opengauss.portalcontroller.PortalControl.errorMsg;
 import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
 /**
@@ -665,10 +667,7 @@ public final class Plan {
     public static boolean checkRunningThreads() {
         boolean isAlive = isKafkaAlive();
         if (!isAlive) {
-            PortalControl.status = Status.ERROR;
-            PortalControl.errorMsg = "During the task, the processes of Kafka or it's components are interrupted.";
-            LOGGER.error("{}{}", ErrorCode.KAFKA_SERVER_EXCEPTION, PortalControl.errorMsg);
-            Plan.stopPlan = true;
+            handleKafkaError();
             return false;
         }
         if (!runningTaskThreadsList.isEmpty()) {
@@ -704,6 +703,14 @@ public final class Plan {
             }
         }
         return isAlive;
+    }
+
+    private static void handleKafkaError() {
+        PortalControl.status = Status.ERROR;
+        PortalControl.errorMsg = "During the task, the processes of Kafka or it's components are interrupted.";
+        LOGGER.error(PortalControl.errorMsg);
+        AlertLogFileUtils.printErrorToAlertFile(Plan.class, errorMsg, ErrorCode.KAFKA_SERVER_EXCEPTION);
+        Plan.stopPlan = true;
     }
 
     /**
