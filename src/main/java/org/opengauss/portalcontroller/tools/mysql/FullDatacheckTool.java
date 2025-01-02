@@ -258,7 +258,9 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
      */
     public boolean stop() {
         while (!Plan.stopPlan) {
-            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CHECK)) == -1) {
+            fileCheck.checkFullDataCheckStop();
+            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CHECK)) == -1
+                    && DataCheckLogFileCheck.isDataCheckFinish()) {
                 if (PortalControl.status != Status.ERROR) {
                     LOGGER.info("Full migration datacheck is finished.");
                     PortalControl.status = Status.FULL_MIGRATION_CHECK_FINISHED;

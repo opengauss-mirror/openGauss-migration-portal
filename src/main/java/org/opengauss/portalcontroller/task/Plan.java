@@ -670,39 +670,48 @@ public final class Plan {
             handleKafkaError();
             return false;
         }
-        if (!runningTaskThreadsList.isEmpty()) {
-            boolean cleanFullDataCheck = false;
-            for (RunningTaskThread thread : runningTaskThreadsList) {
-                int pid = ProcessUtils.getCommandPid(thread.getProcessName());
-                if (pid == -1) {
-                    if (thread.getMethodName().contains("Check") && Plan.isFullDatacheckRunning
-                            && isFullDatacheckSuccess()) {
-                        cleanFullDataCheck = true;
-                        break;
-                    } else if (Plan.pause) {
-                        LOGGER.warn("Plan paused.Stop checking threads.");
-                        break;
-                    } else {
-                        Task.getCheckProcessMap().get(thread.getName()).checkStatus();
-                        Plan.stopPlan = true;
-                        isAlive = false;
-                    }
+
+        for (RunningTaskThread thread : runningTaskThreadsList) {
+            int pid = ProcessUtils.getCommandPid(thread.getProcessName());
+            if (pid == -1) {
+                if (thread.getMethodName().contains("Check") && Plan.isFullDatacheckRunning) {
+                    handleFullDataCheck();
+                    break;
+                } else if (Plan.pause) {
+                    LOGGER.warn("Plan paused. Stop checking threads.");
+                    break;
+                } else {
+                    Task.getCheckProcessMap().get(thread.getName()).checkStatus();
+                    Plan.stopPlan = true;
+                    isAlive = false;
                 }
-            }
-            if (cleanFullDataCheck) {
-                int length = runningTaskThreadsList.size();
-                for (int i = length - 1; i >= 0; i--) {
-                    String methodName = runningTaskThreadsList.get(i).getMethodName();
-                    LOGGER.info("Running task thread {} is in list.", methodName);
-                    if (methodName.contains("Check")) {
-                        runningTaskThreadsList.remove(i);
-                        LOGGER.info("Remove task thread {} in list.", methodName);
-                    }
-                }
-                Plan.checkFullDatacheckRunning();
             }
         }
         return isAlive;
+    }
+
+    private static void handleFullDataCheck() {
+        if (isFullDatacheckSuccess()) {
+            cleanFullDataCheck();
+        } else {
+            PortalControl.status = Status.ERROR;
+            PortalControl.errorMsg = "The data-check process exits unexpectedly.";
+            LOGGER.error("{}{}", ErrorCode.DATA_CHECK_PROCESS_EXITS_ABNORMALLY, PortalControl.errorMsg);
+            Plan.stopPlan = true;
+        }
+    }
+
+    private static void cleanFullDataCheck() {
+        int length = runningTaskThreadsList.size();
+        for (int i = length - 1; i >= 0; i--) {
+            String methodName = runningTaskThreadsList.get(i).getMethodName();
+            LOGGER.info("Running task thread {} is in list.", methodName);
+            if (methodName.contains("Check")) {
+                runningTaskThreadsList.remove(i);
+                LOGGER.info("Remove task thread {} in list.", methodName);
+            }
+        }
+        Plan.checkFullDatacheckRunning();
     }
 
     private static void handleKafkaError() {
