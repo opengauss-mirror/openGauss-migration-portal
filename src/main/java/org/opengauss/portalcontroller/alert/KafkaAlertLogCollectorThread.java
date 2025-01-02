@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.task.Plan;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ public class KafkaAlertLogCollectorThread extends Thread {
         try {
             while (isRunning && !Plan.stopPlan) {
                 processMessages();
+                AlertLogMessageProcessor.setRecentMigrationStatus(PortalControl.status);
             }
         } finally {
             kafkaConsumer.close();
