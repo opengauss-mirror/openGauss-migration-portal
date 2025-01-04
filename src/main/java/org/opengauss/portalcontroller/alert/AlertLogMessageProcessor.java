@@ -133,9 +133,13 @@ public class AlertLogMessageProcessor {
     }
 
     private static void setAlertLogMigrationPhase(AlertLogEntity alertLog) {
-        if (PortalControl.status != Status.ERROR) {
-            recentMigrationStatus = PortalControl.status;
-        }
+        setRecentMigrationStatus(PortalControl.status);
         alertLog.setMigrationPhase(AlertLogMigrationPhaseEnum.getPhaseIdByStatus(recentMigrationStatus));
+    }
+
+    public static void setRecentMigrationStatus(int recentMigrationStatus) {
+        if (recentMigrationStatus != Status.ERROR) {
+            AlertLogMessageProcessor.recentMigrationStatus = recentMigrationStatus;
+        }
     }
 }
