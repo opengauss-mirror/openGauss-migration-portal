@@ -136,4 +136,14 @@ public class DataCheckLogFileCheck {
         checkResultListener.stop();
         threadPool.shutdownNow();
     }
+
+    /**
+     * check whether full data check is stooped based on log signs
+     */
+    public void checkFullDataCheckStop() {
+        if (checkResultListener.getLogMap().keySet().containsAll(DATA_CHECK_STOP_INFO_LIST)) {
+            log.info("change data check finish flag {}", DataCheckLogFileCheck.isDataCheckFinish());
+            DataCheckLogFileCheck.setDataCheckFinish(true);
+        }
+    }
 }
