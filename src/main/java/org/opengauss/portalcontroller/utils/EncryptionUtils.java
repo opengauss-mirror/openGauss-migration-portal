@@ -40,10 +40,7 @@ import java.security.NoSuchAlgorithmException;
  */
 @Slf4j
 public final class EncryptionUtils {
-    /**
-     * Define the AES/GCM/PKCS5Padding algorithm for encryption/decryption
-     */
-    private static String gcm256Algorithm = "AES/GCM/PKCS5Padding";
+    private static final String GCM_ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 16;
     private static byte[] iV = new byte[GCM_IV_LENGTH];
@@ -66,7 +63,7 @@ public final class EncryptionUtils {
             // Create GCMParameterSpec
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iV);
             // Get Cipher Instance
-            Cipher cipher = Cipher.getInstance(gcm256Algorithm);
+            Cipher cipher = Cipher.getInstance(GCM_ALGORITHM);
             // Initialize Cipher for DECRYPT_MODE
             cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec);
             // Perform Decryption
