@@ -16,6 +16,7 @@ package org.opengauss.portalcontroller.tools.mysql;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
 import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -283,6 +284,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         }
         Hashtable<String, String> hashtable = toolsConfigParametersTable;
         KafkaUtils.changekafkaLogParam(workspaceId + "_source", hashtable.get(LOG_PATTERN_PATH));
+        KafkaUtils.addKafkaConnectErrorAppender("connect_source");
         int sourcePort = StartPort.REST_MYSQL_SOURCE + PortalControl.portId * 10;
         int port = ParamsUtils.getAvailablePorts(sourcePort, 1, 1000).get(0);
         sourceConnectMap.put("rest.port", String.valueOf(port));
@@ -332,6 +334,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         changeAllConfig();
         deleteParamsConifg();
         Task.startTaskMethod(Method.Name.CONNECT_SOURCE, 5000, "", incrementalLogFileListener);
+        AlertLogCollectionManager.watchKafkaConnectAlertLog("connect_source");
         return true;
     }
 
@@ -391,10 +394,12 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         Hashtable<String, String> hashtable = toolsConfigParametersTable;
         String standaloneSinkFilePath = hashtable.get(Debezium.Sink.CONNECTOR_PATH);
         KafkaUtils.changekafkaLogParam(workspaceId + "_sink", hashtable.get(LOG_PATTERN_PATH));
+        KafkaUtils.addKafkaConnectErrorAppender("connect_sink");
         int sinkPort = StartPort.REST_MYSQL_SINK + PortalControl.portId * 10;
         int port = ParamsUtils.getAvailablePorts(sinkPort, 1, 1000).get(0);
         PropertitesUtils.changeSinglePropertiesParameter("rest.port", String.valueOf(port), standaloneSinkFilePath);
         Task.startTaskMethod(Method.Name.CONNECT_SINK, 5000, "", incrementalLogFileListener);
+        AlertLogCollectionManager.watchKafkaConnectAlertLog("connect_sink");
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_INCREMENTAL_MIGRATION;
         }
@@ -532,6 +537,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
             Task.stopTaskMethod(taskThread);
         }
         PortalControl.status = Status.INCREMENTAL_MIGRATION_STOPPED;
+        AlertLogCollectionManager.stopRunningTailer();
         LOGGER.info("Incremental migration stopped.");
     }
 }

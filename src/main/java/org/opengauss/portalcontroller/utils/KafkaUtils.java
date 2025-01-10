@@ -25,10 +25,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Properties;
 
 import static org.opengauss.portalcontroller.PortalControl.portalControlPath;
 import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
@@ -76,6 +84,102 @@ public class KafkaUtils {
                     e.getMessage());
             LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
             PortalControl.shutDownPortal(portalException.toString());
+        }
+    }
+
+    /**
+     * add kafka connect error appender to connect-log4j.properties
+     *
+     * @param processName process name
+     */
+    public static void addKafkaConnectErrorAppender(String processName) {
+        String log4jConfigPath = toolsConfigParametersTable.get(Debezium.Connector.LOG_PATTERN_PATH);
+        String errorLogPath = getKafkaConnectErrorLogPath(processName);
+
+        if (checkAppenderExists(log4jConfigPath)) {
+            changeAppenderLogPath(log4jConfigPath, errorLogPath);
+        } else {
+            addAppender(log4jConfigPath, errorLogPath);
+        }
+    }
+
+    /**
+     * get kafka connect error log path
+     *
+     * @param processName process name
+     * @return kafka connect error log path
+     */
+    public static String getKafkaConnectErrorLogPath(String processName) {
+        String errorLogHomePath = PathUtils.combainPath(false,
+                toolsConfigParametersTable.get(Debezium.LOG_PATH), "kafka-connect");
+        String errorLogPath = PathUtils.combainPath(true, errorLogHomePath, processName + ".log");
+        try {
+            FileUtils.createFile(errorLogPath, true);
+        } catch (PortalException e) {
+            LOGGER.error("{}Failed to create file '{}'", ErrorCode.IO_EXCEPTION, errorLogPath, e);
+        }
+        return errorLogPath;
+    }
+
+    private static boolean checkAppenderExists(String log4jConfigPath) {
+        Properties properties = new Properties();
+
+        try (InputStream input = new FileInputStream(log4jConfigPath)) {
+            properties.load(input);
+        } catch (IOException e) {
+            LOGGER.error("{}Failed to read the file '{}'", ErrorCode.IO_EXCEPTION, log4jConfigPath, e);
+            return true;
+        }
+
+        String loggerKey = "log4j.logger.org.apache.kafka";
+        return properties.containsKey(loggerKey);
+    }
+
+    private static void changeAppenderLogPath(String log4jConfigPath, String errorLogPath) {
+        String appenderFileKey = "log4j.appender.kafkaErrorAppender.File=";
+        String newAppenderFileEntry = appenderFileKey + errorLogPath;
+
+        try {
+            Path path = Paths.get(log4jConfigPath);
+            List<String> lines = Files.readAllLines(path);
+            boolean isLineModified = false;
+
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                if (line.trim().startsWith("#")) {
+                    continue;
+                }
+
+                if (line.contains(appenderFileKey)) {
+                    lines.set(i, newAppenderFileEntry);
+                    isLineModified = true;
+                    break;
+                }
+            }
+
+            if (isLineModified) {
+                Files.write(path, lines);
+            }
+        } catch (IOException e) {
+            LOGGER.error("{}Failed to modify the file '{}'", ErrorCode.IO_EXCEPTION, log4jConfigPath, e);
+        }
+    }
+
+    private static void addAppender(String log4jConfigPath, String errorLogPath) {
+        String appenderEntries = String.join(System.lineSeparator(),
+                "log4j.logger.org.apache.kafka=ERROR, kafkaErrorAppender",
+                "log4j.appender.kafkaErrorAppender=org.apache.log4j.FileAppender",
+                "log4j.appender.kafkaErrorAppender.File=" + errorLogPath,
+                "log4j.appender.kafkaErrorAppender.layout=org.apache.log4j.PatternLayout",
+                "log4j.appender.kafkaErrorAppender.layout.ConversionPattern="
+                        + "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %p %c:(%L) - %m%n");
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(log4jConfigPath), StandardOpenOption.APPEND)) {
+            writer.newLine();
+            writer.write(appenderEntries);
+            writer.newLine();
+        } catch (IOException e) {
+            LOGGER.error("{}Failed to write the file '{}'", ErrorCode.IO_EXCEPTION, log4jConfigPath, e);
         }
     }
 

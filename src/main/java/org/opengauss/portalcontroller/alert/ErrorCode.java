@@ -39,7 +39,9 @@ public enum ErrorCode {
     PROCESS_EXITS_ABNORMALLY(5600, "进程异常退出", "The process exits abnormally"),
     KAFKA_SERVER_EXCEPTION(5601, "Kafka服务异常", "The Kafka server is abnormal"),
     DATA_CHECK_PROCESS_EXITS_ABNORMALLY(
-            5602, "数据校验进程异常退出", "The data-check process exits abnormally");
+            5602, "数据校验进程异常退出", "The data-check process exits abnormally"),
+
+    KAFKA_CONNECT_ABNORMALLY(5700, "kafka连接异常", "The kafka connect is abnormal");
 
     private final int code;
     private final String causeCn;

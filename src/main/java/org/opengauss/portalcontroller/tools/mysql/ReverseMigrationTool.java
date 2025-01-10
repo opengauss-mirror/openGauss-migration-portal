@@ -16,6 +16,7 @@ package org.opengauss.portalcontroller.tools.mysql;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
 import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -355,14 +356,18 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
                 hashtable.get(Debezium.Source.REVERSE_CONNECTOR_PATH));
         KafkaUtils.changekafkaLogParam(workspaceId + "_reverse_source",
                 hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
+        KafkaUtils.addKafkaConnectErrorAppender("reverse_connect_source");
         Task.startTaskMethod(Method.Name.REVERSE_CONNECT_SOURCE, 8000, "", reverseLogFileListener);
+        AlertLogCollectionManager.watchKafkaConnectAlertLog("reverse_connect_source");
         int sinkPort = StartPort.REST_OPENGAUSS_SINK + PortalControl.portId * 10;
         int port2 = ParamsUtils.getAvailablePorts(sinkPort, 1, 1000).get(0);
         PropertitesUtils.changeSinglePropertiesParameter("rest.port", String.valueOf(port2),
                 hashtable.get(Debezium.Sink.REVERSE_CONNECTOR_PATH));
         KafkaUtils.changekafkaLogParam(workspaceId + "_reverse_sink",
                 hashtable.get(Debezium.Connector.LOG_PATTERN_PATH));
+        KafkaUtils.addKafkaConnectErrorAppender("reverse_connect_sink");
         Task.startTaskMethod(Method.Name.REVERSE_CONNECT_SINK, 8000, "", reverseLogFileListener);
+        AlertLogCollectionManager.watchKafkaConnectAlertLog("reverse_connect_sink");
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_REVERSE_MIGRATION;
         }
@@ -409,6 +414,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
             Task.stopTaskMethod(Method.Run.REVERSE_CONNECT_SOURCE);
             LOGGER.info("Reverse migration stopped.");
         }
+        AlertLogCollectionManager.stopRunningTailer();
         return true;
     }
 
