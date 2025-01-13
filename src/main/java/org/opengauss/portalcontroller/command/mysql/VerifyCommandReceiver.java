@@ -13,6 +13,7 @@
 
 package org.opengauss.portalcontroller.command.mysql;
 
+import lombok.Getter;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.command.CommandReceiver;
 import org.opengauss.portalcontroller.constant.Command;
@@ -39,6 +40,9 @@ import java.util.Map;
 public class VerifyCommandReceiver extends CommandReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(VerifyCommandReceiver.class);
 
+    @Getter
+    private static boolean isReverseVerify = false;
+
     /**
      * verify before migration
      *
@@ -62,6 +66,7 @@ public class VerifyCommandReceiver extends CommandReceiver {
                     VerifyChainBuilder.getOnlineVerifyChain().verify(resultMap, mysqlConnection, pgConnection);
                 }
             } else if (Command.Verify.VERIFY_REVERSE_MIGRATION.equals(order)) {
+                isReverseVerify = true;
                 VerifyChainBuilder.getReverseVerifyChain().verify(resultMap, mysqlConnection, pgConnection);
             } else {
                 LogViewUtils.outputResult(false, order);

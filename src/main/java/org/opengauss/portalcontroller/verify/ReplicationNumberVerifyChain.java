@@ -16,12 +16,17 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
+import org.opengauss.portalcontroller.command.mysql.VerifyCommandReceiver;
+import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +49,10 @@ public class ReplicationNumberVerifyChain extends AbstractPreMigrationVerifyChai
         try {
             if (pgConnection == null) {
                 numberMap.put(Constants.KEY_OPENGAUSS, Constants.CROSS_BAR);
+            } else if (VerifyCommandReceiver.isReverseVerify() && isReplicationSlotExists(pgConnection)) {
+                numberMap.put(Constants.KEY_RESULT, Constants.KEY_FLAG_TRUE);
+                super.transfer(resultMap, mysqlConnection, pgConnection);
+                return;
             } else {
                 replicationSlots = getReplicationNumber(pgConnection);
                 maxReplication = getMaxReplicationNumber(pgConnection);
@@ -67,6 +76,19 @@ public class ReplicationNumberVerifyChain extends AbstractPreMigrationVerifyChai
         } catch (NumberFormatException e) {
             LOGGER.error("replication number verify error: ", e);
         }
+    }
+
+    private boolean isReplicationSlotExists(PgConnection pgConnection) {
+        String slotName = "slot_" + PortalControl.commandLineParameterStringMap.get(Command.Parameters.ID);
+        try (Statement statement = pgConnection.createStatement()) {
+            String selectSlotSql = "SELECT * FROM pg_get_replication_slots()";
+            String columnName = "slot_name";
+            return JdbcUtils.isSpecifiedNameExist(statement, selectSlotSql, slotName, columnName);
+        } catch (SQLException e) {
+            LOGGER.error("{}Failed to check whether the '{}' replication slot exists failed.",
+                    ErrorCode.SQL_EXCEPTION, slotName, e);
+        }
+        return false;
     }
 
     private String getReplicationNumber(PgConnection pgConnection) {
