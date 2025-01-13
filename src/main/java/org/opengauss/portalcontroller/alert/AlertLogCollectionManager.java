@@ -5,12 +5,21 @@
 package org.opengauss.portalcontroller.alert;
 
 import lombok.Getter;
+import org.apache.commons.io.input.Tailer;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.utils.FileUtils;
+import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.Log4jUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * alert log collection manager
@@ -30,6 +39,8 @@ public class AlertLogCollectionManager {
     @Getter
     private static String kafkaTopic;
     private static KafkaAlertLogCollectorThread collectorThread;
+    private static ThreadPoolExecutor threadPoolExecutor;
+    private static List<Tailer> runningTailerList;
 
     /**
      * start alert log collection
@@ -40,6 +51,15 @@ public class AlertLogCollectionManager {
             initAlertFileHome();
             collectorThread = new KafkaAlertLogCollectorThread(kafkaServer, kafkaTopic);
             collectorThread.start();
+
+            threadPoolExecutor = new ThreadPoolExecutor(
+                    2,
+                    4,
+                    60L,
+                    TimeUnit.SECONDS,
+                    new ArrayBlockingQueue<>(4),
+                    new ThreadPoolExecutor.AbortPolicy());
+            runningTailerList = new ArrayList<>();
         } else {
             Log4jUtils.removeRootKafkaAppender();
             Log4jUtils.stopKafkaAppender();
@@ -52,7 +72,32 @@ public class AlertLogCollectionManager {
     public static void stopCollection() {
         if (collectorThread != null) {
             collectorThread.shutdown();
+            stopRunningTailer();
+            threadPoolExecutor.shutdown();
         }
+    }
+
+    /**
+     * watch kafka connect alert log
+     *
+     * @param processName process name
+     */
+    public static void watchKafkaConnectAlertLog(String processName) {
+        if (isAlertLogCollectionEnabled) {
+            String errorLogPath = KafkaUtils.getKafkaConnectErrorLogPath(processName);
+            KafkaConnectAlertLogListener logListener =
+                    new KafkaConnectAlertLogListener(AlertLogSourceEnum.getIdOfSource(processName));
+            Tailer tailer = new Tailer(new File(errorLogPath), logListener, 1000L);
+            runningTailerList.add(tailer);
+            threadPoolExecutor.submit(tailer);
+        }
+    }
+
+    /**
+     * stop running tailer
+     */
+    public static void stopRunningTailer() {
+        runningTailerList.forEach(Tailer::close);
     }
 
     private static void loadConfig() {

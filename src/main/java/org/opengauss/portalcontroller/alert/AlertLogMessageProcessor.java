@@ -132,7 +132,12 @@ public class AlertLogMessageProcessor {
         alertLog.setCauseEn(CODE_CAUSE_EN_MAP.get(toolName).get(code));
     }
 
-    private static void setAlertLogMigrationPhase(AlertLogEntity alertLog) {
+    /**
+     * set alert log migration phase
+     *
+     * @param alertLog alert log
+     */
+    public static void setAlertLogMigrationPhase(AlertLogEntity alertLog) {
         setRecentMigrationStatus(PortalControl.status);
         alertLog.setMigrationPhase(AlertLogMigrationPhaseEnum.getPhaseIdByStatus(recentMigrationStatus));
     }
