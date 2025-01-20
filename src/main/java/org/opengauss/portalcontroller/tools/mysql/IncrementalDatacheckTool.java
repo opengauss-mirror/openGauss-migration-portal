@@ -18,6 +18,8 @@ import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
@@ -27,6 +29,7 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -88,8 +91,31 @@ public class IncrementalDatacheckTool extends FullDatacheckTool {
     public boolean start(String workspaceId) {
         fileCheck.startCheck();
         Task.startDataCheck(fileCheck.getCheckResultListener());
+        incrementMigrationResumeBrokenTransfer();
         stop();
         return true;
+    }
+
+    private void incrementMigrationResumeBrokenTransfer() {
+        while (!Plan.stopPlan && !Plan.stopIncrementalMigration) {
+            LOGGER.info("Incremental migration is running...");
+            if (StringUtils.hasLength(Plan.runIncrementalMigrationEndpoint)) {
+                LOGGER.info("resume broken transfer of incremental migration endpoint: {}",
+                    Plan.runIncrementalMigrationEndpoint);
+                startConnectMigrationEndpoint(Plan.runIncrementalMigrationEndpoint);
+                Plan.runIncrementalMigrationEndpoint = "";
+                Plan.pause = false;
+                break;
+            }
+            ProcessUtils.sleepThread(1000, "running incremental migration");
+        }
+    }
+
+    private void startConnectMigrationEndpoint(String connectMigrationEndpoint) {
+        LOGGER.info("incrementMigrationResumeBrokenTransfer start task  {}", connectMigrationEndpoint);
+        Task.startTaskMethod(connectMigrationEndpoint, 5000, "", new LogFileListener());
+        PortalControl.status = Status.RUNNING_INCREMENTAL_MIGRATION;
+        Plan.pause = false;
     }
 
     @Override

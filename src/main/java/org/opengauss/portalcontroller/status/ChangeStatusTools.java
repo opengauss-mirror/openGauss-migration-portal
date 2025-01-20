@@ -384,30 +384,20 @@ public class ChangeStatusTools {
      * Write portal status.
      */
     public static void writePortalStatus() {
-        PortalStatusWriter portalStatusWriter;
-        ArrayList<PortalStatusWriter> list = ThreadStatusController.getPortalStatusWriterArrayList();
-        if (PortalControl.status == Status.ERROR) {
-            portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(),
-                    PortalControl.errorMsg);
-            ThreadStatusController.getPortalStatusWriterArrayList().add(portalStatusWriter);
-        } else if (PortalControl.status > lastStatus) {
-            while (PortalControl.status >= lastStatus) {
-                portalStatusWriter = new PortalStatusWriter(lastStatus, System.currentTimeMillis());
-                ThreadStatusController.getPortalStatusWriterArrayList().add(portalStatusWriter);
-                if (PortalControl.status > lastStatus) {
-                    lastStatus++;
-                } else {
-                    break;
-                }
-            }
-        } else if (PortalControl.status == lastStatus
-                && list.get(list.size() - 1).getStatus() != PortalControl.status) {
-            portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
-            ThreadStatusController.getPortalStatusWriterArrayList().add(portalStatusWriter);
+        if (ThreadStatusController.isEqualLastPortalStatus(PortalControl.status)) {
+            return;
         } else {
-            LOGGER.debug("No portal status to update.");
+            PortalStatusWriter portalStatusWriter;
+            if (PortalControl.status == Status.ERROR) {
+                portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(),
+                    PortalControl.errorMsg);
+                ThreadStatusController.addPortalStatusWriterList(portalStatusWriter);
+            } else {
+                portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
+                ThreadStatusController.addPortalStatusWriterList(portalStatusWriter);
+            }
         }
-        String str = JSON.toJSONString(ThreadStatusController.getPortalStatusWriterArrayList());
+        String str = JSON.toJSONString(ThreadStatusController.getPortalStatusWriterList());
         FileUtils.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
     }
 

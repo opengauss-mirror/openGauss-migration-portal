@@ -17,6 +17,7 @@ package org.opengauss.portalcontroller.thread;
 
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Command;
+import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.task.Plan;
@@ -48,7 +49,7 @@ public class ThreadGetOrder extends Thread {
             String order = FileUtils.parseOrderWithTimestamp(strParts[0].trim()).get(Command.Parameters.ORDER);
 
             if (!PortalControl.latestCommand.equals(order)) {
-                LOGGER.info(order);
+                LOGGER.info("read input order {}", order);
                 PortalControl.latestCommand = order;
                 changeMigrationStatus(order);
             }
@@ -77,9 +78,29 @@ public class ThreadGetOrder extends Thread {
                 Plan.stopIncrementalMigration = false;
                 break;
             }
+            case Command.Run.INCREMENTAL_MIGRATION_SOURCE: {
+                Plan.runIncrementalMigrationEndpoint = Method.Name.CONNECT_SOURCE;
+                LOGGER.info("set input order to plan.execPlan incremental = {}", Plan.runIncrementalMigrationEndpoint);
+                break;
+            }
+            case Command.Run.INCREMENTAL_MIGRATION_SINK: {
+                Plan.runIncrementalMigrationEndpoint = Method.Name.CONNECT_SINK;
+                LOGGER.info("set input order to plan.execPlan incremental = {}", Plan.runIncrementalMigrationEndpoint);
+                break;
+            }
             case Command.Run.REVERSE_MIGRATION: {
                 Plan.runReverseMigration = true;
                 Plan.stopReverseMigration = false;
+                break;
+            }
+            case Command.Run.REVERSE_MIGRATION_SOURCE: {
+                Plan.runReverseMigrationEndpoint = Method.Name.REVERSE_CONNECT_SOURCE;
+                LOGGER.info("set input order to plan.execPlan reverse = {}", Plan.runReverseMigrationEndpoint);
+                break;
+            }
+            case Command.Run.REVERSE_MIGRATION_SINK: {
+                Plan.runReverseMigrationEndpoint = Method.Name.REVERSE_CONNECT_SINK;
+                LOGGER.info("set input order to plan.execPlan reverse = {}", Plan.runReverseMigrationEndpoint);
                 break;
             }
             case Command.Stop.PLAN: {

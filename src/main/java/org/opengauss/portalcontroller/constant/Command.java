@@ -358,9 +358,29 @@ public interface Command {
         String INCREMENTAL_MIGRATION = "run incremental migration";
 
         /**
+         * start incremental migration source
+         */
+        String INCREMENTAL_MIGRATION_SOURCE = "run incremental migration source";
+
+        /**
+         * start incremental migration sink
+         */
+        String INCREMENTAL_MIGRATION_SINK = "run incremental migration sink";
+
+        /**
          * The constant REVERSE_MIGRATION.
          */
         String REVERSE_MIGRATION = "run reverse migration";
+
+        /**
+         * start reverse migration source
+         */
+        String REVERSE_MIGRATION_SOURCE = "run reverse migration source";
+
+        /**
+         * start reverse migration sink
+         */
+        String REVERSE_MIGRATION_SINK = "run reverse migration sink";
     }
 
     /**

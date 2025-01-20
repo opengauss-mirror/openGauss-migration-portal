@@ -134,7 +134,6 @@ public class DataCheckLogFileCheck {
         sourceLogListener.stop();
         appLogListener.stop();
         checkResultListener.stop();
-        threadPool.shutdownNow();
     }
 
     /**

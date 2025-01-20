@@ -305,25 +305,27 @@ public class JdbcUtils {
                 String selectSlotSql = "SELECT * FROM pg_get_replication_slots()";
                 String columnName = "slot_name";
                 boolean isReplicationSlotExists = isSpecifiedNameExist(statement, selectSlotSql, slotName, columnName);
-                if (isReplicationSlotExists) {
-                    slotName += "_" + System.currentTimeMillis();
+                // If the slot does not exist, create a new slot.
+                if (!isReplicationSlotExists) {
+                    Set<String> pluginNameMap = PortalControl.toolsMigrationParametersTable.entrySet()
+                        .stream()
+                        .filter(entry -> entry.getKey().startsWith("8") && entry.getKey()
+                            .substring(4)
+                            .equals("plugin.name"))
+                        .map(Map.Entry::getValue)
+                        .collect(Collectors.toSet());
+                    String pluginName = pluginNameMap.iterator().next();
+                    String createSlotSql = "SELECT * FROM pg_create_logical_replication_slot('" + slotName + "', " + "'"
+                        + pluginName + "')";
+                    statement.execute(createSlotSql);
                 }
-                Set<String> pluginNameMap = PortalControl.toolsMigrationParametersTable.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("8") && entry.getKey().substring(4)
-                        .equals("plugin.name"))
-                    .map(Map.Entry::getValue)
-                    .collect(Collectors.toSet());
-                String pluginName = pluginNameMap.iterator().next();
-                String createSlotSql = "SELECT * FROM pg_create_logical_replication_slot('" + slotName + "', " +
-                    "'" + pluginName + "')";
-                statement.execute(createSlotSql);
                 Plan.slotName = slotName;
                 LOGGER.info("Create logical replication slot " + slotName + " finished.");
                 String selectPublicationSql = "SELECT pubname from pg_publication";
                 String publicationName = "dbz_publication";
                 String pubName = "pubname";
                 boolean isPublicationExist = isSpecifiedNameExist(statement, selectPublicationSql, publicationName,
-                        pubName);
+                    pubName);
                 if (isPublicationExist) {
                     LOGGER.info("PUBLICATION dbz_publication already exists.");
                 } else {

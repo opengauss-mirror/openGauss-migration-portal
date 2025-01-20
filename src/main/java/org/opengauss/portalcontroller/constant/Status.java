@@ -91,6 +91,16 @@ public interface Status {
     int REVERSE_MIGRATION_FINISHED = 13;
 
     /**
+     * The incremental connect process ERROR, task pause.
+     */
+    int CONNECT_ERROR = 30;
+
+    /**
+     * The reverse connect process ERROR, task pause.
+     */
+    int REVERSE_CONNECT_ERROR = 40;
+
+    /**
      * The constant ERROR.
      */
     int ERROR = 500;

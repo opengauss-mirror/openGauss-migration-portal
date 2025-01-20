@@ -171,6 +171,16 @@ public final class Plan {
     public static boolean runIncrementalMigration = false;
 
     /**
+     * The constant run incremental migration.
+     */
+    public static String runIncrementalMigrationEndpoint = "";
+
+    /**
+     * The constant run reverse migration.
+     */
+    public static String runReverseMigrationEndpoint = "";
+
+    /**
      * The constant pause.
      */
     public static boolean pause = false;
@@ -682,8 +692,10 @@ public final class Plan {
                     break;
                 } else {
                     Task.getCheckProcessMap().get(thread.getName()).checkStatus();
-                    Plan.stopPlan = true;
-                    isAlive = false;
+                    if (!Method.Name.CONNECT_TYPE_LIST.contains(thread.getName())) {
+                        Plan.stopPlan = true;
+                        isAlive = false;
+                    }
                 }
             }
         }

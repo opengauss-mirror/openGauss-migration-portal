@@ -45,6 +45,7 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -61,7 +63,6 @@ import java.util.Objects;
 
 import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
 import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
-import static org.opengauss.portalcontroller.utils.ProcessUtils.checkProcess;
 
 /**
  * ReverseMigrationTool
@@ -371,8 +372,31 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         if (PortalControl.status != Status.ERROR) {
             PortalControl.status = Status.RUNNING_REVERSE_MIGRATION;
         }
+        reverseMigrationResumeBrokenTransfer();
         stop();
         return true;
+    }
+
+    private void reverseMigrationResumeBrokenTransfer() {
+        while (!Plan.stopPlan && !Plan.stopReverseMigration) {
+            LOGGER.info("Reverse migration is running...");
+            if (StringUtils.hasLength(Plan.runReverseMigrationEndpoint)) {
+                LOGGER.info("resume broken transfer of Reverse migration endpoint: {}",
+                    Plan.runReverseMigrationEndpoint);
+                startConnectMigrationEndpoint(Plan.runReverseMigrationEndpoint);
+                Plan.runReverseMigrationEndpoint = "";
+                Plan.pause = false;
+                break;
+            }
+            ProcessUtils.sleepThread(1000, "running incremental migration");
+        }
+    }
+
+    private void startConnectMigrationEndpoint(String connectMigrationEndpoint) {
+        LOGGER.info("reverseMigrationResumeBrokenTransfer start task  {}", connectMigrationEndpoint);
+        Task.startTaskMethod(connectMigrationEndpoint, 5000, "", reverseLogFileListener);
+        PortalControl.status = Status.RUNNING_REVERSE_MIGRATION;
+        Plan.pause = false;
     }
 
     /**
@@ -445,8 +469,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean checkStatus(String workspaceId) {
-        checkProcess(Method.Run.REVERSE_CONNECT_SINK);
-        checkProcess(Method.Run.REVERSE_CONNECT_SOURCE);
+        ProcessUtils.checkIncProcess(Method.Run.REVERSE_CONNECT_SINK);
+        ProcessUtils.checkIncProcess(Method.Run.REVERSE_CONNECT_SOURCE);
         return true;
     }
 
@@ -460,21 +484,27 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     public boolean reportProgress(String workspaceId) {
         String sourceReverseStatusPath = "";
         String sinkReverseStatusPath = "";
-        File directory = new File(toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
-        if (directory.exists() && directory.isDirectory() && directory.listFiles() != null) {
-            for (File file : Objects.requireNonNull(directory.listFiles())) {
-                if (file.getName().contains("reverse-source-process")) {
-                    sourceReverseStatusPath = file.getAbsolutePath();
-                } else if (file.getName().contains("reverse-sink-process")) {
-                    sinkReverseStatusPath = file.getAbsolutePath();
-                }
-            }
-        }
         String reverseStatusPath = toolsConfigParametersTable.get(Status.REVERSE_PATH);
+        File directory = new File(reverseStatusPath);
+        File[] dirListFiles = directory.listFiles();
+        if (directory.exists() && directory.isDirectory() && dirListFiles != null) {
+            sourceReverseStatusPath = getLastedFileName(dirListFiles, "reverse-source-process");
+            sinkReverseStatusPath = getLastedFileName(dirListFiles, "reverse-sink-process");
+            LOGGER.info("reportProgress forward-source-process {}", sourceReverseStatusPath);
+            LOGGER.info("reportProgress forward-sink-process {}", sinkReverseStatusPath);
+        }
         if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
             ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath,
-                    reverseStatusPath, false);
+                reverseStatusPath, true);
         }
         return true;
+    }
+
+    private String getLastedFileName(File[] dirListFiles, String target) {
+        File targetFile = Arrays.stream(dirListFiles)
+            .filter(file -> file.getName().contains(target))
+            .max((file1, file2) -> (int) (file1.lastModified() - file2.lastModified()))
+            .orElse(null);
+        return Objects.nonNull(targetFile) ? targetFile.getAbsolutePath() : "";
     }
 }
