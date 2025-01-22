@@ -28,6 +28,8 @@ import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.opengauss.portalcontroller.utils.RuntimeExecUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Hashtable;
 
@@ -42,6 +44,8 @@ import static org.opengauss.portalcontroller.PortalControl.toolsConfigParameters
  */
 @Slf4j
 public final class MqTool implements Tool {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MqTool.class);
+
     private final MigrationConfluentInstanceConfig confluentInstanceConfig;
 
     private MqTool() {
@@ -77,19 +81,28 @@ public final class MqTool implements Tool {
         Task.initRunTaskHandlerHashMap();
         PortalControl.initToolsConfigParametersTableConfluent();
         Task.setConfluentConfig(toolsConfigParametersTable, Task.getTaskProcessMap());
-        // kafka change
         Hashtable<String, String> kafkaConfigTable = new Hashtable<>();
         Hashtable<String, String> zkConfigTable = new Hashtable<>();
         Hashtable<String, String> schemaRegistryConfig = new Hashtable<>();
         if (confluentInstanceConfig.checkNecessaryParams()) {
-            // kafka
-            kafkaConfigTable.put("listeners",
-                    "PLAINTEXT://" + confluentInstanceConfig.getKafkaIp() + ":" + confluentInstanceConfig.getKafkaPort());
+            String kafkaIp = confluentInstanceConfig.getKafkaIp();
+            // kafka schema_registry change
+            if (IpTool.getIpType(kafkaIp).equals(IpTool.IPV4)) {
+                kafkaConfigTable.put("listeners",
+                        "PLAINTEXT://" + confluentInstanceConfig.getKafkaIp() + ":" + confluentInstanceConfig.getKafkaPort());
+                schemaRegistryConfig.put("listeners", "http://0.0.0.0:"
+                        + confluentInstanceConfig.getSchemaRegistryPort());
+            } else if (IpTool.getIpType(kafkaIp).equals(IpTool.IPV6)) {
+                kafkaConfigTable.put("listeners",
+                        "PLAINTEXT://[" + confluentInstanceConfig.getKafkaIp()
+                        + "]:" + confluentInstanceConfig.getKafkaPort());
+                schemaRegistryConfig.put("listeners",
+                        "http://[::]:" + confluentInstanceConfig.getSchemaRegistryPort());
+            } else {
+                LOGGER.error(kafkaIp + " is not a valid IP address. listeners of kafka and schema registry put failed");
+            }
             kafkaConfigTable.put("zookeeper.connect", "localhost:" + confluentInstanceConfig.getZookeeperPort());
-            // zk
             zkConfigTable.put("clientPort", confluentInstanceConfig.getZookeeperPort());
-            // schema_registry change
-            schemaRegistryConfig.put("listeners", "http://0.0.0.0:" + confluentInstanceConfig.getSchemaRegistryPort());
             schemaRegistryConfig.put("kafkastore.connection.url",
                     "localhost:" + confluentInstanceConfig.getZookeeperPort());
         }

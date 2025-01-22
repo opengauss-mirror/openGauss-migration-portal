@@ -445,6 +445,9 @@ public class Task {
         }
         String config = PropertitesUtils.getSinglePropertiesParameter("key.converter.schema.registry.url", configFile);
         config += "/config";
+        if (config.contains("[")) {
+            config = config.replaceAll("\\[", "\\\\[").replaceAll("\\]", "\\\\]");
+        }
         String[] cmdParts = new String[]{"curl", "-X", "PUT", "-H", "Content-Type: application/vnd.schemaregistry"
                 + ".v1+json", "--data", "{\"compatibility\": \"NONE\"}", config};
         try {

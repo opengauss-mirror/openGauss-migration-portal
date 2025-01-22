@@ -36,6 +36,7 @@ import org.opengauss.portalcontroller.status.ChangeStatusTools;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
+import org.opengauss.portalcontroller.tools.common.IpTool;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
@@ -255,16 +256,18 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         MigrationConfluentInstanceConfig portalConfig = MigrationConfluentInstanceConfig.getInstanceFromPortalConfig();
         HashMap<String, Object> connectAvroStandalonePropChangeParam = new HashMap<>();
         String schemaRegistryPrefix = "http://";
-        connectAvroStandalonePropChangeParam.put("bootstrap.servers", portalConfig.getKafkaIpPort());
+        String kafkaIpPort = IpTool.formatIpPort(portalConfig.getKafkaIpPort());
+        connectAvroStandalonePropChangeParam.put("bootstrap.servers", kafkaIpPort);
+        String schemaRegistryIpPort = IpTool.formatIpPort(portalConfig.getSchemaRegistryIpPort());
         connectAvroStandalonePropChangeParam.put("key.converter.schema.registry.url",
-                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+                schemaRegistryPrefix + schemaRegistryIpPort);
         connectAvroStandalonePropChangeParam.put("value.converter.schema.registry.url",
-                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+                schemaRegistryPrefix + schemaRegistryIpPort);
         connectAvroStandalonePropChangeParam.put("connector.client.config.override.policy", "All");
         reverseConnectSinkParams.putAll(connectAvroStandalonePropChangeParam);
         reverseConnectSourceParams.putAll(connectAvroStandalonePropChangeParam);
         // opengauss-sink.properties文件修改
-        reverseSinkParams.put("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort());
+        reverseSinkParams.put("record.breakpoint.kafka.bootstrap.servers", kafkaIpPort);
     }
 
     /**

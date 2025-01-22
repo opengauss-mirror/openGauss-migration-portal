@@ -36,7 +36,7 @@ public class MigrationParamUtils {
      */
     public static String getKafkaIp() {
         String kafkaPort = PortalControl.toolsMigrationParametersTable.get(Parameter.Port.KAFKA);
-        int colonIndex = kafkaPort.indexOf(":");
+        int colonIndex = kafkaPort.lastIndexOf(":");
         if (colonIndex != -1) {
             return kafkaPort.substring(0, colonIndex);
         }

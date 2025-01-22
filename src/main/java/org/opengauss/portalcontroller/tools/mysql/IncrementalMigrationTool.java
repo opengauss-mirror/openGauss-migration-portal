@@ -27,6 +27,7 @@ import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -38,6 +39,7 @@ import org.opengauss.portalcontroller.status.ChangeStatusTools;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
+import org.opengauss.portalcontroller.tools.common.IpTool;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
@@ -75,16 +77,14 @@ import static org.opengauss.portalcontroller.utils.ProcessUtils.checkProcess;
  */
 public class IncrementalMigrationTool extends ParamsConfig implements Tool {
     private static final Logger LOGGER = LoggerFactory.getLogger(IncrementalMigrationTool.class);
-    private final LogFileListener incrementalLogFileListener = new LogFileListener();
 
+    private final LogFileListener incrementalLogFileListener = new LogFileListener();
     private final MysqlFullMigrationTool fullMigrationTool = new MysqlFullMigrationTool();
 
     Map<String, Object> sourceMap = null;
     Map<String, Object> sinkMap = null;
-
     Map<String, Object> sourceConnectMap = null;
     Map<String, Object> sinkConnectMap = null;
-
     Map<String, Object> logMap = null;
 
     /**
@@ -206,19 +206,21 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         MigrationConfluentInstanceConfig portalConfig = MigrationConfluentInstanceConfig.getInstanceFromPortalConfig();
         Hashtable<String, String> connectAvroStandalonePropChangeParam = new Hashtable<>();
         String schemaRegistryPrefix = "http://";
-        connectAvroStandalonePropChangeParam.put("bootstrap.servers", portalConfig.getKafkaIpPort());
+        String schemaRegistryIpPort = IpTool.formatIpPort(portalConfig.getSchemaRegistryIpPort());
         connectAvroStandalonePropChangeParam.put("key.converter.schema.registry.url",
-                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+                schemaRegistryPrefix + schemaRegistryIpPort);
         connectAvroStandalonePropChangeParam.put("value.converter.schema.registry.url",
-                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
+                schemaRegistryPrefix + schemaRegistryIpPort);
         connectAvroStandalonePropChangeParam.put("connector.client.config.override.policy", "All");
+        // mysql-sink.properties文件修改
+        String kafkaServers = IpTool.formatIpPort(toolsMigrationParametersTable.get(Parameter.Port.KAFKA));
+        connectAvroStandalonePropChangeParam.put("bootstrap.servers", kafkaServers);
+        sinkMap.put("record.breakpoint.kafka.bootstrap.servers", kafkaServers);
         sourceConnectMap.putAll(connectAvroStandalonePropChangeParam);
         sinkConnectMap.putAll(connectAvroStandalonePropChangeParam);
-        // mysql-sink.properties文件修改
-        sinkMap.put("record.breakpoint.kafka.bootstrap.servers", portalConfig.getKafkaIpPort());
         // mysql-source.properties文件修改
-        sourceMap.put("database.history.kafka.bootstrap.servers", portalConfig.getKafkaIpPort());
-        sourceMap.put("kafka.bootstrap.server", portalConfig.getKafkaIpPort());
+        sourceMap.put("database.history.kafka.bootstrap.servers", kafkaServers);
+        sourceMap.put("kafka.bootstrap.server", kafkaServers);
     }
 
     /**
