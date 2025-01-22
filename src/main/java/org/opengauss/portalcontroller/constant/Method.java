@@ -1,5 +1,8 @@
 package org.opengauss.portalcontroller.constant;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Method constants
  *
@@ -116,5 +119,11 @@ public interface Method {
          * The constant CHECK.
          */
         String CHECK = "datacheck";
+
+        /**
+         * The constant CONNECT_TYPE_LIST.
+         */
+        List<String> CONNECT_TYPE_LIST = Arrays.asList(CONNECT_SINK, CONNECT_SOURCE, REVERSE_CONNECT_SINK,
+            REVERSE_CONNECT_SOURCE);
     }
 }

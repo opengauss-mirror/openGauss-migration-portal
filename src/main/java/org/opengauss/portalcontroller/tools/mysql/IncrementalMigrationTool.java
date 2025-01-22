@@ -54,6 +54,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -63,7 +64,6 @@ import java.util.Objects;
 import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
 import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 import static org.opengauss.portalcontroller.constant.Debezium.Connector.LOG_PATTERN_PATH;
-import static org.opengauss.portalcontroller.utils.ProcessUtils.checkProcess;
 
 /**
  * IncrementalMigrationTool
@@ -472,8 +472,8 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean checkStatus(String workspaceId) {
-        checkProcess(Method.Run.CONNECT_SINK);
-        checkProcess(Method.Run.CONNECT_SOURCE);
+        ProcessUtils.checkIncProcess(Method.Run.CONNECT_SINK);
+        ProcessUtils.checkIncProcess(Method.Run.CONNECT_SOURCE);
         return false;
     }
 
@@ -488,21 +488,27 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         String sourceIncrementalStatusPath = "";
         String sinkIncrementalStatusPath = "";
         File directory = new File(toolsConfigParametersTable.get(Status.INCREMENTAL_FOLDER));
-        if (directory.exists() && directory.isDirectory() && directory.listFiles() != null) {
-            for (File file : Objects.requireNonNull(directory.listFiles())) {
-                if (file.getName().contains("forward-source-process")) {
-                    sourceIncrementalStatusPath = file.getAbsolutePath();
-                } else if (file.getName().contains("forward-sink-process")) {
-                    sinkIncrementalStatusPath = file.getAbsolutePath();
-                }
-            }
+        File[] dirListFiles = directory.listFiles();
+        if (directory.exists() && directory.isDirectory() && dirListFiles != null) {
+            sourceIncrementalStatusPath = getLastedFileName(dirListFiles, "forward-source-process");
+            sinkIncrementalStatusPath = getLastedFileName(dirListFiles, "forward-sink-process");
+            LOGGER.info("reportProgress forward-source-process {}", sourceIncrementalStatusPath);
+            LOGGER.info("reportProgress forward-source-process {}", sinkIncrementalStatusPath);
         }
         String incrementalStatusPath = toolsConfigParametersTable.get(Status.INCREMENTAL_PATH);
         if (new File(sourceIncrementalStatusPath).exists() && new File(sinkIncrementalStatusPath).exists()) {
             ChangeStatusTools.changeIncrementalStatus(sourceIncrementalStatusPath, sinkIncrementalStatusPath,
-                    incrementalStatusPath, true);
+                incrementalStatusPath, true);
         }
         return true;
+    }
+
+    private String getLastedFileName(File[] dirListFiles, String target) {
+        File targetFile = Arrays.stream(dirListFiles)
+            .filter(file -> file.getName().contains(target))
+            .max((file1, file2) -> (int) (file1.lastModified() - file2.lastModified()))
+            .orElse(null);
+        return Objects.nonNull(targetFile) ? targetFile.getAbsolutePath() : "";
     }
 
     /**

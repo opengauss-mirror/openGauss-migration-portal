@@ -258,4 +258,28 @@ public class ProcessUtils {
         PortalControl.errorMsg = errorStr;
         LOGGER.error("{}{}", ErrorCode.PROCESS_EXITS_ABNORMALLY, errorStr);
     }
+
+    /**
+     * check incremental and reverse process
+     *
+     * @param methodName method name
+     */
+    public static void checkIncProcess(String methodName) {
+        LOGGER.info("check process methodName = {}", methodName);
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement ele : stackTrace) {
+            LOGGER.info(ele.getClassName() + "." + ele.getMethodName());
+        }
+        String processName = Task.getTaskProcessMap().get(methodName);
+        String errorStr = "Error message: Process " + processName + " exit abnormally." + System.lineSeparator();
+        String logPath = Task.getTaskLogMap().get(methodName);
+        errorStr += LogViewUtils.getErrorMsg(logPath) + System.lineSeparator();
+        errorStr += "Please read " + logPath + " or error.log to get information.";
+        PortalControl.status = Status.CONNECT_ERROR;
+        PortalControl.errorMsg = errorStr;
+        Plan.pause = true;
+        LOGGER.info("checkIncProcess {} Plan.pause={} and PortalControl.status={}", methodName, Plan.pause,
+            PortalControl.status);
+        LOGGER.error("{}{}", ErrorCode.PROCESS_EXITS_ABNORMALLY, errorStr);
+    }
 }

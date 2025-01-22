@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.LinkedList;
 
 /**
  * The type Thread status controller.
@@ -54,11 +54,11 @@ public class ThreadStatusController extends Thread {
     private static FullMigrationStatus fullMigrationStatus = new FullMigrationStatus();
 
     @Getter
-    private static ArrayList<PortalStatusWriter> portalStatusWriterArrayList = new ArrayList<>();
+    private static LinkedList<PortalStatusWriter> portalStatusWriterList = new LinkedList<>();
 
     static {
         PortalStatusWriter psw = new PortalStatusWriter(Status.START_FULL_MIGRATION, System.currentTimeMillis());
-        portalStatusWriterArrayList.add(psw);
+        portalStatusWriterList.add(psw);
     }
 
     @Setter
@@ -67,6 +67,25 @@ public class ThreadStatusController extends Thread {
 
     @Setter
     private boolean isExit = false;
+
+    /**
+     * if the last status is equal to the given status
+     *
+     * @param status status
+     * @return boolean
+     */
+    public synchronized static boolean isEqualLastPortalStatus(int status) {
+        return portalStatusWriterList.getLast().getStatus() == status;
+    }
+
+    /**
+     * add portal status writer list
+     *
+     * @param psw psw
+     */
+    public static void addPortalStatusWriterList(PortalStatusWriter psw) {
+        portalStatusWriterList.add(psw);
+    }
 
     @Override
     public void run() {

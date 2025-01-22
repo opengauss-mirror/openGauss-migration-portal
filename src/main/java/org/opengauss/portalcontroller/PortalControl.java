@@ -517,7 +517,11 @@ public class PortalControl {
         validOrderList.add(Command.Stop.REVERSE_MIGRATION);
         validOrderList.add(Command.Stop.KAFKA);
         validOrderList.add(Command.Run.INCREMENTAL_MIGRATION);
+        validOrderList.add(Command.Run.INCREMENTAL_MIGRATION_SOURCE);
+        validOrderList.add(Command.Run.INCREMENTAL_MIGRATION_SINK);
         validOrderList.add(Command.Run.REVERSE_MIGRATION);
+        validOrderList.add(Command.Run.REVERSE_MIGRATION_SOURCE);
+        validOrderList.add(Command.Run.REVERSE_MIGRATION_SINK);
         validOrderList.add(Command.CheckPortalStatus.CHECK_POTAL_STATUS);
         validOrderList.add(Command.LoadToolsConfig.LOAD_TOOLS_CONFIG);
         validOrderList.add(Command.Verify.VERIFY_PRE_MIGRATION);
