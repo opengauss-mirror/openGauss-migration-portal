@@ -37,6 +37,7 @@ import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
+import org.opengauss.portalcontroller.tools.common.IpTool;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
@@ -77,7 +78,6 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
     Map<String, Object> checkSinkParams = null;
     Map<String, Object> checkConfigParams = null;
     Map<String, Object> debeziumConfigParams = null;
-
 
     @Override
     public void initConfigChangeParamsMap() {
@@ -220,14 +220,16 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
     public void initKafkaParams() {
         MigrationConfluentInstanceConfig portalConfig = MigrationConfluentInstanceConfig.getInstanceFromPortalConfig();
         String schemaRegistryPrefix = "http://";
+        String schemaRegistryIpPort = IpTool.formatIpPort(portalConfig.getSchemaRegistryIpPort());
+        String kafkaIpPort = IpTool.formatIpPort(portalConfig.getKafkaIpPort());
         checkSourceParams.put("spring.extract.debezium-avro-registry",
-                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
-        checkSourceParams.put("spring.kafka.bootstrap-servers", portalConfig.getKafkaIpPort());
+                schemaRegistryPrefix + schemaRegistryIpPort);
+        checkSourceParams.put("spring.kafka.bootstrap-servers", kafkaIpPort);
         checkSinkParams.put("spring.extract.debezium-avro-registry",
-                schemaRegistryPrefix + portalConfig.getSchemaRegistryIpPort());
-        checkSinkParams.put("spring.kafka.bootstrap-servers", portalConfig.getKafkaIpPort());
+                schemaRegistryPrefix + schemaRegistryIpPort);
+        checkSinkParams.put("spring.kafka.bootstrap-servers", kafkaIpPort);
         // application.yml文件修改
-        checkConfigParams.put("spring.kafka.bootstrap-servers", portalConfig.getKafkaIpPort());
+        checkConfigParams.put("spring.kafka.bootstrap-servers", kafkaIpPort);
     }
 
     /**

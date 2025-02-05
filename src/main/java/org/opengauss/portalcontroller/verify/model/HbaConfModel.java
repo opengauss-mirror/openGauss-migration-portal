@@ -103,12 +103,6 @@ public class HbaConfModel {
     }
 
     private boolean checkAddress() {
-        // If whitelist type is ipv6.
-        if (address.contains(":")) {
-            checkStatus = CheckStatus.ADDRESS_NOT_SUPPORT;
-            return false;
-        }
-
         String kafkaIp = MigrationParamUtils.getKafkaIp();
         // Check whether kafka ip address is in whitelist. For example: 10.10.0.0/24.
         if (address.contains("/") && isInWhitelistWithCIDR(kafkaIp, address)) {
