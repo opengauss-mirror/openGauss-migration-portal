@@ -682,10 +682,11 @@ public final class Plan {
         }
 
         for (RunningTaskThread thread : runningTaskThreadsList) {
+            LOGGER.info("=====current check process is ====={}", thread.getName());
             int pid = ProcessUtils.getCommandPid(thread.getProcessName());
             if (pid == -1) {
-                if (thread.getMethodName().contains("Check") && Plan.isFullDatacheckRunning) {
-                    handleFullDataCheck();
+                if (thread.getMethodName().contains("Check")) {
+                    handleDataCheck();
                     break;
                 } else if (Plan.pause) {
                     LOGGER.warn("Plan paused. Stop checking threads.");
@@ -702,8 +703,8 @@ public final class Plan {
         return isAlive;
     }
 
-    private static void handleFullDataCheck() {
-        if (isFullDatacheckSuccess()) {
+    private static void handleDataCheck() {
+        if (Plan.isFullDatacheckRunning && isFullDatacheckSuccess()) {
             cleanFullDataCheck();
         } else {
             PortalControl.status = Status.ERROR;
