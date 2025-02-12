@@ -472,8 +472,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean checkStatus(String workspaceId) {
-        ProcessUtils.checkIncProcess(Method.Run.REVERSE_CONNECT_SINK);
-        ProcessUtils.checkIncProcess(Method.Run.REVERSE_CONNECT_SOURCE);
+        ProcessUtils.checkRevProcess(Method.Run.REVERSE_CONNECT_SINK);
+        ProcessUtils.checkRevProcess(Method.Run.REVERSE_CONNECT_SOURCE);
         return true;
     }
 
