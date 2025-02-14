@@ -682,7 +682,6 @@ public final class Plan {
         }
 
         for (RunningTaskThread thread : runningTaskThreadsList) {
-            LOGGER.info("=====current check process is ====={}", thread.getName());
             int pid = ProcessUtils.getCommandPid(thread.getProcessName());
             if (pid == -1) {
                 if (thread.getMethodName().contains("Check")) {
@@ -690,6 +689,7 @@ public final class Plan {
                     break;
                 } else if (Plan.pause) {
                     LOGGER.warn("Plan paused. Stop checking threads.");
+                    ProcessUtils.sleepThread(1000, "plan_paused");
                     break;
                 } else {
                     Task.getCheckProcessMap().get(thread.getName()).checkStatus();

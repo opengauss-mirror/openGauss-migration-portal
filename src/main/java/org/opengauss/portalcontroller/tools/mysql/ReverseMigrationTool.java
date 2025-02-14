@@ -389,7 +389,6 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
                 startConnectMigrationEndpoint(Plan.runReverseMigrationEndpoint);
                 Plan.runReverseMigrationEndpoint = "";
                 Plan.pause = false;
-                break;
             }
             ProcessUtils.sleepThread(1000, "running incremental migration");
         }
