@@ -27,33 +27,73 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * The type Thread get order.
+ *
+ * @author ：liutong
+ * @since ：2022/12/24
  */
 public class ThreadGetOrder extends Thread {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadGetOrder.class);
+    private static final int MAX_CACHE_SIZE = 20;
+    private static final ReentrantLock LOCK = new ReentrantLock();
+    private static final LinkedList<String> HISTORY_ORDERS = new LinkedList<>();
+
     /**
      * The Exit.
      */
     public boolean exit = false;
 
+    private long lastedOrderTimestamp = 0L;
+
     /**
      * Read input order.
      */
-    public static void readInputOrder() {
-        String path = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
-        String fullLog = LogViewUtils.getFullLog(path);
-        if (!fullLog.isEmpty()) {
-            String[] strParts = fullLog.split(System.lineSeparator());
-            String order = FileUtils.parseOrderWithTimestamp(strParts[0].trim()).get(Command.Parameters.ORDER);
-
-            if (!PortalControl.latestCommand.equals(order)) {
-                LOGGER.info("read input order {}", order);
-                PortalControl.latestCommand = order;
-                changeMigrationStatus(order);
+    private void readInputOrder() {
+        LOCK.lock();
+        try {
+            String path = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
+            String fullLog = LogViewUtils.getFullLog(path);
+            if (fullLog.isEmpty()) {
+                return;
             }
+            String[] strParts = fullLog.split(System.lineSeparator());
+            String lastedInputCommand = strParts[0].trim();
+
+            // check if the order is already processed
+            Map<String, String> commandMap = FileUtils.parseOrderWithTimestamp(lastedInputCommand);
+            long timestamp = parseInputCommandTimestamp(commandMap);
+            if (HISTORY_ORDERS.contains(lastedInputCommand)) {
+                return;
+            }
+
+            // check if the order timestamp is already processed
+            if (timestamp <= lastedOrderTimestamp) {
+                return;
+            }
+            LOGGER.info("read input order {}", lastedInputCommand);
+            changeMigrationStatus(commandMap.get(Command.Parameters.ORDER));
+            if (HISTORY_ORDERS.size() >= MAX_CACHE_SIZE) {
+                HISTORY_ORDERS.remove(HISTORY_ORDERS.getLast());
+            }
+            HISTORY_ORDERS.addFirst(lastedInputCommand);
+            lastedOrderTimestamp = timestamp;
+        } finally {
+            LOCK.unlock();
         }
+    }
+
+    private long parseInputCommandTimestamp(Map<String, String> commandMap) {
+        try {
+            return Long.parseLong(commandMap.get(Parameter.ORDER_INVOKED_TIMESTAMP));
+        } catch (NumberFormatException ex) {
+            LOGGER.error("parse input order timestamp error {}", commandMap);
+        }
+        return 0L;
     }
 
     /**
@@ -61,7 +101,7 @@ public class ThreadGetOrder extends Thread {
      *
      * @param command the command
      */
-    public static void changeMigrationStatus(String command) {
+    private void changeMigrationStatus(String command) {
         switch (command) {
             case Command.Stop.INCREMENTAL_MIGRATION: {
                 Plan.stopIncrementalMigration = true;

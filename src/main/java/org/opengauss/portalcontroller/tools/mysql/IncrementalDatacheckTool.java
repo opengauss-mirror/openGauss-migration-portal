@@ -97,15 +97,15 @@ public class IncrementalDatacheckTool extends FullDatacheckTool {
     }
 
     private void incrementMigrationResumeBrokenTransfer() {
+        String name = "";
         while (!Plan.stopPlan && !Plan.stopIncrementalMigration) {
-            LOGGER.info("Incremental migration is running...");
+            LOGGER.info("Incremental migration is running... {}", Plan.runIncrementalMigrationEndpoint);
             if (StringUtils.hasLength(Plan.runIncrementalMigrationEndpoint)) {
-                LOGGER.info("resume broken transfer of incremental migration endpoint: {}",
-                    Plan.runIncrementalMigrationEndpoint);
-                startConnectMigrationEndpoint(Plan.runIncrementalMigrationEndpoint);
+                name = Plan.runIncrementalMigrationEndpoint;
                 Plan.runIncrementalMigrationEndpoint = "";
+                LOGGER.info("resume broken transfer of incremental migration endpoint: {}", name);
+                startConnectMigrationEndpoint(name);
                 Plan.pause = false;
-                break;
             }
             ProcessUtils.sleepThread(1000, "running incremental migration");
         }
