@@ -486,8 +486,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     public boolean reportProgress(String workspaceId) {
         String sourceReverseStatusPath = "";
         String sinkReverseStatusPath = "";
-        String reverseStatusPath = toolsConfigParametersTable.get(Status.REVERSE_PATH);
-        File directory = new File(reverseStatusPath);
+        File directory = new File(toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
         File[] dirListFiles = directory.listFiles();
         if (directory.exists() && directory.isDirectory() && dirListFiles != null) {
             sourceReverseStatusPath = getLastedFileName(dirListFiles, "reverse-source-process");
@@ -495,9 +494,10 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
             LOGGER.info("reportProgress forward-source-process {}", sourceReverseStatusPath);
             LOGGER.info("reportProgress forward-sink-process {}", sinkReverseStatusPath);
         }
+        String reverseStatusPath = toolsConfigParametersTable.get(Status.REVERSE_PATH);
         if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
             ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath,
-                reverseStatusPath, true);
+                    reverseStatusPath, false);
         }
         return true;
     }
