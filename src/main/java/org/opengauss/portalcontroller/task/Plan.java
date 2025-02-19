@@ -68,6 +68,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -680,7 +681,7 @@ public final class Plan {
             handleKafkaError();
             return false;
         }
-
+        List<RunningTaskThread> missThreadList = new LinkedList<>();
         for (RunningTaskThread thread : runningTaskThreadsList) {
             int pid = ProcessUtils.getCommandPid(thread.getProcessName());
             if (pid == -1) {
@@ -692,6 +693,7 @@ public final class Plan {
                     ProcessUtils.sleepThread(1000, "plan_paused");
                     break;
                 } else {
+                    missThreadList.add(thread);
                     Task.getCheckProcessMap().get(thread.getName()).checkStatus();
                     if (!Method.Name.CONNECT_TYPE_LIST.contains(thread.getName())) {
                         Plan.stopPlan = true;
@@ -700,6 +702,7 @@ public final class Plan {
                 }
             }
         }
+        runningTaskThreadsList.removeAll(missThreadList);
         return isAlive;
     }
 
