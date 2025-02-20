@@ -118,6 +118,11 @@ public interface Parameter {
      */
     interface IncrementalStatus {
         /**
+         * The constant TIMESTAMP.
+         */
+        String TIMESTAMP = "timestamp";
+
+        /**
          * The constant REPLAYED_COUNT.
          */
         String REPLAYED_COUNT = "replayedCount";
