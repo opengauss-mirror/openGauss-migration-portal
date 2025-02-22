@@ -41,7 +41,10 @@ public enum ErrorCode {
     DATA_CHECK_PROCESS_EXITS_ABNORMALLY(
             5602, "数据校验进程异常退出", "The data-check process exits abnormally"),
 
-    KAFKA_CONNECT_ABNORMALLY(5700, "kafka连接异常", "The kafka connect is abnormal");
+    KAFKA_CONNECT_ABNORMALLY(5700, "kafka连接异常", "The kafka connect is abnormal"),
+
+    MIGRATION_PROCESS_FUNCTION_ABNORMALLY(
+            5800, "迁移进程功能异常", "The migration process function is abnormal");
 
     private final int code;
     private final String causeCn;

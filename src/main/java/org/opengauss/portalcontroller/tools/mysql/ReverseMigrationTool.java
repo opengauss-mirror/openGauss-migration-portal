@@ -55,12 +55,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
 import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
@@ -484,29 +482,18 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean reportProgress(String workspaceId) {
-        String sourceReverseStatusPath = "";
-        String sinkReverseStatusPath = "";
-        File directory = new File(toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
-        File[] dirListFiles = directory.listFiles();
-        if (directory.exists() && directory.isDirectory() && dirListFiles != null) {
-            sourceReverseStatusPath = getLastedFileName(dirListFiles, "reverse-source-process");
-            sinkReverseStatusPath = getLastedFileName(dirListFiles, "reverse-sink-process");
+        String fileDir = toolsConfigParametersTable.get(Status.REVERSE_FOLDER);
+        String sourceReverseStatusPath = IncrementalMigrationTool.getLatestProgressFilePath(
+                fileDir, "reverse-source-process");
+        String sinkReverseStatusPath = IncrementalMigrationTool.getLatestProgressFilePath(
+                fileDir, "reverse-sink-process");
+        if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
             LOGGER.info("reportProgress forward-source-process {}", sourceReverseStatusPath);
             LOGGER.info("reportProgress forward-sink-process {}", sinkReverseStatusPath);
-        }
-        String reverseStatusPath = toolsConfigParametersTable.get(Status.REVERSE_PATH);
-        if (new File(sourceReverseStatusPath).exists() && new File(sinkReverseStatusPath).exists()) {
+            String reverseStatusPath = toolsConfigParametersTable.get(Status.REVERSE_PATH);
             ChangeStatusTools.changeIncrementalStatus(sourceReverseStatusPath, sinkReverseStatusPath,
                     reverseStatusPath, false);
         }
         return true;
-    }
-
-    private String getLastedFileName(File[] dirListFiles, String target) {
-        File targetFile = Arrays.stream(dirListFiles)
-            .filter(file -> file.getName().contains(target))
-            .max((file1, file2) -> (int) (file1.lastModified() - file2.lastModified()))
-            .orElse(null);
-        return Objects.nonNull(targetFile) ? targetFile.getAbsolutePath() : "";
     }
 }
