@@ -18,6 +18,7 @@ package org.opengauss.portalcontroller.task;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
@@ -105,6 +106,8 @@ public final class Plan {
     private static final int TIME_INTERVAL_SECONDS = 5;
     private static final long TIME_INTERVAL_MILLIS = TIME_INTERVAL_SECONDS * 1000;
     private static final int MAX_REPEATED_TIMES = TIME_THRESHOLD_SECONDS / TIME_INTERVAL_SECONDS;
+    @Getter
+    private static final List<RunningTaskThread> hasStoppedThreadList = new ArrayList<>();
 
     static {
         PROGRESS_FILE_MONITOR_MAP.put(Method.Run.CONNECT_SOURCE, new DebeziumProgressFileMonitor(
@@ -708,6 +711,10 @@ public final class Plan {
         List<RunningTaskThread> missThreadList = new LinkedList<>();
         for (RunningTaskThread thread : runningTaskThreadsList) {
             int pid = ProcessUtils.getCommandPid(thread.getProcessName());
+            if (hasStoppedThreadList.contains(thread)) {
+                LOGGER.info("{} is stopped.", thread.getName());
+                continue;
+            }
             if (pid == -1) {
                 if (thread.getMethodName().contains("Check")) {
                     handleDataCheck();
@@ -731,6 +738,7 @@ public final class Plan {
             }
         }
         runningTaskThreadsList.removeAll(missThreadList);
+        hasStoppedThreadList.clear();
         return isAlive;
     }
 

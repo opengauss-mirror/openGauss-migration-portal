@@ -415,15 +415,15 @@ public class Task {
         int index = -1;
         for (RunningTaskThread runningTaskThread : runningTaskThreadThreadList) {
             if (runningTaskThread.getMethodName().equals(methodName)) {
-                runningTaskThread.stopTask("");
                 index = runningTaskThreadThreadList.indexOf(runningTaskThread);
                 break;
             }
         }
         if (index != -1) {
-            runningTaskThreadThreadList.remove(index);
+            RunningTaskThread runningTaskThread = runningTaskThreadThreadList.remove(index);
+            Plan.getHasStoppedThreadList().add(runningTaskThread);
+            runningTaskThread.stopTask("");
         }
-        Plan.setRunningTaskThreadsList(runningTaskThreadThreadList);
     }
 
 
