@@ -18,7 +18,6 @@ public class DebeziumProgressFileMonitor {
     private String processName;
     private String fileHomeParam;
     private String filePrefix;
-    private Long latestTimestamp;
+    private long latestModifiedTimestamp;
     private int repeatedTimes;
-    private long latestMonitorTimeMillis;
 }

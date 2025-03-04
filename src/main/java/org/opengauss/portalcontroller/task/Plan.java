@@ -16,8 +16,6 @@
 package org.opengauss.portalcontroller.task;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.opengauss.jdbc.PgConnection;
@@ -27,8 +25,8 @@ import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
+import org.opengauss.portalcontroller.constant.LogParseConstants;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.entity.model.DebeziumProgressFileMonitor;
@@ -49,7 +47,6 @@ import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.Log4jUtils;
-import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
@@ -78,7 +75,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -103,21 +99,19 @@ public final class Plan {
 
     private static final Map<String, DebeziumProgressFileMonitor> PROGRESS_FILE_MONITOR_MAP = new HashMap<>();
     private static final int TIME_THRESHOLD_SECONDS = 30;
-    private static final int TIME_INTERVAL_SECONDS = 5;
-    private static final long TIME_INTERVAL_MILLIS = TIME_INTERVAL_SECONDS * 1000;
-    private static final int MAX_REPEATED_TIMES = TIME_THRESHOLD_SECONDS / TIME_INTERVAL_SECONDS;
+    private static final int MAX_REPEATED_TIMES = TIME_THRESHOLD_SECONDS * 1000 / LogParseConstants.PERIOD_WATCH_LOG;
     @Getter
     private static final List<RunningTaskThread> hasStoppedThreadList = new ArrayList<>();
 
     static {
         PROGRESS_FILE_MONITOR_MAP.put(Method.Run.CONNECT_SOURCE, new DebeziumProgressFileMonitor(
-                "incremental source process", Status.INCREMENTAL_FOLDER, "forward-source-process", 0L, 0, 0L));
+                "incremental source process", Status.INCREMENTAL_FOLDER, "forward-source-process", 0L, 0));
         PROGRESS_FILE_MONITOR_MAP.put(Method.Run.CONNECT_SINK, new DebeziumProgressFileMonitor(
-                "incremental sink process", Status.INCREMENTAL_FOLDER, "forward-sink-process", 0L, 0, 0L));
+                "incremental sink process", Status.INCREMENTAL_FOLDER, "forward-sink-process", 0L, 0));
         PROGRESS_FILE_MONITOR_MAP.put(Method.Run.REVERSE_CONNECT_SOURCE, new DebeziumProgressFileMonitor(
-                "reverse source process", Status.REVERSE_FOLDER, "reverse-source-process", 0L, 0, 0L));
+                "reverse source process", Status.REVERSE_FOLDER, "reverse-source-process", 0L, 0));
         PROGRESS_FILE_MONITOR_MAP.put(Method.Run.REVERSE_CONNECT_SINK, new DebeziumProgressFileMonitor(
-                "reverse sink process", Status.REVERSE_FOLDER, "reverse-sink-process", 0L, 0, 0L));
+                "reverse sink process", Status.REVERSE_FOLDER, "reverse-sink-process", 0L, 0));
     }
 
     private Plan() {
@@ -749,61 +743,33 @@ public final class Plan {
             return true;
         }
 
-        // ensure that the check time interval is longer than 5 seconds, avoid high-frequency I/O
-        long currentTimeMillis = System.currentTimeMillis();
-        if (currentTimeMillis < fileMonitor.getLatestMonitorTimeMillis() + TIME_INTERVAL_MILLIS) {
-            return true;
-        }
-        fileMonitor.setLatestMonitorTimeMillis(currentTimeMillis);
-
         // if the progress file is not exists, return true
         String fileHomeDir = PortalControl.toolsConfigParametersTable.get(fileMonitor.getFileHomeParam());
         String filePrefix = fileMonitor.getFilePrefix();
         String filePath = IncrementalMigrationTool.getLatestProgressFilePath(fileHomeDir, filePrefix);
-        if (!new File(filePath).exists()) {
+        File progressFile = new File(filePath);
+        if (!progressFile.exists()) {
             return true;
         }
 
-        // get the progress object of the progress file
-        String fileContent = LogViewUtils.getFullLogNoSeparator(filePath);
-        Optional<JSONObject> progressObject = parseProgressFileContent(fileContent, fileMonitor.getProcessName());
-        if (progressObject.isEmpty()) {
-            return true;
-        }
-
-        // get the timestamp of the progress file
-        Long timestamp = progressObject.get().getLong(Parameter.IncrementalStatus.TIMESTAMP);
-        if (timestamp == null) {
-            return true;
-        }
-
-        // If the progress file is not updated after 6 checks within 30 seconds, it is considered abnormal
-        if (fileMonitor.getLatestTimestamp().equals(timestamp)) {
+        long lastModified = progressFile.lastModified();
+        if (fileMonitor.getLatestModifiedTimestamp() == lastModified) {
             fileMonitor.setRepeatedTimes(fileMonitor.getRepeatedTimes() + 1);
 
             if (fileMonitor.getRepeatedTimes() >= MAX_REPEATED_TIMES) {
                 fileMonitor.setRepeatedTimes(0);
                 thread.stopTask("");
-                LOGGER.error("{}The progress file of {} is not updated after {} seconds",
-                        ErrorCode.MIGRATION_PROCESS_FUNCTION_ABNORMALLY,
-                        fileMonitor.getProcessName(), TIME_THRESHOLD_SECONDS);
+                LOGGER.error("{}The progress file of {} is not updated after {} seconds. Last modified time: {}",
+                        ErrorCode.MIGRATION_PROCESS_FUNCTION_ABNORMALLY, fileMonitor.getProcessName(),
+                        TIME_THRESHOLD_SECONDS, lastModified);
                 return false;
             }
         } else {
             // reset the latest timestamp
-            fileMonitor.setLatestTimestamp(timestamp);
+            fileMonitor.setLatestModifiedTimestamp(lastModified);
             fileMonitor.setRepeatedTimes(0);
         }
         return true;
-    }
-
-    private static Optional<JSONObject> parseProgressFileContent(String fileContent, String processName) {
-        try {
-            return Optional.of(JSONObject.parseObject(fileContent));
-        } catch (JSONException e) {
-            LOGGER.warn("The progress file of {} is not a valid json", processName);
-            return Optional.empty();
-        }
     }
 
     private static void handleDataCheck() {
