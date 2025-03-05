@@ -57,7 +57,8 @@ public class ThreadStatusController extends Thread {
     private static LinkedList<PortalStatusWriter> portalStatusWriterList = new LinkedList<>();
 
     static {
-        PortalStatusWriter psw = new PortalStatusWriter(Status.START_FULL_MIGRATION, System.currentTimeMillis());
+        PortalStatusWriter psw = new PortalStatusWriter(Status.START_FULL_MIGRATION,
+                ChangeStatusTools.getCurrentTimestamp());
         portalStatusWriterList.add(psw);
     }
 
