@@ -49,6 +49,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -389,16 +392,36 @@ public class ChangeStatusTools {
         } else {
             PortalStatusWriter portalStatusWriter;
             if (PortalControl.status == Status.ERROR) {
-                portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis(),
+                portalStatusWriter = new PortalStatusWriter(PortalControl.status, getCurrentTimestamp(),
                     PortalControl.errorMsg);
                 ThreadStatusController.addPortalStatusWriterList(portalStatusWriter);
             } else {
-                portalStatusWriter = new PortalStatusWriter(PortalControl.status, System.currentTimeMillis());
+                portalStatusWriter = new PortalStatusWriter(PortalControl.status, getCurrentTimestamp());
                 ThreadStatusController.addPortalStatusWriterList(portalStatusWriter);
             }
         }
         String str = JSON.toJSONString(ThreadStatusController.getPortalStatusWriterList());
         FileUtils.writeFile(str, PortalControl.toolsConfigParametersTable.get(Status.PORTAL_PATH), false);
+    }
+
+    /**
+     * get current timestamp
+     *
+     * @return current timestamp
+     */
+    public static long getCurrentTimestamp() {
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        String timezone = System.getProperty("datakit.timezone");
+        ZoneId zoneId = ZoneId.systemDefault();
+
+        if (timezone != null) {
+            try {
+                zoneId = ZoneId.of(timezone);
+            } catch (DateTimeException e) {
+                LOGGER.error("Invalid datakit.timezone: " + timezone);
+            }
+        }
+        return currentDateTime.atZone(zoneId).toInstant().toEpochMilli();
     }
 
     /**
