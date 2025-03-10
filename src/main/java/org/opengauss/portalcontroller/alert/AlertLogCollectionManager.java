@@ -97,7 +97,9 @@ public class AlertLogCollectionManager {
      * stop running tailer
      */
     public static void stopRunningTailer() {
-        runningTailerList.forEach(Tailer::close);
+        if (isAlertLogCollectionEnabled) {
+            runningTailerList.forEach(Tailer::close);
+        }
     }
 
     private static void loadConfig() {
