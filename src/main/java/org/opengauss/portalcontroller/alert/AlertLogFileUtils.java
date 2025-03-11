@@ -113,8 +113,10 @@ public class AlertLogFileUtils {
      * @param e throwable
      */
     public static void printUncaughtError(AlertLogEntity alertLog, Throwable e) {
-        generateAlertLog(alertLog, e);
-        writeAlertLogsToFile(List.of(alertLog));
+        if (AlertLogCollectionManager.isAlertLogCollectionEnabled()) {
+            generateAlertLog(alertLog, e);
+            writeAlertLogsToFile(List.of(alertLog));
+        }
     }
 
     private static void generateAlertLog(AlertLogEntity alertLog, Throwable e) {
