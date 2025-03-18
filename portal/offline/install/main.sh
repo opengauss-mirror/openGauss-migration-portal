@@ -16,7 +16,7 @@ portal_packages=""
 chameleon_packages=""
 
 # 有效的系统架构
-valid_system_archs=("CentOS7_x86_64" "openEuler2003_x86_64" "openEuler2003_aarch64" "openEuler2203_x86_64" "openEuler2203_aarch64")
+valid_system_archs=("CentOS7_x86_64" "openEuler2003_x86_64" "openEuler2003_aarch64" "openEuler2203_x86_64" "openEuler2203_aarch64" "openEuler2403_x86_64" "openEuler2403_aarch64")
 
 generate_usage() {
     temp=""
