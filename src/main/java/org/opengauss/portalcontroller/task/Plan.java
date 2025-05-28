@@ -889,7 +889,8 @@ public final class Plan {
         if (PortalControl.taskList.contains(Command.Start.Mysql.REVERSE)
                 && PortalControl.toolsMigrationParametersTable.get(Check.DROP_LOGICAL_SLOT).equals("true")) {
             try (PgConnection conn = JdbcUtils.getPgConnection()) {
-                JdbcUtils.changeAllTable(conn);
+                List<String> schemaTables = JdbcUtils.getMigrationSchemaTables(conn);
+                JdbcUtils.changeAllTable(conn, schemaTables);
                 JdbcUtils.dropLogicalReplicationSlot(conn);
             } catch (SQLException e) {
                 LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());

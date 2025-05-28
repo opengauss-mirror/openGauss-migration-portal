@@ -44,6 +44,7 @@ import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
+import org.opengauss.portalcontroller.verify.FullPermissionVerifyChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -206,6 +207,13 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
             Plan.slotName = "slot_" + workspaceId;
         }
         reverseSourceParams.put("slot.name", Plan.slotName);
+
+        PgConnection pgConnection = JdbcUtils.getPgConnection();
+        boolean isAdmin = FullPermissionVerifyChain.judgeSystemAdmin(pgConnection);
+        if (!isAdmin) {
+            reverseSourceParams.put("publication.autocreate.mode", "filtered");
+        }
+
         reverseSinkParams.put("topics", "opengauss_server_" + workspaceId + "_topic");
         reverseSinkParams.put("record.breakpoint.kafka.topic", "opengauss_bp_" + workspaceId + "_topic");
         reverseSinkParams.put("sink.process.file.path", toolsConfigParametersTable.get(Status.REVERSE_FOLDER));
