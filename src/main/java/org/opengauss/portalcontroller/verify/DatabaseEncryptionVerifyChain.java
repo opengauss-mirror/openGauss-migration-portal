@@ -16,6 +16,8 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
+import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,10 +71,11 @@ public class DatabaseEncryptionVerifyChain extends AbstractPreMigrationVerifyCha
 
     private String getMysqlEncryption(Connection mysqlConnection) {
         String result;
-        String selectSql = "select @@default_authentication_plugin;";
+        String user = PortalControl.toolsMigrationParametersTable.get(Mysql.USER);
+        String selectSql = String.format("select user,plugin from mysql.user where user='%s';", user);
         try {
-            result = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "@@default_authentication_plugin");
-            LOGGER.info("mysql @@default_authentication_plugin is {}", result);
+            result = JdbcUtils.selectStringValue(mysqlConnection, selectSql, "plugin");
+            LOGGER.info("mysql user authentication plugin is {}", result);
         } catch (SQLException e) {
             result = selectSql + " execute failed";
             LOGGER.error(result, e);
