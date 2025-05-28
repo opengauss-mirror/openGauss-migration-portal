@@ -55,7 +55,7 @@ public class HbaConfVerifyChain extends AbstractPreMigrationVerifyChain {
         if (pgConnection == null) {
             resultMap.put(verifyParamKey, paramMap);
             paramMap.put(Constants.KEY_RESULT, Constants.CROSS_BAR);
-        } else if (isDbVersionSupport(pgConnection)) {
+        } else if (isDbVersionSupport(pgConnection) && FullPermissionVerifyChain.judgeSystemAdmin(pgConnection)) {
             resultMap.put(verifyParamKey, paramMap);
             doVerify(pgConnection);
         } else {

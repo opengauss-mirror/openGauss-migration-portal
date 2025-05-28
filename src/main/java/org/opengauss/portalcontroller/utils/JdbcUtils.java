@@ -23,6 +23,7 @@ import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
+import org.opengauss.portalcontroller.verify.FullPermissionVerifyChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -261,34 +263,54 @@ public class JdbcUtils {
     }
 
     /**
-     * Change all table boolean.
+     * Get the table list in migration schema
      *
-     * @param connection the connection
+     * @param connection connection
+     * @return table list
      */
-    public static void changeAllTable(PgConnection connection) {
+    public static List<String> getMigrationSchemaTables(PgConnection connection) {
+        List<String> result = new ArrayList<>();
         if (connection != null) {
             String schema = PortalControl.toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA);
             try {
                 connection.setSchema(schema);
             } catch (SQLException e) {
-                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
+                LOGGER.warn("Failed to set connect schema{}", e.getMessage());
             }
+
             String selectSql = "SELECT distinct(tablename) FROM pg_tables WHERE SCHEMANAME = '" + schema + "';";
-            try (Statement selectTableStatement = connection.createStatement(); ResultSet rs =
-                    selectTableStatement.executeQuery(selectSql); Statement alterTableStatement =
-                    connection.createStatement()) {
-                ArrayList<String> arrayList = new ArrayList<>();
+            try (Statement selectTableStatement = connection.createStatement();
+                 ResultSet rs = selectTableStatement.executeQuery(selectSql)
+            ) {
                 while (rs.next()) {
                     String tableName = rs.getString("tablename");
-                    arrayList.add(tableName);
+                    result.add(tableName);
                 }
-                for (String tableName : arrayList) {
-                    String alterTableSql = String.format("ALTER table %s replica identity full", tableName);
+            } catch (SQLException e) {
+                LOGGER.error("{}Failed to get migration schema tables, error:{}",
+                        ErrorCode.SQL_EXCEPTION, e.getMessage());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Alter table replica identity full
+     *
+     * @param connection connection
+     * @param schemaTables table list
+     */
+    public static void changeAllTable(PgConnection connection, List<String> schemaTables) {
+        if (connection != null) {
+            try (Statement alterTableStatement = connection.createStatement()) {
+                for (String tableName : schemaTables) {
+                    String alterTableSql = String.format("ALTER table \"%s\" replica identity full;", tableName);
                     alterTableStatement.execute(alterTableSql);
                 }
                 LOGGER.info("Alter all table replica identity full finished.");
             } catch (SQLException e) {
-                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
+                LOGGER.error("{}Failed to alter table replica identity full, error: {}",
+                        ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
         }
     }
@@ -321,20 +343,42 @@ public class JdbcUtils {
                 }
                 Plan.slotName = slotName;
                 LOGGER.info("Create logical replication slot " + slotName + " finished.");
+            } catch (SQLException e) {
+                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Create publication
+     *
+     * @param connection connection
+     * @param schemaTables schema table list
+     */
+    public static void createPublication(PgConnection connection, List<String> schemaTables) {
+        if (connection != null) {
+            try (Statement statement = connection.createStatement()) {
                 String selectPublicationSql = "SELECT pubname from pg_publication";
                 String publicationName = "dbz_publication";
                 String pubName = "pubname";
                 boolean isPublicationExist = isSpecifiedNameExist(statement, selectPublicationSql, publicationName,
-                    pubName);
+                        pubName);
+
                 if (isPublicationExist) {
                     LOGGER.info("PUBLICATION dbz_publication already exists.");
                 } else {
-                    String createPublicationSql = "CREATE PUBLICATION dbz_publication FOR ALL TABLES;";
-                    statement.execute(createPublicationSql);
+                    String createSql = "CREATE PUBLICATION dbz_publication FOR ALL TABLES;";
+                    boolean systemAdmin = FullPermissionVerifyChain.judgeSystemAdmin(connection);
+                    if (!systemAdmin) {
+                        String tables = String.join(",", schemaTables);
+                        createSql = String.format("CREATE PUBLICATION dbz_publication FOR TABLE %s;", tables);
+                    }
+
+                    statement.execute(createSql);
                     LOGGER.info("Create publication dbz_publication finished.");
                 }
             } catch (SQLException e) {
-                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
+                LOGGER.error("{}Failed to create publication, error: {}", ErrorCode.SQL_EXCEPTION, e.getMessage());
             }
         }
     }

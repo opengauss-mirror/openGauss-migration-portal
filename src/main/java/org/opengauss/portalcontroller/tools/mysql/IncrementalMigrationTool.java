@@ -547,8 +547,10 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                 fullMigrationTool.runDetach();
             }
             try (PgConnection conn = JdbcUtils.getPgConnection()) {
-                JdbcUtils.changeAllTable(conn);
+                List<String> schemaTables = JdbcUtils.getMigrationSchemaTables(conn);
+                JdbcUtils.changeAllTable(conn, schemaTables);
                 JdbcUtils.createLogicalReplicationSlot(conn);
+                JdbcUtils.createPublication(conn, schemaTables);
             } catch (SQLException e) {
                 PortalException portalException = new PortalException("SQL exception", "select global variable",
                         e.getMessage());

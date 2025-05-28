@@ -69,7 +69,7 @@ public class ReversePermissionVerifyChain extends FullPermissionVerifyChain {
             databaseMap.put(Constants.KEY_OPENGAUSS, Constants.CROSS_BAR);
         } else {
             int result;
-            if (super.judgeSystemAdmin(pgConnection) || (hasReplicationRolePermission(pgConnection))) {
+            if (judgeSystemAdmin(pgConnection) || (hasReplicationRolePermission(pgConnection))) {
                 result = Constants.KEY_FLAG_TRUE;
             } else {
                 result = Constants.KEY_FLAG_FALSE;

@@ -120,7 +120,7 @@ public class FullPermissionVerifyChain extends AbstractPreMigrationVerifyChain {
      * @param pgConnection pgConnection
      * @return is sysadmin or not
      */
-    protected boolean judgeSystemAdmin(PgConnection pgConnection) {
+    public static boolean judgeSystemAdmin(PgConnection pgConnection) {
         boolean isAdmin = false;
         try {
             String permissionStr = JdbcUtils.selectStringValue(pgConnection,
