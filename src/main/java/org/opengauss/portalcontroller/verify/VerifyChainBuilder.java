@@ -55,6 +55,7 @@ public class VerifyChainBuilder {
             .addChain(new ReplicationNumberVerifyChain())
             .addChain(new EnableSlotLogVerifyChain())
             .addChain(new HbaConfVerifyChain())
+            .addChain(new GtidSetVerifyChain())
             .build();
     }
 
