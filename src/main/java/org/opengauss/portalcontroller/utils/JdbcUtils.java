@@ -60,7 +60,7 @@ public class JdbcUtils {
         String ip = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_HOST);
         String port = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_PORT);
         String databaseName = PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
-        String url = "jdbc:mysql://" + ip + ":" + port + "/" + databaseName;
+        String url = "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?useSSL=false";
         String user = PortalControl.toolsMigrationParametersTable.get(Mysql.USER);
         String password = PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD);
         String driver = "com.mysql.cj.jdbc.Driver";
@@ -69,7 +69,7 @@ public class JdbcUtils {
             Class.forName(driver);
             connection = DriverManager.getConnection(url, user, password);
         } catch (SQLException | ClassNotFoundException e) {
-            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, e.getMessage());
+            LOGGER.error(ErrorCode.SQL_EXCEPTION.toString(), e);
         }
         return connection;
     }
