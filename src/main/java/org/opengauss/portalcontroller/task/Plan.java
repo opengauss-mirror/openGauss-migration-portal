@@ -704,7 +704,7 @@ public final class Plan {
         }
         List<RunningTaskThread> missThreadList = new LinkedList<>();
         for (RunningTaskThread thread : runningTaskThreadsList) {
-            int pid = ProcessUtils.getCommandPid(thread.getProcessName());
+            int pid = getPid(thread.getProcessName());
             if (hasStoppedThreadList.contains(thread)) {
                 LOGGER.info("{} is stopped.", thread.getName());
                 continue;
@@ -734,6 +734,18 @@ public final class Plan {
         runningTaskThreadsList.removeAll(missThreadList);
         hasStoppedThreadList.clear();
         return isAlive;
+    }
+
+    private static int getPid(String processName) {
+        int commandPid = ProcessUtils.getCommandPid(processName);
+        if (commandPid != -1) {
+            return commandPid;
+        }
+
+        if (!processName.contains("ConnectStandalone")) {
+            return -1;
+        }
+        return ProcessUtils.getCommandPidNeedRetry(processName);
     }
 
     private static boolean checkProcessNormally(RunningTaskThread thread) {
@@ -815,7 +827,7 @@ public final class Plan {
         stringArrayList.add(Method.Run.KAFKA);
         stringArrayList.add(Method.Run.REGISTRY);
         for (String methodName : stringArrayList) {
-            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(methodName)) == -1) {
+            if (ProcessUtils.getCommandPidNeedRetry(Task.getTaskProcessMap().get(methodName)) == -1) {
                 LOGGER.error("Start methond={} failed.", methodName);
                 return false;
             }

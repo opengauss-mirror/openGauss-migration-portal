@@ -96,6 +96,31 @@ public class ProcessUtils {
     }
 
     /**
+     * Gets command pid need retry
+     *
+     * @param processName the process name
+     * @return the command pid
+     */
+    public static int getCommandPidNeedRetry(String processName) {
+        for (int i = 0; i < 6; i++) {
+            int commandPid = getCommandPid(processName);
+            if (commandPid != -1) {
+                return commandPid;
+            }
+
+            try {
+                if (i < 5) {
+                    LOGGER.warn("Can not find process '{}', try again after 1s", processName);
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                LOGGER.warn("Thread sleep interrupted, when get command pid, error: {}", e.getMessage());
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Gets running task pid.
      *
      * @param sign the sign
