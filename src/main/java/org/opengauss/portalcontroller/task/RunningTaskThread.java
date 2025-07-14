@@ -185,12 +185,10 @@ public class RunningTaskThread {
             return;
         }
         try {
-            String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
             if (order.equals("")) {
-                String killOrder = "kill -9 " + pid;
-                RuntimeExecUtils.executeOrder(killOrder, 3000, errorPath);
+                killProcess();
             } else {
-                killProcessByOrder(order, errorPath);
+                killProcessByOrder(order, PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH));
             }
         } catch (PortalException e) {
             e.setRequestInformation("Stop " + name + " failed.");
@@ -216,6 +214,34 @@ public class RunningTaskThread {
             RuntimeExecUtils.executeOrder(killOrder, 3000, errorPath);
         } else {
             RuntimeExecUtils.executeOrder(order, 3000, errorPath);
+        }
+    }
+
+    private void killProcess() throws PortalException {
+        int processStopTime = 5000;
+        ProcessUtils.killProcessByCommandSnippet(processName, processStopTime, false);
+
+        int oneSecond = 1000;
+        while (processStopTime > 0) {
+            try {
+                Thread.sleep(oneSecond);
+            } catch (InterruptedException e) {
+                LOGGER.warn("Interrupted while waiting for process to stop", e);
+            }
+
+            processStopTime -= oneSecond;
+            if (ProcessUtils.getCommandPid(processName) == -1) {
+                LOGGER.info("{} stopped", processName);
+                return;
+            }
+        }
+
+        ProcessUtils.killProcessByCommandSnippet(processName, processStopTime, true);
+        pid = ProcessUtils.getCommandPid(processName);
+        if (pid == -1) {
+            LOGGER.info("{} stopped", processName);
+        } else {
+            LOGGER.error("Failed to stop {}, please kill it manually, pid: {}", processName, pid);
         }
     }
 }
