@@ -15,6 +15,7 @@ package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.ErrorCode;
+import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.task.Plan;
@@ -319,5 +320,23 @@ public class ProcessUtils {
         LOGGER.info("checkIncProcess {} Plan.pause={} and PortalControl.status={}", methodName, Plan.pause,
             PortalControl.status);
         LOGGER.error("{}{}", ErrorCode.PROCESS_EXITS_ABNORMALLY, errorStr);
+    }
+
+    /**
+     * Kill the processes with the given command snippet
+     *
+     * @param commandSnippet the command snippet
+     * @param time the time
+     * @param isForce if true, use kill -9 to kill the process, otherwise use kill -15 to kill the process
+     * @throws PortalException the portal exception
+     */
+    public static void killProcessByCommandSnippet(String commandSnippet, int time, boolean isForce)
+            throws PortalException {
+        String killCommandPart = isForce ? "xargs -I {} kill -s KILL {}"
+                : "xargs -I {} kill -s TERM {} || xargs -I {} kill -s KILL {}";
+        String killCommand = String.format("ps -ef | grep -- '%s' | grep -v grep | awk '{print $2}' | %s",
+                commandSnippet, killCommandPart);
+        RuntimeExecUtils.executeOrderByBash(killCommand, time,
+                PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH));
     }
 }
