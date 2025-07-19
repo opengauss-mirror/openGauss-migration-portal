@@ -13,7 +13,6 @@
 
 package org.opengauss.portalcontroller.tools.mysql;
 
-import com.alibaba.fastjson.JSON;
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Check;
@@ -33,12 +32,10 @@ import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.software.Confluent;
 import org.opengauss.portalcontroller.software.Datacheck;
 import org.opengauss.portalcontroller.software.Software;
-import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.common.IpTool;
-import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
@@ -313,11 +310,7 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean reportProgress(String workspaceId) {
-        ThreadStatusController.getFullMigrationStatus().setTable(
-                getdataCheckTableStatus(ThreadStatusController.getFullMigrationStatus().getTable()));
-        String fullMigrationStatusString = JSON.toJSONString(ThreadStatusController.getFullMigrationStatus());
-        FileUtils.writeFile(fullMigrationStatusString,
-                PortalControl.toolsConfigParametersTable.get(Status.FULL_PATH), false);
+        getdataCheckTableStatus();
         return true;
     }
 }

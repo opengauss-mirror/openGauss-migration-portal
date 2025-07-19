@@ -25,7 +25,6 @@ import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
-import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.entity.ObjectEntry;
@@ -116,33 +115,17 @@ public class ChangeStatusTools {
 
     /**
      * getdataCheckTableStatus
-     *
-     * @param tableStatusList tableStatusList
-     * @return ArrayList<TableStatus>
      */
-    public static ArrayList<TableStatus> getdataCheckTableStatus(ArrayList<TableStatus> tableStatusList) {
+    public static void getdataCheckTableStatus() {
         boolean isFullCheck = PortalControl.status >= Status.START_FULL_MIGRATION_CHECK;
         String checkResultPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT);
         if (new File(checkResultPath).exists() && isFullCheck) {
-            tableStatusList = getDatacheckTableStatus(tableStatusList);
             String progressPath = checkResultPath + "progress.log";
             String destinationPath = PortalControl.toolsConfigParametersTable.get(Status.FULL_CHECK_PATH);
             changeDatacheckSpeedStatus(progressPath, destinationPath);
         }
-        return tableStatusList;
     }
 
-    /**
-     * Gets datacheck table status.
-     *
-     * @param tableStatusArrayList the table status array list
-     * @return the datacheck table status
-     */
-    public static ArrayList<TableStatus> getDatacheckTableStatus(ArrayList<TableStatus> tableStatusArrayList) {
-        String successPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT) + "success.log";
-        String failPath = PortalControl.toolsConfigParametersTable.get(Check.Result.FULL_CURRENT) + "failed.log";
-        return getDatacheckTableStatus(successPath, tableStatusArrayList, failPath);
-    }
 
     /**
      * Gets chameleon object status.
@@ -543,67 +526,6 @@ public class ChangeStatusTools {
             iterator.next();
         }
         return status;
-    }
-
-    /**
-     * Gets datacheck table status.
-     *
-     * @param successPath          the success path
-     * @param tableStatusArrayList the table status array list
-     * @param failPath             the fail path
-     * @return the datacheck table status
-     */
-    public static ArrayList<TableStatus> getDatacheckTableStatus(String successPath,
-                                                                 ArrayList<TableStatus> tableStatusArrayList,
-                                                                 String failPath) {
-        String successStr = LogViewUtils.getFullLog(successPath);
-        if (!successStr.equals("")) {
-            successStr = "[" + successStr.substring(0, successStr.length() - 1) + "]";
-            JSONArray array = JSONArray.parseArray(successStr);
-            Iterator iterator = array.iterator();
-            int index = 0;
-            while (iterator.hasNext()) {
-                String tableName = array.getJSONObject(index).getString("table");
-                for (TableStatus tableStatus : tableStatusArrayList) {
-                    if (tableStatus.getName().equals(tableName)) {
-                        tableStatus.setPercent(1.0);
-                        tableStatus.setStatus(Status.Object.FULL_MIGRATION_CHECK_FINISHED);
-                        break;
-                    }
-                }
-                index++;
-                iterator.next();
-            }
-        }
-        String failStr = LogViewUtils.getFullLog(failPath);
-        if (!failStr.equals("")) {
-            failStr = "[" + failStr.substring(0, failStr.length() - 1) + "]";
-            JSONArray array = JSONArray.parseArray(failStr);
-            Iterator iterator = array.iterator();
-            int index = 0;
-            while (iterator.hasNext()) {
-                String tableName = array.getJSONObject(index).getString("table");
-                for (TableStatus tableStatus : tableStatusArrayList) {
-                    if (tableStatus.getName().equals(tableName)) {
-                        tableStatus.setStatus(Status.Object.CHECK_FAILED);
-                        String errorMsg = array.getJSONObject(index).getString("message");
-                        errorMsg += "If you want to repair data.please read the following files:";
-                        String repairFileName =
-                                "repair_" + PortalControl.toolsMigrationParametersTable.get(Mysql.DATABASE_NAME) + "_"
-                                        + tableName + "_0_0.txt";
-                        String repairPath = PathUtils.combainPath(true,
-                                PortalControl.toolsConfigParametersTable.get(Check.Result.FULL) + "result",
-                                repairFileName);
-                        errorMsg += repairPath;
-                        tableStatus.setErrorMsg(errorMsg);
-                        break;
-                    }
-                }
-                index++;
-                iterator.next();
-            }
-        }
-        return tableStatusArrayList;
     }
 
     /**
