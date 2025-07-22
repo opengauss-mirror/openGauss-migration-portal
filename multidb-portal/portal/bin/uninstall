@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+# Description: Migration Tool Uninstallation Script
+
+set -euo pipefail
+
+usage() {
+    cat <<EOF
+Migration Tool Uninstallation Script
+
+Usage:
+  Basic Usage:
+    $0 tools                      Uninstall migration tools
+    $0 -h|--help                  Show this help message
+
+Tips:
+  1. Requires Java 11 or later to be installed.
+EOF
+    exit 1
+}
+
+# Check if the first argument is provided
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+# Check for help argument
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+fi
+
+# Function to check Java version
+check_java_version() {
+    local java_version
+    local version_num
+
+    if ! java_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}'); then
+        echo "Error: Java is not installed or not in PATH"
+        return 1
+    fi
+
+    if [[ "$java_version" =~ ^1\. ]]; then
+        version_num=$(echo "$java_version" | cut -d. -f2)
+    else
+        version_num=$(echo "$java_version" | cut -d. -f1)
+    fi
+
+    if [ "$version_num" -lt 11 ]; then
+        echo "Error: Java 11 or later is required (found Java $java_version)"
+        return 1
+    fi
+    return 0
+}
+
+# Verify Java is available and version >= 11
+if ! check_java_version; then
+    exit 1
+fi
+
+COMPONENT="$1"
+shift
+
+# Validate component - only "tools" is supported for uninstall
+case "$COMPONENT" in
+    tools)
+        ;;
+    *)
+        echo "Error: Invalid component name '$COMPONENT'. Only 'tools' can be uninstalled."
+        usage
+        ;;
+esac
+
+# Build Java command arguments
+ARGS=("--uninstall" "$COMPONENT")
+
+if [ $# -gt 0 ]; then
+    echo "Error: Unknown parameter '$1'"
+    usage
+fi
+
+# Change to project root
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$PROJECT_ROOT" || {
+    echo "Error: Failed to change to project directory"
+    exit 1
+}
+
+# Find the JAR file
+JAVA_PROGRAM=$(ls openGauss-portal-*.jar 2> /dev/null | head -n 1)
+if [[ -z "$JAVA_PROGRAM" ]]; then
+    echo "Error: No openGauss-portal-*.jar file found in $PROJECT_ROOT"
+    exit 1
+fi
+
+# Execute Java program
+exec java -Dfile.encoding=UTF-8 -jar "$JAVA_PROGRAM" "${ARGS[@]}"

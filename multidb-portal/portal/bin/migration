@@ -1,0 +1,147 @@
+#!/bin/bash
+
+# Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+# Description: Migration Operation Script
+
+set -euo pipefail
+
+usage() {
+    cat <<EOF
+Migration Operation Script
+
+Usage:
+  Basic Usage:
+    $0 start <task_id>                    Start migration
+    $0 status <task_id>                   Check migration status
+    $0 status <task_id> [-d|--detail]     Generate migration detail csv file
+    $0 stop <task_id>                     Stop migration
+    $0 start_incremental <task_id>        Start incremental migration
+    $0 resume_incremental <task_id>       Resume incremental migration
+    $0 stop_incremental <task_id>         Stop incremental migration
+    $0 restart_incremental <task_id>      Restart incremental migration
+    $0 start_reverse <task_id>            Start reverse migration
+    $0 resume_reverse <task_id>           Resume reverse migration
+    $0 stop_reverse <task_id>             Stop reverse migration
+    $0 restart_reverse <task_id>          Restart reverse migration
+    $0 -h|--help                          Show this help message
+
+  Examples:
+    $0 start 1
+    $0 status 1
+    $0 status 1 -d
+    $0 stop 1
+    $0 start_incremental 1
+
+Tips:
+  1. Requires Java 11 or later to be installed.
+  2. Task ID must correspond to an existing migration task.
+EOF
+    exit 1
+}
+
+# Function to check if task exists
+task_exists() {
+    local task_id=$1
+    local task_dir="$PROJECT_ROOT/workspace/task_$task_id"
+    [[ -d "$task_dir" ]]
+}
+
+# Check if the first argument is provided
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+# Check for help argument
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+fi
+
+# Function to check Java version
+check_java_version() {
+    local java_version
+    local version_num
+
+    if ! java_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}'); then
+        echo "Error: Java is not installed or not in PATH"
+        return 1
+    fi
+
+    if [[ "$java_version" =~ ^1\. ]]; then
+        version_num=$(echo "$java_version" | cut -d. -f2)
+    else
+        version_num=$(echo "$java_version" | cut -d. -f1)
+    fi
+
+    if [ "$version_num" -lt 11 ]; then
+        echo "Error: Java 11 or later is required (found Java $java_version)"
+        return 1
+    fi
+    return 0
+}
+
+# Verify Java is available and version >= 11
+if ! check_java_version; then
+    exit 1
+fi
+
+# Change to project root
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$PROJECT_ROOT" || {
+    echo "Error: Failed to change to project directory"
+    exit 1
+}
+
+# Ensure workspace directory exists
+mkdir -p "$PROJECT_ROOT/workspace"
+
+OPERATION="$1"
+shift
+
+# Validate operation and arguments
+case "$OPERATION" in
+    start|status|stop|start_incremental|stop_incremental|start_reverse|stop_reverse| \
+    resume_incremental|restart_incremental|resume_reverse|restart_reverse)
+        if [ $# -lt 1 ]; then
+            echo "Error: '$OPERATION' operation requires task_id"
+            usage
+        fi
+        TASK_ID="$1"
+
+        # Check if task already exists
+        if ! task_exists "$TASK_ID"; then
+            echo "Error: Task $TASK_ID does not exist in $PROJECT_ROOT/workspace/task_$TASK_ID"
+            exit 1
+        fi
+        shift
+        ;;
+    *)
+        echo "Error: Invalid operation name '$OPERATION'"
+        usage
+        ;;
+esac
+
+# Build Java command arguments
+ARGS=("--migration" "$OPERATION" "$TASK_ID")
+if [ $# -gt 0 ] && [[ "$1" == "-d" || "$1" == "--detail" ]]; then
+    ARGS+=("--detail")
+    shift
+fi
+
+if [ $# -gt 0 ]; then
+    echo "Error: Too many arguments provided"
+    usage
+fi
+
+# Find the JAR file
+JAVA_PROGRAM=$(ls openGauss-portal-*.jar 2> /dev/null | head -n 1)
+if [[ -z "$JAVA_PROGRAM" ]]; then
+    echo "Error: No openGauss-portal-*.jar file found in $PROJECT_ROOT"
+    exit 1
+fi
+
+# Set workspace directory
+WORKSPACE_DIR="$PROJECT_ROOT/workspace/task_$TASK_ID"
+
+# Execute Java program in the workspace directory
+(cd "$WORKSPACE_DIR" && exec java -Dfile.encoding=UTF-8 -jar "$PROJECT_ROOT/$JAVA_PROGRAM" "${ARGS[@]}")
