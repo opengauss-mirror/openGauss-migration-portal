@@ -50,6 +50,7 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.sql.Connection;
@@ -416,9 +417,17 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
      */
     @Override
     public boolean stop() {
+        String name = "";
         while (!Plan.stopPlan && !Plan.stopIncrementalMigration
                 && !PortalControl.taskList.contains(Command.Start.Mysql.INCREMENTAL_CHECK)) {
-            LOGGER.info("Incremental migration is running...");
+            LOGGER.info("Incremental migration is running... {}", Plan.runIncrementalMigrationEndpoint);
+            if (StringUtils.hasLength(Plan.runIncrementalMigrationEndpoint)) {
+                name = Plan.runIncrementalMigrationEndpoint;
+                Plan.runIncrementalMigrationEndpoint = "";
+                LOGGER.info("resume broken transfer of incremental migration endpoint: {}", name);
+                startConnectMigrationEndpoint(name);
+                Plan.pause = false;
+            }
             ProcessUtils.sleepThread(1000, "running incremental migraiton");
         }
         LOGGER.info("Plan.stopIncrementalMigration = {} Plan.stopPlan={}  PortalControl.taskList.contains(Command"
@@ -429,6 +438,13 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
             beforeStop(taskThreadList);
         }
         return true;
+    }
+
+    private void startConnectMigrationEndpoint(String connectMigrationEndpoint) {
+        LOGGER.info("incrementMigrationResumeBrokenTransfer start task  {}", connectMigrationEndpoint);
+        Task.startTaskMethod(connectMigrationEndpoint, 5000, "", new LogFileListener());
+        PortalControl.status = Status.RUNNING_INCREMENTAL_MIGRATION;
+        Plan.pause = false;
     }
 
     /**

@@ -64,12 +64,11 @@ public class MigrationModeConstants {
             ),
             new MigrationMode("plan2",
                     List.of(MigrationPhase.FULL_MIGRATION, MigrationPhase.FULL_DATA_CHECK,
-                            MigrationPhase.INCREMENTAL_MIGRATION, MigrationPhase.INCREMENTAL_DATA_CHECK)
+                            MigrationPhase.INCREMENTAL_MIGRATION)
             ),
             new MigrationMode("plan3",
                     List.of(MigrationPhase.FULL_MIGRATION, MigrationPhase.FULL_DATA_CHECK,
-                            MigrationPhase.INCREMENTAL_MIGRATION, MigrationPhase.INCREMENTAL_DATA_CHECK,
-                            MigrationPhase.REVERSE_MIGRATION)
+                            MigrationPhase.INCREMENTAL_MIGRATION, MigrationPhase.REVERSE_MIGRATION)
             ),
             new MigrationMode(MigrationPhase.FULL_MIGRATION.getPhaseName(), List.of(MigrationPhase.FULL_MIGRATION)),
             new MigrationMode(MigrationPhase.FULL_DATA_CHECK.getPhaseName(), List.of(MigrationPhase.FULL_DATA_CHECK)),

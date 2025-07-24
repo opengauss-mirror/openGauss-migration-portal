@@ -283,13 +283,11 @@ public class PortalControl {
         plan2.add("start mysql full migration");
         plan2.add("start mysql full migration datacheck");
         plan2.add("start mysql incremental migration");
-        plan2.add("start mysql incremental migration datacheck");
         planList.put("plan2", plan2);
         List<String> plan3 = new ArrayList<>();
         plan3.add("start mysql full migration");
         plan3.add("start mysql full migration datacheck");
         plan3.add("start mysql incremental migration");
-        plan3.add("start mysql incremental migration datacheck");
         plan3.add("start mysql reverse migration");
         planList.put("plan3", plan3);
     }
