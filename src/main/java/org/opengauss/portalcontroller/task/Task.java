@@ -22,6 +22,8 @@ import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
 import org.opengauss.portalcontroller.alert.AlertLogConstants;
 import org.opengauss.portalcontroller.alert.ErrorCode;
+import org.opengauss.portalcontroller.constant.Mysql;
+import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalDatacheckTool;
@@ -54,6 +56,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 import static org.opengauss.portalcontroller.PortalControl.workspaceId;
 
 /**
@@ -524,8 +527,8 @@ public class Task {
         }
 
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        RuntimeExecUtils.executeConnectStandaloneOrder(
-                order, PROCESS_START_TIME, errorPath, "Start mysql connector source");
+        RuntimeExecUtils.executeConnectStandaloneOrder(order, PROCESS_START_TIME, errorPath,
+                PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD), "Start mysql connector source");
     }
 
     /**
@@ -552,8 +555,8 @@ public class Task {
         }
 
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        RuntimeExecUtils.executeConnectStandaloneOrder(
-                order, PROCESS_START_TIME, errorPath, "Start mysql connector sink");
+        RuntimeExecUtils.executeConnectStandaloneOrder(order, PROCESS_START_TIME, errorPath,
+                PortalControl.toolsMigrationParametersTable.get(Opengauss.PASSWORD), "Start mysql connector sink");
     }
 
     /**
@@ -581,10 +584,10 @@ public class Task {
         }
 
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        RuntimeExecUtils.executeConnectStandaloneOrder(
-                order, REVERSE_START_TIME, errorPath, "Start opengauss connector source");
+        RuntimeExecUtils.executeConnectStandaloneOrder(order, REVERSE_START_TIME, errorPath,
+                PortalControl.toolsMigrationParametersTable.get(Opengauss.PASSWORD),
+                "Start opengauss connector source");
     }
-
 
     /**
      * Run reverse kafka connect sink.
@@ -610,8 +613,8 @@ public class Task {
         }
 
         String errorPath = PortalControl.toolsConfigParametersTable.get(Parameter.ERROR_PATH);
-        RuntimeExecUtils.executeConnectStandaloneOrder(
-                order, REVERSE_START_TIME, errorPath, "Start opengauss connector sink");
+        RuntimeExecUtils.executeConnectStandaloneOrder(order, REVERSE_START_TIME, errorPath,
+                PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD), "Start opengauss connector sink");
     }
 
     @Builder
@@ -671,8 +674,8 @@ public class Task {
                 .param("--sink")
                 .build()
                 .getRunCommamd();
-        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath,
-                errorPath, false, "Start datacheck sink");
+        RuntimeExecUtils.executeStartDataCheckOrder(order, PortalControl.portalWorkSpacePath, errorPath,
+                "Start datacheck sink", PortalControl.toolsMigrationParametersTable.get(Opengauss.PASSWORD));
     }
 
     /**
@@ -709,8 +712,8 @@ public class Task {
                 .param("--source")
                 .build()
                 .getRunCommamd();
-        RuntimeExecUtils.executeStartOrder(order, PROCESS_START_TIME, PortalControl.portalWorkSpacePath,
-                errorPath, false, "Start datacheck source");
+        RuntimeExecUtils.executeStartDataCheckOrder(order, PortalControl.portalWorkSpacePath, errorPath,
+                "Start datacheck source", PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD));
     }
 
     /**

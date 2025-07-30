@@ -131,7 +131,6 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         reverseSourceParams.put(Debezium.Source.HOST, toolsMigrationParametersTable.get(Opengauss.DATABASE_HOST));
         reverseSourceParams.put(Debezium.Source.PORT, toolsMigrationParametersTable.get(Opengauss.DATABASE_PORT));
         reverseSourceParams.put(Debezium.Source.USER, toolsMigrationParametersTable.get(Opengauss.USER));
-        reverseSourceParams.put(Debezium.Source.PASSWORD, toolsMigrationParametersTable.get(Opengauss.PASSWORD));
         reverseSourceParams.put(Debezium.Source.NAME, toolsMigrationParametersTable.get(Opengauss.DATABASE_NAME));
         reverseSourceParams.put(Debezium.Source.ISCLUSTER, Opengauss.getDatabaseIsClusterDefaultValue());
         if (Opengauss.isOpengaussClusterAvailable()) {
@@ -144,7 +143,6 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         }
 
         reverseSinkParams.put(Debezium.Sink.Mysql.USER, toolsMigrationParametersTable.get(Mysql.USER));
-        reverseSinkParams.put(Debezium.Sink.Mysql.PASSWORD, toolsMigrationParametersTable.get(Mysql.PASSWORD));
         reverseSinkParams.put(Debezium.Sink.Mysql.NAME, toolsMigrationParametersTable.get(Mysql.DATABASE_NAME));
         reverseSinkParams.put(Debezium.Sink.Mysql.PORT, toolsMigrationParametersTable.get(Mysql.DATABASE_PORT));
         reverseSinkParams.put(Debezium.Sink.Mysql.URL, toolsMigrationParametersTable.get(Mysql.DATABASE_HOST));
@@ -318,6 +316,8 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         if (Strings.isNotBlank(openGaussSourceParams)) {
             configDeleteParamsMap.put(Debezium.Source.REVERSE_CONFIG_PATH, List.of(openGaussSourceParams.split(",")));
         }
+        configDeleteParamsMap.put(Debezium.Sink.REVERSE_CONFIG_PATH, List.of(Debezium.Sink.Mysql.PASSWORD));
+        configDeleteParamsMap.put(Debezium.Source.REVERSE_CONFIG_PATH, List.of(Debezium.Source.PASSWORD));
     }
 
     /**
