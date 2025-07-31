@@ -134,8 +134,6 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
         checkSourceParams.put(Check.Parameters.URL, mysqlDatacheckUrl);
         String mysqlUserName = toolsMigrationParametersTable.get(Mysql.USER);
         checkSourceParams.put(Check.Parameters.USER_NAME, mysqlUserName);
-        String mysqlUserPassword = toolsMigrationParametersTable.get(Mysql.PASSWORD);
-        checkSourceParams.put(Check.Parameters.PASSWORD, mysqlUserPassword);
         ArrayList<Integer> portList = ParamsUtils.getAvailablePorts(checkPort, 3, 1000);
         int servicePort = portList.get(2);
         checkSourceParams.put("spring.check.server-uri", "http://127.0.0.1:" + servicePort);
@@ -154,8 +152,6 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
         checkSinkParams.put(Check.Parameters.URL, opengaussDatacheckUrl);
         String opengaussUserName = toolsMigrationParametersTable.get(Opengauss.USER);
         checkSinkParams.put(Check.Parameters.USER_NAME, opengaussUserName);
-        String opengaussUserPassword = toolsMigrationParametersTable.get(Opengauss.PASSWORD);
-        checkSinkParams.put(Check.Parameters.PASSWORD, opengaussUserPassword);
         checkSinkParams.put("spring.check.server-uri", "http://127.0.0.1:" + servicePort);
         int sinkPort = portList.get(1);
         checkSinkParams.put("server.port", sinkPort);

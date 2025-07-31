@@ -84,12 +84,9 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             configMap.put(Chameleon.Parameters.Opengauss.HOST, opengaussDatabaseHost);
             configMap.put(Chameleon.Parameters.Opengauss.PORT, opengaussDatabasePort);
             configMap.put(Chameleon.Parameters.Mysql.USER, toolsMigrationParametersTable.get(Mysql.USER));
-            configMap.put(Chameleon.Parameters.Mysql.PASSWORD, toolsMigrationParametersTable.get(Mysql.PASSWORD));
             String mysqlDatabaseName = toolsMigrationParametersTable.get(Mysql.DATABASE_NAME);
             configMap.put(Chameleon.Parameters.Mysql.NAME, mysqlDatabaseName);
             configMap.put(Chameleon.Parameters.Opengauss.USER, toolsMigrationParametersTable.get(Opengauss.USER));
-            configMap.put(Chameleon.Parameters.Opengauss.PASSWORD,
-                    toolsMigrationParametersTable.get(Opengauss.PASSWORD));
             String opengaussDatabaseName = toolsMigrationParametersTable.get(Opengauss.DATABASE_NAME);
             configMap.put(Chameleon.Parameters.Opengauss.NAME, opengaussDatabaseName);
             configMap.put(Chameleon.Parameters.Mysql.MAPPING + "." + mysqlDatabaseName,
@@ -595,7 +592,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         String chameleonOrder = jointChameleonOrders(parametersTable, order);
         String logPath = PortalControl.toolsConfigParametersTable.get(Chameleon.LOG_PATH);
         try {
-            RuntimeExecUtils.executeOrder(chameleonOrder, 2000, chameleonVenvPath, logPath, true, orderList);
+            RuntimeExecUtils.executeChameleonOrder(chameleonOrder, 2000, chameleonVenvPath, logPath, orderList);
         } catch (PortalException e) {
             e.setRequestInformation("Start chameleon order " + order + " failed");
             LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());

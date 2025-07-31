@@ -17,7 +17,10 @@ package org.opengauss.portalcontroller.utils;
 
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.ErrorCode;
+import org.opengauss.portalcontroller.constant.Mysql;
+import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.task.Task;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
@@ -30,6 +33,8 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
 /**
  * RuntimeExecUtils
@@ -141,6 +146,67 @@ public class RuntimeExecUtils {
                     }
                 }
             }
+        } catch (IOException e) {
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
+        } catch (InterruptedException e) {
+            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
+        }
+    }
+
+    /**
+     * Execute chameleon order.
+     *
+     * @param command the command
+     * @param time the time
+     * @param workDirectory the work directory
+     * @param errorFilePath the error file path
+     * @param outPutStringList the output string list
+     * @throws PortalException the portal exception
+     */
+    public static void executeChameleonOrder(String command, int time, String workDirectory, String errorFilePath,
+            ArrayList<String> outPutStringList) throws PortalException {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        String[] commands = command.split(" ");
+        processBuilder.directory(new File(workDirectory));
+        processBuilder.command(commands);
+        processBuilder.redirectErrorStream(true);
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
+        processBuilder.environment().put("enable.env.password", "true");
+        processBuilder.environment().put("sources.db_conn.password",
+                PortalControl.toolsMigrationParametersTable.get(Mysql.PASSWORD));
+        processBuilder.environment().put("pg_conn.password",
+                PortalControl.toolsMigrationParametersTable.get(Opengauss.PASSWORD));
+
+        try {
+            Process process = processBuilder.start();
+            process.waitFor(time, TimeUnit.MILLISECONDS);
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(),
+                    StandardCharsets.UTF_8))) {
+                for (String outputOrder : outPutStringList) {
+                    bw.write(outputOrder);
+                    ProcessUtils.sleepThread(1000, "input parameters");
+                }
+            }
+        } catch (IOException e) {
+            throw new PortalException("IO exception", "executing command " + command, e.getMessage());
+        } catch (InterruptedException e) {
+            throw new PortalException("Interrupted exception", "executing command " + command, e.getMessage());
+        }
+    }
+
+    private static void executeDataCheckOrder(String command, int time, String workDirectory, String errorFilePath,
+                                             String password) throws PortalException {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        String[] commands = command.split(" ");
+        processBuilder.directory(new File(workDirectory));
+        processBuilder.command(commands);
+        processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(new File(errorFilePath)));
+        processBuilder.environment().put("enable.env.password", "true");
+        processBuilder.environment().put("spring.datasource.password", password);
+
+        try {
+            Process process = processBuilder.start();
+            process.waitFor(time, TimeUnit.MILLISECONDS);
         } catch (IOException e) {
             throw new PortalException("IO exception", "executing command " + command, e.getMessage());
         } catch (InterruptedException e) {
@@ -421,22 +487,56 @@ public class RuntimeExecUtils {
     }
 
     /**
+     * Execute start data check order.
+     *
+     * @param command            the command
+     * @param workDirectory      the work directory
+     * @param errorFilePath      the error file path
+     * @param information        the information
+     * @param password           the password
+     */
+    public static void executeStartDataCheckOrder(String command, String workDirectory, String errorFilePath,
+                                                  String information, String password) {
+        LOGGER.info("start command = {}", command);
+        try {
+            RuntimeExecUtils.executeDataCheckOrder(
+                    command, Task.PROCESS_START_TIME, workDirectory, errorFilePath, password);
+            LOGGER.info(information);
+        } catch (PortalException e) {
+            e.setRequestInformation(information + " failed");
+            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            PortalControl.shutDownPortal(e.toString());
+        }
+    }
+
+    /**
      * Execute connect standalone order.
      *
      * @param command            the command
      * @param time               the time
      * @param errorFilePath      the error file path
+     * @param password           the password
      * @param information        the information
      */
     public static void executeConnectStandaloneOrder(
-            String command, int time, String errorFilePath, String information) {
+            String command, int time, String errorFilePath, String password, String information) {
         LOGGER.info("start connect standalone = {}", command);
         try {
-            executeOrderByBash(command, time, errorFilePath);
+            ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
+            processBuilder.environment().put("enable.env.password", "true");
+            processBuilder.environment().put("database.password", password);
+            Process process = processBuilder.start();
+            process.waitFor(time, TimeUnit.MILLISECONDS);
+
+            String errorStr = getInputStreamString(process.getErrorStream());
+            if (!errorStr.isEmpty()) {
+                LOGGER.warn("Error command:" + command);
+                LOGGER.error(errorStr);
+            }
+            FileUtils.writeFile(errorStr, errorFilePath, true);
             LOGGER.info("{}.", information);
-        } catch (PortalException e) {
-            e.setRequestInformation(information + " failed");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+        } catch (InterruptedException | IOException | PortalException e) {
+            LOGGER.error("{}Execute command: {} failed", ErrorCode.COMMAND_EXECUTION_FAILED, command, e);
             PortalControl.shutDownPortal(e.toString());
         }
     }
