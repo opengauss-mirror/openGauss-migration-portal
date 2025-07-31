@@ -45,7 +45,6 @@ public abstract class ParamsConfig {
             }
             log.info("path:{} start change...",
                     toolsConfigParametersTable.get(configChangeParams.getKey()));
-            log.info("changeParamMap = {}", changeParamMap);
             YmlUtils.changeYmlParameters(changeParamMap, toolsConfigParametersTable.get(configChangeParams.getKey()));
         }
         for (Map.Entry<String, Map<String, Object>> configChangeParams

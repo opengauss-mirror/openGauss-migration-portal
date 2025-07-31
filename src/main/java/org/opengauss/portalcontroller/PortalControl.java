@@ -29,33 +29,34 @@ import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.Regex;
 import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.status.ChangeStatusTools;
-import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.task.WorkspacePath;
-import org.opengauss.portalcontroller.handler.ThreadExceptionHandler;
 import org.opengauss.portalcontroller.thread.ThreadGetOrder;
+import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
-
 import org.opengauss.portalcontroller.utils.EncryptionUtils;
 import org.opengauss.portalcontroller.utils.FileUtils;
+import org.opengauss.portalcontroller.utils.InputReader;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
 import org.opengauss.portalcontroller.utils.ParamsUtils;
 import org.opengauss.portalcontroller.utils.PathUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -202,7 +203,7 @@ public class PortalControl {
         AlertLogCollectionManager.startCollection();
         initPlanList();
         initParametersRegexMap();
-        decryptPassword();
+        initDatabasePassword();
         initCommandLineParameters();
         initValidOrderList();
         initPortalPath();
@@ -212,6 +213,36 @@ public class PortalControl {
         Task.initTaskProcessMap();
         Task.initTaskLogMap();
         Task.initCheckProcessMap();
+    }
+
+    private static void initDatabasePassword() {
+        String isStdin = System.getProperty("enable.stdin.password");
+        if ("true".equals(isStdin)) {
+            String mysqlPwd = readPasswordFromConsole("Please input your MySQL user password:");
+            System.setProperty(Command.Parameters.MYSQL_PWD, mysqlPwd);
+            String opengaussPwd = readPasswordFromConsole("Please input your openGauss user password:");
+            System.setProperty(Command.Parameters.OPENGAUSS_PWD, opengaussPwd);
+            InputReader.close();
+        } else {
+            decryptPassword();
+        }
+    }
+
+    private static String readPasswordFromConsole(String prompt) {
+        Console console = System.console();
+        String result = "";
+        if (console != null) {
+            char[] pwdChars = console.readPassword(prompt);
+            result = new String(pwdChars);
+        } else {
+            result = InputReader.readLine(prompt);
+        }
+
+        if (ObjectUtils.isEmpty(result)) {
+            LOGGER.error("Password cannot be empty.");
+            throw new IllegalArgumentException("Password cannot be empty.");
+        }
+        return result;
     }
 
     /**
@@ -771,7 +802,15 @@ public class PortalControl {
                 String valueString = hashtable.get(key);
                 hashtable.replace(key, ParamsUtils.changeValue(valueString, hashtable));
             }
+            String mysqlPwd = hashtable.remove(Command.Parameters.MYSQL_PWD);
+            String opengaussPwd = hashtable.remove(Command.Parameters.OPENGAUSS_PWD);
             PropertitesUtils.changePropertiesParameters(hashtable, path);
+            if (mysqlPwd != null) {
+                hashtable.put(Command.Parameters.MYSQL_PWD, mysqlPwd);
+            }
+            if (opengaussPwd != null) {
+                hashtable.put(Command.Parameters.OPENGAUSS_PWD, opengaussPwd);
+            }
         }
     }
 
