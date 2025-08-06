@@ -93,7 +93,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                     toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA));
             setTables();
         } else {
-            LOGGER.error("{}Invalid parameters.", ErrorCode.INCORRECT_CONFIGURATION);
+            LOGGER.error("Invalid parameters.");
         }
     }
 
@@ -246,7 +246,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         if (commandResult.trim().startsWith("Python 3")) {
             LOGGER.info("Python 3 is available on the server.");
         } else {
-            LOGGER.error("{}Python 3 is not available on the server.", ErrorCode.MIGRATION_ENVIRONMENT_NOT_MET);
+            LOGGER.error("Python 3 is not available on the server.");
         }
     }
 
@@ -331,7 +331,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             writeChameleonOverrideType();
             copyConfigFiles(workspaceId);
         } catch (PortalException e) {
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
+            LOGGER.error("{}Failed to init chameleon full migration environment{}", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(e.toString());
             return false;
         }
@@ -595,7 +595,8 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             RuntimeExecUtils.executeChameleonOrder(chameleonOrder, 2000, chameleonVenvPath, logPath, orderList);
         } catch (PortalException e) {
             e.setRequestInformation("Start chameleon order " + order + " failed");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            LOGGER.error("{}Failed to start chameleon order, command: {}", ErrorCode.COMMAND_EXECUTION_FAILED,
+                    chameleonOrder, e);
             PortalControl.shutDownPortal(e.toString());
         }
     }

@@ -122,7 +122,7 @@ public class ParamsUtils {
             PortalException portalException = new PortalException("Unknown host exception", "checking port is "
                     + "available", e.getMessage());
             portalException.setRequestInformation("Unknown host address.Cannot get available ports");
-            LOGGER.error("{}{}", ErrorCode.UNKNOWN_HOST, portalException.toString());
+            LOGGER.error("{}Failed to check host port is available", ErrorCode.MIGRATION_ENVIRONMENT_NOT_MET, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             LOGGER.info("The port " + host + ":" + port + " is available.");
@@ -453,7 +453,7 @@ public class ParamsUtils {
             randomAccessFile = new RandomAccessFile(file, "rw");
             randomAccessFile.write(JSONObject.toJSONString(resultMap).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, "writeJsonToFile create file failed.");
+            LOGGER.error("Failed to write map to file {}: {}", filePath, e);
         } finally {
             try {
                 if (randomAccessFile != null) {
@@ -479,7 +479,7 @@ public class ParamsUtils {
         try (OutputStream fos = new FileOutputStream(propertiesPath)) {
             properties.store(fos, properties.toString());
         } catch (IOException e) {
-            LOGGER.error("{}writeMapToProperties failed", ErrorCode.IO_EXCEPTION, e);
+            LOGGER.error("Failed to write map to properties file: {}", propertiesPath, e);
         }
     }
 }

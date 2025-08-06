@@ -83,7 +83,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "changing single yml parameter " + key, e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to change yml config file params, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -122,7 +122,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "delete yml parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to delete yml config file params, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -159,7 +159,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing yml parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to change yml config file params, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -197,7 +197,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting single yml parameter " + key, e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to get yml config file param, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return value;
@@ -229,7 +229,7 @@ public class YmlUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "getting yml parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to get yml config file param, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return hashMap;

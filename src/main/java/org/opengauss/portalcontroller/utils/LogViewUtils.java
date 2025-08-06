@@ -93,7 +93,7 @@ public class LogViewUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting error message in file " + logPath, e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to read log from log file: {}", ErrorCode.IO_EXCEPTION, logPath, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return stringBuilder.toString();
@@ -131,7 +131,7 @@ public class LogViewUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting error message in file " + logPath, e.getMessage());
-            LOGGER.error("{}", ErrorCode.IO_EXCEPTION, e);
+            LOGGER.error("{}Failed to read log from log file: {}", ErrorCode.IO_EXCEPTION, logPath, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return stringBuilder.toString();
@@ -158,7 +158,7 @@ public class LogViewUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "getting error message in file " + logPath, e.getMessage());
-            LOGGER.error("{}", ErrorCode.IO_EXCEPTION, e);
+            LOGGER.error("{}Failed to read log from log file: {}", ErrorCode.IO_EXCEPTION, logPath, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return stringBuilder.toString();
@@ -172,7 +172,7 @@ public class LogViewUtils {
             File file = new File(logPath);
             return file.exists();
         } catch (Exception ex) {
-            LOGGER.error("{}logPath {} not exists ", ErrorCode.IO_EXCEPTION, logPath, ex);
+            LOGGER.error("{}Failed to check log file {} exists: {}", ErrorCode.IO_EXCEPTION, logPath, ex);
             PortalControl.shutDownPortal("logPath not exists :" + logPath);
         }
         return false;
@@ -242,12 +242,12 @@ public class LogViewUtils {
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "reading last line in " +
                     "file " + path, e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, portalException.toString());
+            LOGGER.error("{}Failed to read file: {}", ErrorCode.FILE_NOT_FOUND, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "reading last line in file " + path
                     , e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to read file: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return builder.reverse().toString();

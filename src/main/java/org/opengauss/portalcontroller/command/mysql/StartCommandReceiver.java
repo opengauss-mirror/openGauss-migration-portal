@@ -14,7 +14,6 @@
 package org.opengauss.portalcontroller.command.mysql;
 
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.command.CommandReceiver;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.tools.common.MqTool;
@@ -64,7 +63,7 @@ public class StartCommandReceiver extends CommandReceiver {
         if (PortalControl.planList.containsKey(plan)) {
             return PortalControl.planList.get(plan);
         } else {
-            LOGGER.error("{}Invalid command.", ErrorCode.INVALID_COMMAND);
+            LOGGER.error("Invalid command.");
             return new ArrayList<>();
         }
     }
