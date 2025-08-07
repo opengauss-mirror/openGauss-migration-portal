@@ -74,12 +74,9 @@ public class ProcessErrorHandler {
                     LOGGER.info("Restarted Kafka process successfully, restarting incremental migration...");
                     migrationManager.restartIncremental();
                 }
-            } else {
-                LOGGER.error("Stop incremental migration due to Kafka process exit abnormally");
-                migrationManager.stopIncremental();
-                statusMonitor.setCurrentStatus(MigrationStatusEnum.INCREMENTAL_MIGRATION_INTERRUPTED);
+                return;
             }
-            return;
+            throw new MigrationException("During the incremental migration process, Kafka process abnormally exited");
         }
 
         if (statusMonitor.isReverseMigrationStatus()) {
@@ -89,9 +86,7 @@ public class ProcessErrorHandler {
                     migrationManager.restartReverse();
                 }
             } else {
-                LOGGER.error("Stop reverse migration due to Kafka process exit abnormally");
-                migrationManager.startReverse();
-                statusMonitor.setCurrentStatus(MigrationStatusEnum.REVERSE_MIGRATION_INTERRUPTED);
+                throw new MigrationException("During the reverse migration process, Kafka process abnormally exited");
             }
         }
     }

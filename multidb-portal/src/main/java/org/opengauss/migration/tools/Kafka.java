@@ -60,6 +60,7 @@ public class Kafka extends Tool {
     private final String schemaRegistryConfigPath;
 
     private final String connectStandalonePath;
+    private final String kafkaLogPath;
 
     private volatile Properties kafkaPortProperties;
     private volatile ConfluentProcess zookeeperProcess;
@@ -97,6 +98,7 @@ public class Kafka extends Tool {
 
         this.connectStandalonePath = String.format("%s/%s", confluentDirPath,
                 KafkaConstants.CONNECT_STANDALONE_RELATIVE_PATH);
+        this.kafkaLogPath = String.format("%s/%s", applicationConfig.getPortalLogsDirPath(), "kafka.log");
     }
 
     /**
@@ -307,7 +309,8 @@ public class Kafka extends Tool {
                 LOGGER.error("Failed to restart Kafka process, attempt: {}", i + 1, e);
             }
         }
-        LOGGER.error("Failed to restart Kafka process after {} attempts, please check the log", tryMaxCount);
+        LOGGER.error("Failed to restart Kafka process after {} attempts, please check the kafka log: {}",
+                tryMaxCount, kafkaLogPath);
         return false;
     }
 
@@ -485,10 +488,8 @@ public class Kafka extends Tool {
     }
 
     private ConfluentProcess getKafkaProcess() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
         String kafkaCmd = String.format("%s %s", kafkaStarterPath, kafkaConfigPath);
         String kafkaCheckCmd = String.format("SupportedKafka %s", kafkaConfigPath);
-        String kafkaLogPath = String.format("%s/%s", applicationConfig.getPortalLogsDirPath(), "kafka.log");
         if (kafkaProcess == null) {
             kafkaProcess = new ConfluentProcess("kafka", kafkaCmd, kafkaCheckCmd, kafkaLogPath, KAFKA_START_TIME);
         }
