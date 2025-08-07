@@ -192,7 +192,7 @@ public class PortalControl {
             ConcreteCommand concreteCommand = new ConcreteCommand();
             concreteCommand.execute(standardOrder);
         } else {
-            LOGGER.error("{}Invalid command.", ErrorCode.INVALID_COMMAND);
+            LOGGER.error("Invalid command.");
         }
         threadGetOrder.exit = true;
         AlertLogCollectionManager.stopCollection();
@@ -296,7 +296,7 @@ public class PortalControl {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "read current plan", e.getMessage());
             portalException.setRequestInformation("Read current plan failed");
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to read current plan file, file path: {}", ErrorCode.IO_EXCEPTION, path, e);
             shutDownPortal(portalException.toString());
         }
         return taskArrayList;
@@ -446,7 +446,7 @@ public class PortalControl {
         threadStatusController.start();
         generatePlanHistory(taskList);
         if (!Task.checkPlan(taskList)) {
-            LOGGER.error("{}Invalid plan.", ErrorCode.INVALID_COMMAND);
+            LOGGER.error("Invalid plan.");
             return;
         }
         if (taskList.contains("start mysql reverse migration")) {
@@ -716,7 +716,7 @@ public class PortalControl {
     public static void initPortalPath() {
         String path = commandLineParameterStringMap.get(Command.Parameters.PATH);
         if (!new File(path).exists() || new File(path).isFile()) {
-            LOGGER.error("{}portalControlPath not exist", ErrorCode.INCORRECT_CONFIGURATION);
+            LOGGER.error("{}Check portal control path not exist, path: {}", ErrorCode.INCORRECT_CONFIGURATION, path);
             return;
         }
         String workspaceId = commandLineParameterStringMap.get(Command.Parameters.ID);
@@ -782,7 +782,7 @@ public class PortalControl {
             } catch (IOException e) {
                 PortalException portalException = new PortalException("IO exception",
                     "loading the parameters in file" + " " + path, e.getMessage());
-                LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+                LOGGER.error("{}Failed to load the config file, path: {}", ErrorCode.IO_EXCEPTION, path, e);
                 shutDownPortal(portalException.toString());
                 return;
             }

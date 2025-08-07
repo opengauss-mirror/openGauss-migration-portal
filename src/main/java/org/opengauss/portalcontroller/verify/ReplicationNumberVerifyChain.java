@@ -17,7 +17,6 @@ package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.command.mysql.VerifyCommandReceiver;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
@@ -85,8 +84,7 @@ public class ReplicationNumberVerifyChain extends AbstractPreMigrationVerifyChai
             String columnName = "slot_name";
             return JdbcUtils.isSpecifiedNameExist(statement, selectSlotSql, slotName, columnName);
         } catch (SQLException e) {
-            LOGGER.error("{}Failed to check whether the '{}' replication slot exists failed.",
-                    ErrorCode.SQL_EXCEPTION, slotName, e);
+            LOGGER.error("Failed to check whether the '{}' replication slot exists failed.", slotName, e);
         }
         return false;
     }

@@ -22,8 +22,16 @@ import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
 import org.opengauss.portalcontroller.alert.AlertLogConstants;
 import org.opengauss.portalcontroller.alert.ErrorCode;
+import org.opengauss.portalcontroller.constant.Check;
+import org.opengauss.portalcontroller.constant.Command;
+import org.opengauss.portalcontroller.constant.Debezium;
+import org.opengauss.portalcontroller.constant.Method;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Opengauss;
+import org.opengauss.portalcontroller.constant.Parameter;
+import org.opengauss.portalcontroller.constant.Status;
+import org.opengauss.portalcontroller.exception.PortalException;
+import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.tools.Tool;
 import org.opengauss.portalcontroller.tools.mysql.FullDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.IncrementalDatacheckTool;
@@ -31,14 +39,6 @@ import org.opengauss.portalcontroller.tools.mysql.IncrementalMigrationTool;
 import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseDatacheckTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
-import org.opengauss.portalcontroller.constant.Check;
-import org.opengauss.portalcontroller.constant.Command;
-import org.opengauss.portalcontroller.constant.Debezium;
-import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.Parameter;
-import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.exception.PortalException;
-import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
@@ -56,7 +56,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 import static org.opengauss.portalcontroller.PortalControl.workspaceId;
 
 /**
@@ -397,7 +396,7 @@ public class Task {
                     break;
                 }
             } catch (PortalException e) {
-                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+                LOGGER.error("{}Failed to start process '{}'", ErrorCode.COMMAND_EXECUTION_FAILED, name, e);
                 break;
             }
             if (sleepTime <= 0) {
@@ -442,7 +441,7 @@ public class Task {
         } catch (PortalException e) {
             e.setRequestInformation("Create file failed.Please ensure the file " + log + " is available to check "
                     + "whether the curl order finishes successfully.");
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
+            LOGGER.error("{}Failed to create curl log file, path: {}", ErrorCode.IO_EXCEPTION, log, e);
             PortalControl.shutDownPortal(e.toString());
             return;
         }
@@ -457,7 +456,8 @@ public class Task {
             RuntimeExecUtils.executeOrderCurrentRuntime(cmdParts, METHOD_START_TIME, log, "Run curl failed.");
         } catch (PortalException e) {
             e.setRequestInformation("Run curl failed.");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            LOGGER.error("{}Failed to run curl command, command: {}", ErrorCode.COMMAND_EXECUTION_FAILED,
+                    String.join(" ", cmdParts), e);
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -762,11 +762,11 @@ public class Task {
     public static boolean checkPlan(List<String> taskList) {
         if (taskList != null) {
             if (taskList.isEmpty()) {
-                LOGGER.error("{}No task in plan. Please check the plan.", ErrorCode.INVALID_COMMAND);
+                LOGGER.error("No task in plan. Please check the plan.");
                 return false;
             } else if (taskList.size() == 1) {
                 if (!ALL_TASK_LIST.contains(taskList.get(0))) {
-                    LOGGER.error("{}The task is not valid.", ErrorCode.INVALID_COMMAND);
+                    LOGGER.error("The task is not valid.");
                     return false;
                 } else {
                     return true;
@@ -775,28 +775,27 @@ public class Task {
                 List<String> existingTaskList = new ArrayList<>();
                 for (String task : taskList) {
                     if (!ALL_TASK_LIST.contains(task)) {
-                        LOGGER.error("{}The task is not valid.", ErrorCode.INVALID_COMMAND);
+                        LOGGER.error("The task is not valid.");
                         return false;
                     }
                     if (existingTaskList.contains(task)) {
-                        LOGGER.error("{}The task already exists.", ErrorCode.INVALID_COMMAND);
+                        LOGGER.error("The task already exists.");
                         return false;
                     }
                     if (!checkDatacheckType(taskList, task)) {
-                        LOGGER.error("{}There must be the same type of migration before datacheck.",
-                                ErrorCode.INVALID_COMMAND);
+                        LOGGER.error("There must be the same type of migration before datacheck.");
                         return false;
                     }
                     existingTaskList.add(task);
                 }
             }
             if (!checkMigrationSequence(taskList)) {
-                LOGGER.error("{}Please set tasks in a particular sequence.", ErrorCode.INVALID_COMMAND);
+                LOGGER.error("Please set tasks in a particular sequence.");
                 return false;
             }
             addCheckTask(taskList);
         } else {
-            LOGGER.error("{}The taskList is null.", ErrorCode.INVALID_COMMAND);
+            LOGGER.error("The taskList is null.");
             return false;
         }
         return true;

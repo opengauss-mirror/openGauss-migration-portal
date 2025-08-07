@@ -192,7 +192,7 @@ public class RunningTaskThread {
             }
         } catch (PortalException e) {
             e.setRequestInformation("Stop " + name + " failed.");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            LOGGER.error("{}Stop process '{}' failed", ErrorCode.COMMAND_EXECUTION_FAILED, name, e);
             PortalControl.shutDownPortal(e.toString());
         }
         LOGGER.info("Stop {}.", name);

@@ -83,7 +83,7 @@ public class FileUtils {
             writeFile(orderWithTimestamp, inputOrderPath, false);
         } catch (PortalException e) {
             e.setRequestInformation("Write input order failed");
-            log.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
+            log.error("{}Write input order to file failed, file path: {}", ErrorCode.IO_EXCEPTION, inputOrderPath, e);
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -198,7 +198,7 @@ public class FileUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
-            log.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            log.error("{}Failed to modify file content, file path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -227,7 +227,7 @@ public class FileUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "output strings in file " + path,
                     e.getMessage());
-            log.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            log.error("{}Failed to output strings to file, file path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return str.toString();
@@ -274,7 +274,7 @@ public class FileUtils {
             Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND,
                     StandardOpenOption.CREATE);
         } catch (IOException e) {
-            log.error("{}{}", ErrorCode.IO_EXCEPTION, "file write error:", e);
+            log.error("file write error:", e);
         }
     }
 
@@ -289,7 +289,7 @@ public class FileUtils {
             Files.write(Paths.get(filename), content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
-            log.error("{}{}", ErrorCode.IO_EXCEPTION, "file write error:", e);
+            log.error("file write error:", e);
         }
     }
 
@@ -303,7 +303,7 @@ public class FileUtils {
         try {
             RuntimeExecUtils.executeOrder(command, 1000);
         } catch (PortalException e) {
-            log.error("{}Remove file '{}' failed.", ErrorCode.IO_EXCEPTION, path, e);
+            log.error("Remove file '{}' failed.", path, e);
         }
     }
 }

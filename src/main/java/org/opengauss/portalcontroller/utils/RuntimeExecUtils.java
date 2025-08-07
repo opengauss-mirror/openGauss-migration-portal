@@ -34,8 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
-
 /**
  * RuntimeExecUtils
  *
@@ -271,7 +269,7 @@ public class RuntimeExecUtils {
                 if (str != null && !str.equals("")) {
                     FileUtils.writeFile(str, outputFilePath, true);
                 } else {
-                    LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, errorLog);
+                    LOGGER.error(errorLog);
                 }
                 FileUtils.writeFile(errorStr, outputFilePath, true);
             }
@@ -481,7 +479,7 @@ public class RuntimeExecUtils {
             LOGGER.info(information + ".");
         } catch (PortalException e) {
             e.setRequestInformation(information + " failed");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            LOGGER.error("{}Failed to execute command: {}", ErrorCode.COMMAND_EXECUTION_FAILED, command, e);
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -504,7 +502,7 @@ public class RuntimeExecUtils {
             LOGGER.info(information);
         } catch (PortalException e) {
             e.setRequestInformation(information + " failed");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+            LOGGER.error("{}Failed to execute command: {}", ErrorCode.COMMAND_EXECUTION_FAILED, command, e);
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -536,7 +534,7 @@ public class RuntimeExecUtils {
             FileUtils.writeFile(errorStr, errorFilePath, true);
             LOGGER.info("{}.", information);
         } catch (InterruptedException | IOException | PortalException e) {
-            LOGGER.error("{}Execute command: {} failed", ErrorCode.COMMAND_EXECUTION_FAILED, command, e);
+            LOGGER.error("{}Failed to execute command: {}", ErrorCode.COMMAND_EXECUTION_FAILED, command, e);
             PortalControl.shutDownPortal(e.toString());
         }
     }
@@ -554,7 +552,7 @@ public class RuntimeExecUtils {
                 String command = "sh " + name;
                 RuntimeExecUtils.executeOrder(command, 3000, workDirectory, errorFilePath, true, new ArrayList<>());
             } catch (PortalException e) {
-                LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.getMessage());
+                LOGGER.error("{}Failed to run shell: {}", ErrorCode.COMMAND_EXECUTION_FAILED, name, e);
             }
         }
         ProcessUtils.sleepThread(1000, "run shell");

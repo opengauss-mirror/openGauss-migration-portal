@@ -82,7 +82,7 @@ public class KafkaUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to change kafka log4j config file param: {}", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -116,7 +116,7 @@ public class KafkaUtils {
         try {
             FileUtils.createFile(errorLogPath, true);
         } catch (PortalException e) {
-            LOGGER.error("{}Failed to create file '{}'", ErrorCode.IO_EXCEPTION, errorLogPath, e);
+            LOGGER.error("Failed to create file '{}'", errorLogPath, e);
         }
         return errorLogPath;
     }
@@ -127,7 +127,7 @@ public class KafkaUtils {
         try (InputStream input = new FileInputStream(log4jConfigPath)) {
             properties.load(input);
         } catch (IOException e) {
-            LOGGER.error("{}Failed to read the file '{}'", ErrorCode.IO_EXCEPTION, log4jConfigPath, e);
+            LOGGER.error("Failed to read the file '{}'", log4jConfigPath, e);
             return true;
         }
 
@@ -161,7 +161,7 @@ public class KafkaUtils {
                 Files.write(path, lines);
             }
         } catch (IOException e) {
-            LOGGER.error("{}Failed to modify the file '{}'", ErrorCode.IO_EXCEPTION, log4jConfigPath, e);
+            LOGGER.error("Failed to modify the file '{}'", log4jConfigPath, e);
         }
     }
 
@@ -179,7 +179,7 @@ public class KafkaUtils {
             writer.write(appenderEntries);
             writer.newLine();
         } catch (IOException e) {
-            LOGGER.error("{}Failed to write the file '{}'", ErrorCode.IO_EXCEPTION, log4jConfigPath, e);
+            LOGGER.error("Failed to write the file '{}'", log4jConfigPath, e);
         }
     }
 
@@ -263,7 +263,7 @@ public class KafkaUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing file parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to change connectStandalone jvm param: {}", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }

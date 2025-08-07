@@ -64,12 +64,12 @@ public class ProcessUtils {
             pro.destroy();
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "search process", e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to execute 'ps ux' to search process", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (InterruptedException e) {
             PortalException portalException = new PortalException("Interrupted exception", "search process",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, portalException.toString());
+            LOGGER.error("{}Failed to execute 'ps ux' to search process", ErrorCode.COMMAND_EXECUTION_FAILED, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return processString.toString();
@@ -156,7 +156,7 @@ public class ProcessUtils {
                         RuntimeExecUtils.executeOrder("kill -9 " + pid, 20, PortalControl.portalErrorPath);
                     } catch (PortalException e) {
                         e.setRequestInformation("Close chameleon failed");
-                        LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, e.toString());
+                        LOGGER.error("{}Failed to kill process, pid: {}", ErrorCode.COMMAND_EXECUTION_FAILED, pid, e);
                         PortalControl.shutDownPortal(e.toString());
                     }
                 }
@@ -169,13 +169,13 @@ public class ProcessUtils {
             PortalException portalException = new PortalException("IO exception", "closing chameleon process",
                     e.getMessage());
             portalException.setRequestInformation("Close full migration tools failed");
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to kill process, process: {}", ErrorCode.IO_EXCEPTION, command, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (InterruptedException e) {
             PortalException portalException = new PortalException("Interrupted exception", "closing chameleon "
                     + "process", e.getMessage());
             portalException.setRequestInformation("Close full migration tools failed");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, portalException.toString());
+            LOGGER.error("{}Failed to kill process, process: {}", ErrorCode.COMMAND_EXECUTION_FAILED, command, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -219,14 +219,14 @@ public class ProcessUtils {
                     + " running", e.getMessage());
             portalException.setRequestInformation("Checking whether another portal is running failed.Some tools "
                     + "cannot be closed");
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to execute 'ps ux' to search process", ErrorCode.IO_EXCEPTION, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (InterruptedException e) {
             PortalException portalException = new PortalException("Interrupted exception", "checking whether another "
                     + "portal is running", e.getMessage());
             portalException.setRequestInformation("Checking whether another portal is running failed.Some tools "
                     + "cannot be closed");
-            LOGGER.error("{}{}", ErrorCode.COMMAND_EXECUTION_FAILED, portalException.toString());
+            LOGGER.error("{}Failed to execute 'ps ux' to search process", ErrorCode.COMMAND_EXECUTION_FAILED, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return signal;
@@ -282,7 +282,7 @@ public class ProcessUtils {
         errorStr += "Please read " + logPath + " or error.log to get information.";
         PortalControl.status = Status.ERROR;
         PortalControl.errorMsg = errorStr;
-        LOGGER.error("{}{}", ErrorCode.PROCESS_EXITS_ABNORMALLY, errorStr);
+        LOGGER.error(errorStr);
     }
 
     /**

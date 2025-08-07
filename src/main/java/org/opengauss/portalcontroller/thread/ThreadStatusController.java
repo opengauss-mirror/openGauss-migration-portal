@@ -140,7 +140,7 @@ public class ThreadStatusController extends Thread {
                 }
             } catch (PortalException e) {
                 e.setRequestInformation("Cannot find logs.");
-                LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, e.toString());
+                LOGGER.error("{}Failed to copy kafka logs to task workspace", ErrorCode.FILE_NOT_FOUND, e);
                 PortalControl.shutDownPortal(e.toString());
             }
             ProcessUtils.sleepThread(2000, "writing the status");

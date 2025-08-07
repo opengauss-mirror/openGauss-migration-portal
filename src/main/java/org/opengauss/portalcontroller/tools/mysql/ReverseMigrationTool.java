@@ -117,7 +117,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
             PortalException portalException = new PortalException("IO exception",
                     "checking reverse migration is runnable", e.getMessage());
             refuseReverseMigrationReason = portalException.getMessage();
-            LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to connect to openGauss. Please check database status", ErrorCode.SQL_EXCEPTION, e);
         }
         allowReverseMigration = isReverseRunnable;
         return isReverseRunnable;
@@ -244,7 +244,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception",
                     "reading xlog.path in file " + file.getAbsolutePath(), e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to read xlog.path in file {}", ErrorCode.IO_EXCEPTION, file.getAbsolutePath(), e);
             PortalControl.shutDownPortal(portalException.toString());
             return;
         }
@@ -284,7 +284,7 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     @Override
     public boolean init(String workspaceId) {
         if (!allowReverseMigration) {
-            LOGGER.error("{}Can not run reverse migration{}",
+            LOGGER.error("{}Can not run reverse migration, reason: {}",
                     ErrorCode.MIGRATION_CONDITIONS_NOT_MET, refuseReverseMigrationReason);
             Plan.stopPlan = true;
             PortalControl.status = Status.ERROR;
@@ -355,8 +355,6 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
     @Override
     public boolean start(String workspaceId) {
         if (checkAnotherConnectExists()) {
-            LOGGER.error("{}Another connector is running.Cannot run reverse migration with workspaceId is {}.",
-                    ErrorCode.MIGRATION_CONDITIONS_NOT_MET, workspaceId);
             return false;
         }
         Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
@@ -413,15 +411,20 @@ public class ReverseMigrationTool extends ParamsConfig implements Tool {
      * @return the boolean
      */
     public boolean checkAnotherConnectExists() {
-        boolean hasSouce =
-                ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SOURCE)) != -1;
-        boolean hasSink =
-                ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.REVERSE_CONNECT_SINK)) != -1;
-        boolean hasConnectSource =
-                ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SOURCE)) != -1;
-        boolean hasConnectSink =
-                ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CONNECT_SINK)) != -1;
-        return hasSouce || hasSink || hasConnectSource || hasConnectSink;
+        ArrayList<String> connectorParameterList = new ArrayList<>();
+        connectorParameterList.add(Method.Run.REVERSE_CONNECT_SOURCE);
+        connectorParameterList.add(Method.Run.CONNECT_SOURCE);
+        connectorParameterList.add(Method.Run.CONNECT_SINK);
+        connectorParameterList.add(Method.Run.REVERSE_CONNECT_SINK);
+        for (String connectorParameter : connectorParameterList) {
+            int commandPid = ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(connectorParameter));
+            if (commandPid != -1) {
+                LOGGER.error("{}Another debezium connector process is running. Please clean up the residual process."
+                        + " Pid: {}", ErrorCode.MIGRATION_CONDITIONS_NOT_MET, commandPid);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -269,7 +269,8 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         } catch (PortalException e) {
             e.setRequestInformation("Create incremental migration folder status folder failed.Please ensure the "
                     + "config folder " + incrementalFolder + " is available");
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, e.toString());
+            LOGGER.error("{}Failed to create incremental migration status folder, path: {}", ErrorCode.IO_EXCEPTION,
+                    incrementalFolder, e);
             return;
         }
         sinkMap.put("sink.process.file.path", incrementalFolder);
@@ -317,14 +318,12 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
     @Override
     public boolean init(String workspaceId) {
         if (checkAnotherConnectExists()) {
-            LOGGER.error("{}Another connector is running.Cannot run incremental migration whose workspace id is {}.",
-                    ErrorCode.MIGRATION_CONDITIONS_NOT_MET, workspaceId);
             return false;
         }
         try {
             findOffset();
         } catch (PortalException e) {
-            LOGGER.error("{}{}", ErrorCode.LOAD_CONFIGURATION_ERROR, e.toString());
+            LOGGER.error("{}Failed to load MySQL binlog offset", ErrorCode.LOAD_CONFIGURATION_ERROR, e);
             PortalControl.shutDownPortal(e.toString());
             return false;
         }
@@ -457,7 +456,10 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
         connectorParameterList.add(Method.Run.CONNECT_SINK);
         connectorParameterList.add(Method.Run.REVERSE_CONNECT_SINK);
         for (String connectorParameter : connectorParameterList) {
-            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(connectorParameter)) != -1) {
+            int commandPid = ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(connectorParameter));
+            if (commandPid != -1) {
+                LOGGER.error("{}Another debezium connector process is running. Please clean up the residual process."
+                                + " Pid: {}", ErrorCode.MIGRATION_CONDITIONS_NOT_MET, commandPid);
                 return true;
             }
         }
@@ -570,7 +572,8 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                         e.getMessage());
                 portalException.setRequestInformation("Create slot failed.");
                 ReverseMigrationTool.refuseReverseMigrationReason = portalException.getMessage();
-                LOGGER.error("{}{}", ErrorCode.SQL_EXCEPTION, portalException.toString());
+                LOGGER.error("{}Failed to connect to openGauss. Please check database status",
+                        ErrorCode.SQL_EXCEPTION, e);
             }
         }
         for (String taskThread : taskThreadList) {

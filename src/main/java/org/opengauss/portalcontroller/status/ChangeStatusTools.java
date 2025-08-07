@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.opengauss.portalcontroller.PortalControl;
-import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
@@ -304,7 +303,7 @@ public class ChangeStatusTools {
         try {
             tempFullMigrationStatus = getAllChameleonStatus();
         } catch (JSONException | IOException e) {
-            LOGGER.error("{}", ErrorCode.IO_EXCEPTION, e);
+            LOGGER.warn("Failed to get chameleon status, {}", e.getMessage());
             tempFullMigrationStatus = ThreadStatusController.getFullMigrationStatus();
         }
         ThreadStatusController.setFullMigrationStatus(tempFullMigrationStatus);
@@ -433,7 +432,7 @@ public class ChangeStatusTools {
                         mysqlConnection.close();
                     }
                 } catch (SQLException e) {
-                    LOGGER.error("{}close PgConnection fail.", ErrorCode.SQL_EXCEPTION);
+                    LOGGER.error("Close connection failed, cause: {}", e.getMessage());
                 }
             }
         }

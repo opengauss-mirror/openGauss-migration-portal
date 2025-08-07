@@ -96,7 +96,7 @@ public class PropertitesUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "delete yml parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to delete properties parameters, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         } finally {
             try {
@@ -124,7 +124,7 @@ public class PropertitesUtils {
         try {
             ArrayList<String> stringList = new ArrayList<>();
             if (!file.exists()) {
-                LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, "No such file whose path is " + path);
+                LOGGER.error("{}Check properties file does not exist, path: {}", ErrorCode.FILE_NOT_FOUND, path);
                 return;
             }
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file),
@@ -160,7 +160,7 @@ public class PropertitesUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing single properties "
                     + "parameter", e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to change properties param, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -178,7 +178,7 @@ public class PropertitesUtils {
         File file = new File(path);
         ArrayList<String> stringList = new ArrayList<>();
         if (!file.exists()) {
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, "No such file whose path is " + path);
+            LOGGER.error("{}Check properties file does not exist, path: {}", ErrorCode.IO_EXCEPTION, path);
             return;
         }
         try {
@@ -227,7 +227,7 @@ public class PropertitesUtils {
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "changing properties parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to change properties param, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
     }
@@ -248,12 +248,12 @@ public class PropertitesUtils {
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "getting single "
                     + "properties parameter " + key, e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, portalException.toString());
+            LOGGER.error("{}Check properties file does not exist, path: {}", ErrorCode.FILE_NOT_FOUND, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "getting single properties "
                     + "parameter " + key, e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to get properties param, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         pps.clear();
@@ -280,12 +280,12 @@ public class PropertitesUtils {
         } catch (FileNotFoundException e) {
             PortalException portalException = new PortalException("File not found exception", "getting properties "
                     + "parameters", e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.FILE_NOT_FOUND, portalException.toString());
+            LOGGER.error("{}Check properties file does not exist, path: {}", ErrorCode.FILE_NOT_FOUND, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         } catch (IOException e) {
             PortalException portalException = new PortalException("IO exception", "getting properties parameters",
                     e.getMessage());
-            LOGGER.error("{}{}", ErrorCode.IO_EXCEPTION, portalException.toString());
+            LOGGER.error("{}Failed to get properties param, path: {}", ErrorCode.IO_EXCEPTION, path, e);
             PortalControl.shutDownPortal(portalException.toString());
         }
         return table;
