@@ -25,6 +25,8 @@ import org.opengauss.migration.verify.opengauss.OpenGaussWalLevelVerifyChain;
 import org.opengauss.migration.verify.pgsql.PgsqlConnectVerifyChain;
 import org.opengauss.migration.verify.pgsql.PgsqlReplicationConnectionVerifyChain;
 import org.opengauss.migration.verify.pgsql.PgsqlReplicationNumberVerifyChain;
+import org.opengauss.migration.verify.pgsql.PgsqlVersionVerifyChain;
+import org.opengauss.migration.verify.pgsql.PgsqlWalLevelVerifyChain;
 
 import java.util.List;
 
@@ -103,6 +105,7 @@ public class VerifyChainBuilder {
     public static AbstractVerifyChain getPgsqlMigrationVerifyChain(List<MigrationPhase> migrationPhaseList) {
         VerifyChainBuilder builder = new VerifyChainBuilder();
         builder.addVerifyChain(new PgsqlConnectVerifyChain())
+                .addVerifyChain(new PgsqlVersionVerifyChain())
                 .addVerifyChain(new OpenGaussConnectVerifyChain())
                 .addVerifyChain(new OpenGaussSqlCompatibilityVerifyChain());
 
@@ -113,7 +116,8 @@ public class VerifyChainBuilder {
         if (migrationPhaseList.contains(MigrationPhase.INCREMENTAL_MIGRATION)) {
             builder.addVerifyChain(new OpenGaussIncrementalPermissionVerifyChain())
                     .addVerifyChain(new PgsqlReplicationConnectionVerifyChain())
-                    .addVerifyChain(new PgsqlReplicationNumberVerifyChain());
+                    .addVerifyChain(new PgsqlReplicationNumberVerifyChain())
+                    .addVerifyChain(new PgsqlWalLevelVerifyChain());
         }
 
         if (migrationPhaseList.contains(MigrationPhase.REVERSE_MIGRATION)) {
@@ -134,6 +138,7 @@ public class VerifyChainBuilder {
     public static AbstractVerifyChain getPgsqlReversePhaseVerifyChain() {
         VerifyChainBuilder builder = new VerifyChainBuilder();
         builder.addVerifyChain(new PgsqlConnectVerifyChain())
+                .addVerifyChain(new PgsqlVersionVerifyChain())
                 .addVerifyChain(new OpenGaussConnectVerifyChain())
                 .addVerifyChain(new OpenGaussReversePermissionVerifyChain())
                 .addVerifyChain(new OpenGaussWalLevelVerifyChain())
