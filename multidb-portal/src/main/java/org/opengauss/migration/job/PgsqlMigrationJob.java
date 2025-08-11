@@ -83,6 +83,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
             return;
         }
 
+        statusMonitor.setCurrentStatus(MigrationStatusEnum.INCREMENTAL_MIGRATION_STOPPING);
         incrementalMigrationTask.stopTask();
 
         if (hasFullMigration && fullMigrationTask.isForeignKeyMigrated()) {
@@ -137,6 +138,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
         } else if (MigrationStatusEnum.INCREMENTAL_MIGRATION_INTERRUPTED.equals(currentStatus)
                 || MigrationStatusEnum.INCREMENTAL_MIGRATION_RUNNING.equals(currentStatus)) {
             if (!migrationStopIndicator.isStopped()) {
+                statusMonitor.setCurrentStatus(MigrationStatusEnum.INCREMENTAL_MIGRATION_STOPPING);
                 incrementalMigrationTask.stopTask();
                 statusMonitor.setCurrentStatus(MigrationStatusEnum.INCREMENTAL_MIGRATION_FINISHED);
 
@@ -165,6 +167,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
         if (MigrationStatusEnum.START_REVERSE_MIGRATION.equals(currentStatus)
                 || MigrationStatusEnum.REVERSE_MIGRATION_RUNNING.equals(currentStatus)
                 || MigrationStatusEnum.REVERSE_MIGRATION_INTERRUPTED.equals(currentStatus)
+                || MigrationStatusEnum.REVERSE_MIGRATION_STOPPING.equals(currentStatus)
                 || MigrationStatusEnum.REVERSE_MIGRATION_FINISHED.equals(currentStatus)) {
             LOGGER.warn("Reverse migration is already running or interrupted or finished, "
                     + "unable to start reverse migration again");
@@ -211,6 +214,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
             return;
         }
 
+        statusMonitor.setCurrentStatus(MigrationStatusEnum.REVERSE_MIGRATION_STOPPING);
         reverseMigrationTask.stopTask();
         statusMonitor.setCurrentStatus(MigrationStatusEnum.REVERSE_MIGRATION_FINISHED);
         LOGGER.info("Stop reverse migration successfully");
@@ -250,6 +254,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
         } else if (MigrationStatusEnum.REVERSE_MIGRATION_INTERRUPTED.equals(currentStatus)
                 || MigrationStatusEnum.REVERSE_MIGRATION_RUNNING.equals(currentStatus)) {
             if (!migrationStopIndicator.isStopped()) {
+                statusMonitor.setCurrentStatus(MigrationStatusEnum.REVERSE_MIGRATION_STOPPING);
                 reverseMigrationTask.stopTask();
                 statusMonitor.setCurrentStatus(MigrationStatusEnum.REVERSE_MIGRATION_FINISHED);
 
