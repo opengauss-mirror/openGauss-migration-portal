@@ -81,6 +81,7 @@ public class MigrationManager {
      * Start migration
      */
     public void start() {
+        statusMonitor.setCurrentStatus(MigrationStatusEnum.MIGRATION_STARTING);
         if (!migrationJob.preMigrationVerify()) {
             migrationStopIndicator.setStop();
             statusMonitor.setCurrentStatus(MigrationStatusEnum.PRE_MIGRATION_VERIFY_FAILED);
@@ -102,6 +103,7 @@ public class MigrationManager {
      */
     public void stop() {
         if (!migrationStopIndicator.isStopped()) {
+            statusMonitor.setCurrentStatus(MigrationStatusEnum.MIGRATION_STOPPING);
             doStop();
             statusMonitor.setCurrentStatus(MigrationStatusEnum.MIGRATION_FINISHED);
         }

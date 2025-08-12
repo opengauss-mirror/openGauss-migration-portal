@@ -94,6 +94,7 @@ public class MigrationStatusConstants {
             MigrationStatusEnum.START_INCREMENTAL_MIGRATION,
             MigrationStatusEnum.INCREMENTAL_MIGRATION_RUNNING,
             MigrationStatusEnum.INCREMENTAL_MIGRATION_INTERRUPTED,
+            MigrationStatusEnum.INCREMENTAL_MIGRATION_STOPPING,
             MigrationStatusEnum.INCREMENTAL_MIGRATION_FINISHED
     );
 
@@ -104,6 +105,7 @@ public class MigrationStatusConstants {
             MigrationStatusEnum.START_REVERSE_MIGRATION,
             MigrationStatusEnum.REVERSE_MIGRATION_RUNNING,
             MigrationStatusEnum.REVERSE_MIGRATION_INTERRUPTED,
+            MigrationStatusEnum.REVERSE_MIGRATION_STOPPING,
             MigrationStatusEnum.REVERSE_MIGRATION_FINISHED
     );
 
