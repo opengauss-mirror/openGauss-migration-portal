@@ -15,11 +15,11 @@
     <commons-cli.version>1.9.0</commons-cli.version>
     <opencsv.version>5.7.1</opencsv.version>
     <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
-    <mysql-connector-java>8.0.27</mysql-connector-java>
+    <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
     <postgresql.version>42.7.6</postgresql.version>
 
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -106,8 +106,8 @@
     </dependency>
 
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
     </dependency>
 
     <dependency>
