@@ -11,17 +11,18 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.6.7</version>
+        <version>3.5.3</version>
     </parent>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mysql-connector-java>8.0.27</mysql-connector-java>
-        <spring.boot.version>2.6.7</spring.boot.version>
+        <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
+        <spring.boot.version>3.5.3</spring.boot.version>
+        <tomcat.version>10.1.43</tomcat.version>
         <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
-        <fastjson.version>1.2.75</fastjson.version>
+        <fastjson.version>2.0.51</fastjson.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
         <log4j2.version>2.24.2</log4j2.version>
@@ -29,7 +30,7 @@
         <common.io.version>2.14.0</common.io.version>
         <jdom.version>2.0.6.1</jdom.version>
         <mockito-inline.version>3.12.4</mockito-inline.version>
-        <kafka.version>3.0.0</kafka.version>
+        <kafka.version>3.9.1</kafka.version>
     </properties>
 
     <build>
@@ -127,9 +128,9 @@
             <version>${fastjson.version}</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql-connector-java}</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql-connector-j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
