@@ -7,16 +7,16 @@
   <version>7.0.0rc2</version>
 
   <properties>
-    <quarkus.version>3.6.9</quarkus.version>
-    <lombok.version>1.18.32</lombok.version>
-    <snakeyaml.version>2.0</snakeyaml.version>
-    <fastjson2.version>2.0.57</fastjson2.version>
-    <log4j2.version>2.24.2</log4j2.version>
-    <commons-cli.version>1.9.0</commons-cli.version>
-    <opencsv.version>5.7.1</opencsv.version>
+    <quarkus.version>3.19.4</quarkus.version>
+    <lombok.version>1.18.38</lombok.version>
+    <snakeyaml.version>2.4</snakeyaml.version>
+    <fastjson2.version>2.0.58</fastjson2.version>
+    <log4j2.version>2.24.3</log4j2.version>
+    <commons-cli.version>1.10.0</commons-cli.version>
+    <opencsv.version>5.11.2</opencsv.version>
     <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
     <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
-    <postgresql.version>42.7.6</postgresql.version>
+    <postgresql.version>42.7.7</postgresql.version>
 
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>

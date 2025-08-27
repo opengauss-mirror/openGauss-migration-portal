@@ -20,17 +20,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
         <spring.boot.version>3.5.3</spring.boot.version>
-        <tomcat.version>10.1.43</tomcat.version>
         <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
         <fastjson.version>2.0.51</fastjson.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
-        <log4j2.version>2.24.2</log4j2.version>
         <disruptor.version>3.4.4</disruptor.version>
         <common.io.version>2.14.0</common.io.version>
-        <jdom.version>2.0.6.1</jdom.version>
         <mockito-inline.version>3.12.4</mockito-inline.version>
-        <kafka.version>3.9.1</kafka.version>
     </properties>
 
     <build>
@@ -40,7 +36,6 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring.boot.version}</version>
                 <configuration>
-                    <fork>true</fork>
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>
@@ -104,18 +99,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
+            <artifactId>log4j-slf4j2-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>com.lmax</groupId>
@@ -139,7 +131,6 @@
         <dependency>
             <groupId>org.jdom</groupId>
             <artifactId>jdom2</artifactId>
-            <version>${jdom.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>
@@ -150,7 +141,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <version>${spring.boot.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -160,7 +150,6 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${kafka.version}</version>
         </dependency>
     </dependencies>
 
