@@ -105,8 +105,8 @@ public class VerifyChainBuilder {
     public static AbstractVerifyChain getPgsqlMigrationVerifyChain(List<MigrationPhase> migrationPhaseList) {
         VerifyChainBuilder builder = new VerifyChainBuilder();
         builder.addVerifyChain(new PgsqlConnectVerifyChain())
-                .addVerifyChain(new PgsqlVersionVerifyChain())
                 .addVerifyChain(new OpenGaussConnectVerifyChain())
+                .addVerifyChain(new PgsqlVersionVerifyChain())
                 .addVerifyChain(new OpenGaussSqlCompatibilityVerifyChain());
 
         if (migrationPhaseList.contains(MigrationPhase.FULL_MIGRATION)) {
@@ -138,8 +138,8 @@ public class VerifyChainBuilder {
     public static AbstractVerifyChain getPgsqlReversePhaseVerifyChain() {
         VerifyChainBuilder builder = new VerifyChainBuilder();
         builder.addVerifyChain(new PgsqlConnectVerifyChain())
-                .addVerifyChain(new PgsqlVersionVerifyChain())
                 .addVerifyChain(new OpenGaussConnectVerifyChain())
+                .addVerifyChain(new PgsqlVersionVerifyChain())
                 .addVerifyChain(new OpenGaussReversePermissionVerifyChain())
                 .addVerifyChain(new OpenGaussWalLevelVerifyChain())
                 .addVerifyChain(new OpenGaussReplicationConnectionVerifyChain())

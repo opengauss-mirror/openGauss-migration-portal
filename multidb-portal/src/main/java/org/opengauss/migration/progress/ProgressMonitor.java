@@ -73,13 +73,18 @@ public abstract class ProgressMonitor extends Thread {
         while (isRunning) {
             ThreadUtils.sleep(INTERVAL_TIME);
             MigrationStatusEnum currentStatus = statusMonitor.getCurrentStatus().getStatus();
-            if (MigrationStatusEnum.NOT_START.equals(currentStatus)) {
+            if (MigrationStatusEnum.NOT_START.equals(currentStatus)
+                    || MigrationStatusEnum.MIGRATION_STARTING.equals(currentStatus)) {
                 continue;
             }
             if (MigrationStatusEnum.MIGRATION_FAILED.equals(currentStatus)
                     || MigrationStatusEnum.MIGRATION_FINISHED.equals(currentStatus)) {
                 stopMonitoring();
                 continue;
+            }
+
+            if (MigrationStatusEnum.MIGRATION_STOPPING.equals(currentStatus)) {
+                currentStatus = latestStatus;
             }
 
             MigrationPhase currentPhase = getPhaseByStatus(currentStatus);
