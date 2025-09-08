@@ -136,7 +136,7 @@ public class JdbcUtils {
             try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(selectSql)) {
                 int columnCount = rs.getMetaData().getColumnCount();
                 if (rs.next()) {
-                    for (int i = 0; i < columnCount; i++) {
+                    for (int i = 0; i < columnKeys.length; i++) {
                         resultMap.put(columnKeys[i], rs.getString(columnKeys[i]));
                     }
                 }

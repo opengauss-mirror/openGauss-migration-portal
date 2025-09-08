@@ -48,16 +48,17 @@ public class GtidSetVerifyChain extends AbstractPreMigrationVerifyChain {
 
     private boolean isExecutedGtidSetAvailable(Connection mysqlConnection) {
         String sql = "SHOW MASTER STATUS;";
-
         try {
             String gtidSet = JdbcUtils.selectStringValue(mysqlConnection, sql, "Executed_Gtid_Set");
             if (gtidSet != null && gtidSet.contains(":1-")) {
                 return true;
             }
         } catch (SQLException e) {
-            LOGGER.error("Failed to execute Gtid Set query", e);
-            paramMap.put("error_message", "Failed to execute sql: " + sql + ", error: " + e.getMessage());
+            Map<String, String> binlogPosMap = JdbcUtils.selectMapValue(mysqlConnection, sql,
+                new String[] {"File", "Position"});
+            return binlogPosMap.get("File") != null && binlogPosMap.get("Position") != null;
         }
+        LOGGER.error("Failed to execute Gtid Set and binlog position query");
         return false;
     }
 }

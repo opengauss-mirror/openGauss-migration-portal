@@ -177,6 +177,9 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
      * @return the string
      */
     public static String changeGtidSet(String oldGtidSet, String mysqlUuid) {
+        if ("None".equals(oldGtidSet) || "".equals(mysqlUuid)) {
+            return "";
+        }
         StringBuilder newGtidSet = new StringBuilder();
         String[] gtidSetParts = oldGtidSet.replaceAll(System.lineSeparator(), "").split(",");
         for (String tGtidSet : gtidSetParts) {
