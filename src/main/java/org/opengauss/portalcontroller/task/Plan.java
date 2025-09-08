@@ -296,6 +296,7 @@ public final class Plan {
             ProcessUtils.sleepThread(1000, "waiting for signal");
             if (runReverseMigration || stopPlan) {
                 LOGGER.info(msg);
+                Plan.pause = false;
                 break;
             }
         }
@@ -576,6 +577,7 @@ public final class Plan {
                         break;
                     }
                     if (runIncrementalMigration) {
+                        Plan.pause = false;
                         incrementalMigrationTool.init(workspaceId);
                     }
                 }
