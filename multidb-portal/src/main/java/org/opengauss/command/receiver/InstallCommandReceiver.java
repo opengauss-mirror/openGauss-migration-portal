@@ -203,7 +203,7 @@ public class InstallCommandReceiver implements CommandReceiver {
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "/bin/bash", "-c", "sudo -n true &> /dev/null && echo 0 || echo 1"
             );
-            String exitCode = ProcessUtils.executeCommandWithResult(processBuilder);
+            String exitCode = ProcessUtils.executeCommandWithResult(processBuilder).trim();
 
             if (exitCode.equals("0")) {
                 LOGGER.debug("The installation user has the sudo permission");
@@ -230,7 +230,8 @@ public class InstallCommandReceiver implements CommandReceiver {
         try {
             LOGGER.info("Run dependencies install script");
             String installLogPath = String.format("%s/execute_%s.log", installScriptDirPath, installScriptName);
-            ProcessUtils.executeShellScript(installScriptName, installScriptDirPath, installLogPath, 60000L);
+            String command = String.format("sh %s chameleon", installScriptName);
+            ProcessUtils.executeCommand(command, installScriptDirPath, installLogPath, 60000L);
             String installLog = FileUtils.readFileContents(installLogPath);
             LOGGER.info("Install script logs: \n{}", installLog);
         } catch (IOException | InterruptedException e) {
