@@ -191,7 +191,6 @@ public class ParamsUtils {
     public static void initMigrationParamsFromProps() {
         Hashtable<String, String> migrationConfig = new Hashtable<>();
         Properties properties = System.getProperties();
-        LOGGER.info("properties = {}", properties.toString());
         properties.keySet().forEach(key -> {
             String keyStr = String.valueOf(key);
             if (keyStr.startsWith(NEW_PARAM_PREFIX)) {
