@@ -7,7 +7,7 @@
   <version>7.0.0rc2</version>
 
   <properties>
-    <quarkus.version>3.19.4</quarkus.version>
+    <quarkus.version>3.28.0.CR1</quarkus.version>
     <lombok.version>1.18.38</lombok.version>
     <snakeyaml.version>2.4</snakeyaml.version>
     <fastjson2.version>2.0.58</fastjson2.version>

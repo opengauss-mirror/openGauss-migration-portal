@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.5</version>
     </parent>
 
     <properties>
@@ -19,7 +19,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
-        <spring.boot.version>3.5.3</spring.boot.version>
+        <spring.boot.version>3.5.5</spring.boot.version>
         <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
         <fastjson.version>2.0.51</fastjson.version>
         <snakeyaml.version>2.0</snakeyaml.version>
