@@ -21,7 +21,6 @@ public enum ErrorCode {
 
     INCORRECT_CONFIGURATION(5100, "参数配置错误", "There is an error in the parameter configuration"),
     INVALID_COMMAND(5101, "无效的命令", "Invalid command"),
-    INVALID_DB_PASSWORD(5102, "数据库密码错误", "Invalid database password"),
     LOAD_CONFIGURATION_ERROR(5103, "加载配置信息时发生错误", "Failed to load the configuration"),
     MIGRATION_CONDITIONS_NOT_MET(5104, "迁移条件不满足", "Migration conditions are not met"),
     MIGRATION_ENVIRONMENT_NOT_MET(5105, "迁移环境不满足", "Migration environment are not met"),

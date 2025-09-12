@@ -150,7 +150,6 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
                 ResultSet rs = JdbcUtils.getPgConnection().execSQLQuery(sql)
         ) {
             String uuid = JdbcUtils.getCurrentUuid(mysqlConnection);
-            LOGGER.info("Current uuid: {}", uuid);
             if (rs.next()) {
                 String tBinlogName = rs.getString("t_binlog_name");
                 String iBinlogPosition = rs.getString("i_binlog_position");
