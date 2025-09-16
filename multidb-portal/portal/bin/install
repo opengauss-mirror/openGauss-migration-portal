@@ -13,7 +13,7 @@ Usage:
   Basic Usage:
     $0 tools                      Install all migration tools
     $0 chameleon                  Install MySQL full migration tool
-    $0 full_migration_tool        Install PostgreSQL full migration tool
+    $0 og_datasync                Install PostgreSQL full migration tool
     $0 debezium                   Install incremental and reverse migration tool
     $0 data_checker               Install data check migration tool
     $0 kafka                      Install confluent
@@ -74,7 +74,7 @@ shift
 
 # Validate component
 case "$COMPONENT" in
-    tools|chameleon|full_migration_tool|debezium|data_checker|kafka|dependencies|check)
+    tools|chameleon|og_datasync|debezium|data_checker|kafka|dependencies|check)
         ;;
     *)
         echo "Error: Invalid component name '$COMPONENT'"

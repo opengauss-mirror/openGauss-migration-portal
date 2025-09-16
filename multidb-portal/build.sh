@@ -114,8 +114,8 @@ build_dirs() {
     chmod +x ./bin/*
     cp ../target/openGauss-portal-*.jar ./
 
-    mkdir -p pkg/chameleon pkg/confluent pkg/datachecker pkg/debezium pkg/full-migration
-    mkdir -p template/config/chameleon template/config/datachecker template/config/debezium template/config/full-migration
+    mkdir -p pkg/chameleon pkg/confluent pkg/datachecker pkg/debezium pkg/oG_datasync
+    mkdir -p template/config/chameleon template/config/datachecker template/config/debezium template/config/oG_datasync
     echo "Build the directories successfully"
 }
 

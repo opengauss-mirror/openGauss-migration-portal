@@ -11,12 +11,12 @@ import org.opengauss.migration.progress.model.FullTotalInfo;
 import java.util.List;
 
 /**
- * full migration tool status entry
+ * oG_datasync_full_migration status entry
  *
  * @since 2025/6/24
  */
 @Data
-public class FullMigrationToolStatusEntry {
+public class OgDatasyncStatusEntry {
     private FullTotalInfo total;
     private List<FullEntry> table;
     private List<FullEntry> view;

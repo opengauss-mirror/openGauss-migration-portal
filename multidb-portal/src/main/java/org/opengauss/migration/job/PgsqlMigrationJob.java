@@ -18,7 +18,7 @@ import org.opengauss.migration.process.ProcessMonitor;
 import org.opengauss.migration.status.StatusMonitor;
 import org.opengauss.migration.tasks.impl.DebeziumPgsqlIncrementalMigrationTask;
 import org.opengauss.migration.tasks.impl.DebeziumPgsqlReverseMigrationTask;
-import org.opengauss.migration.tasks.impl.FullMigrationToolPgsqlFullMigrationTask;
+import org.opengauss.migration.tasks.impl.OgDatasyncPgsqlFullMigrationTask;
 import org.opengauss.migration.verify.VerifyManager;
 
 import java.sql.SQLException;
@@ -295,7 +295,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
         TaskWorkspace taskWorkspace = migrationJobConfig.getTaskWorkspace();
         PgsqlMigrationConfigDto migrationConfigDto = migrationJobConfig.getMigrationConfigDto();
         if (hasFullMigration) {
-            fullMigrationTask = new FullMigrationToolPgsqlFullMigrationTask(taskWorkspace, migrationStopIndicator,
+            fullMigrationTask = new OgDatasyncPgsqlFullMigrationTask(taskWorkspace, migrationStopIndicator,
                     migrationConfigDto, migrationJobConfig.getFullConfigBundle());
         }
 
@@ -357,13 +357,13 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
                 executor.addStep(() -> fullMigrationTask.migrateObject());
             } else {
                 executor.addStep(() -> {
-                    if (!(fullMigrationTask instanceof FullMigrationToolPgsqlFullMigrationTask)) {
+                    if (!(fullMigrationTask instanceof OgDatasyncPgsqlFullMigrationTask)) {
                         throw new IllegalArgumentException("Full migration task is not instance of "
                                 + "FullMigrationToolPgsqlFullMigrationTask");
                     }
 
-                    FullMigrationToolPgsqlFullMigrationTask fullMigrationToolTask =
-                            (FullMigrationToolPgsqlFullMigrationTask) fullMigrationTask;
+                    OgDatasyncPgsqlFullMigrationTask fullMigrationToolTask =
+                            (OgDatasyncPgsqlFullMigrationTask) fullMigrationTask;
                     fullMigrationToolTask.waitTableMigrationExit();
                 });
             }

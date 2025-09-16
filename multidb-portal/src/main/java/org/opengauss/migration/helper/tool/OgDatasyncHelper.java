@@ -10,11 +10,11 @@ import com.alibaba.fastjson2.JSONReader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.tool.FullMigrationToolConstants;
+import org.opengauss.constants.tool.OgDatasyncConstants;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.migration.progress.model.tool.FullMigrationToolStatusEntry;
-import org.opengauss.migration.tools.FullMigrationTool;
+import org.opengauss.migration.progress.model.tool.OgDatasyncStatusEntry;
+import org.opengauss.migration.tools.OgDatasync;
 import org.opengauss.utils.StringUtils;
 
 import java.io.IOException;
@@ -23,23 +23,23 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * full migration tool helper
+ * oG_datasync_full_migration helper
  *
  * @since 2025/5/29
  */
 @Slf4j
-public class FullMigrationToolHelper {
-    private static final Logger LOGGER = LogManager.getLogger(FullMigrationToolHelper.class);
+public class OgDatasyncHelper {
+    private static final Logger LOGGER = LogManager.getLogger(OgDatasyncHelper.class);
 
-    private FullMigrationToolHelper() {
+    private OgDatasyncHelper() {
     }
 
     /**
-     * generate full migration tool process start command
+     * generate oG_datasync_full_migration process start command
      *
      * @param fullConfig full config file
      * @param sourceDbType source db type
-     * @param fullMigrationToolOrder full migration tool order
+     * @param fullMigrationToolOrder oG_datasync_full_migration order
      * @param jvmPrefixOptions jvm prefix options
      * @return process start command
      */
@@ -47,7 +47,7 @@ public class FullMigrationToolHelper {
             ConfigFile fullConfig, String sourceDbType, String fullMigrationToolOrder, String jvmPrefixOptions) {
         StringBuilder commandBuilder = new StringBuilder();
 
-        String jarPath = FullMigrationTool.getInstance().getJarPath();
+        String jarPath = OgDatasync.getInstance().getJarPath();
         commandBuilder.append("java").append(" ")
                 .append(jvmPrefixOptions).append(" ")
                 .append("-jar").append(" ").append(jarPath).append(" ")
@@ -59,11 +59,11 @@ public class FullMigrationToolHelper {
     }
 
     /**
-     * generate full migration tool process check command
+     * generate oG_datasync_full_migration process check command
      *
      * @param fullConfig full config file
      * @param sourceDbType source db type
-     * @param fullMigrationToolOrder full migration tool order
+     * @param fullMigrationToolOrder oG_datasync_full_migration order
      * @param jvmPrefixOptions jvm prefix options
      * @return process check command
      */
@@ -83,23 +83,23 @@ public class FullMigrationToolHelper {
     }
 
     /**
-     * get full migration tool process stop sign
+     * get oG_datasync_full_migration process stop sign
      *
-     * @param fullMigrationToolOrder full migration tool order
+     * @param fullMigrationToolOrder oG_datasync_full_migration order
      * @return process stop sign
      */
     public static String getProcessStopSign(String fullMigrationToolOrder) {
-        if (FullMigrationToolConstants.ORDER_DROP_REPLICA_SCHEMA.equals(fullMigrationToolOrder)) {
+        if (OgDatasyncConstants.ORDER_DROP_REPLICA_SCHEMA.equals(fullMigrationToolOrder)) {
             return "drop replica schema(sch_debezium) success.";
         }
         return fullMigrationToolOrder + " migration complete. full report thread is close.";
     }
 
     /**
-     * generate full migration tool order status file path
+     * generate oG_datasync_full_migration order status file path
      *
      * @param taskWorkspace task workspace
-     * @param fullMigrationToolOrder full migration tool order
+     * @param fullMigrationToolOrder oG_datasync_full_migration order
      * @return order status file path
      */
     public static String generateOrderStatusFilePath(TaskWorkspace taskWorkspace, String fullMigrationToolOrder) {
@@ -107,12 +107,12 @@ public class FullMigrationToolHelper {
     }
 
     /**
-     * parse full migration tool status file to full migration tool status entry
+     * parse oG_datasync_full_migration status file to oG_datasync_full_migration status entry
      *
      * @param statusFilePath status file path
-     * @return full migration tool status entry
+     * @return oG_datasync_full_migration status entry
      */
-    public static Optional<FullMigrationToolStatusEntry> parseToolStatusFile(String statusFilePath) {
+    public static Optional<OgDatasyncStatusEntry> parseToolStatusFile(String statusFilePath) {
         Path statusPath = Path.of(statusFilePath);
         try {
             if (!Files.exists(statusPath)) {
@@ -121,11 +121,11 @@ public class FullMigrationToolHelper {
 
             String text = Files.readString(statusPath);
             if (!StringUtils.isNullOrBlank(text)) {
-                return Optional.ofNullable(JSON.parseObject(text, FullMigrationToolStatusEntry.class,
+                return Optional.ofNullable(JSON.parseObject(text, OgDatasyncStatusEntry.class,
                         JSONReader.Feature.IgnoreAutoTypeNotMatch));
             }
         } catch (IOException | JSONException e) {
-            LOGGER.warn("Failed to read or parse full migration tool progress, error: {}", e.getMessage());
+            LOGGER.warn("Failed to read or parse oG_datasync_full_migration progress, error: {}", e.getMessage());
         }
         return Optional.empty();
     }

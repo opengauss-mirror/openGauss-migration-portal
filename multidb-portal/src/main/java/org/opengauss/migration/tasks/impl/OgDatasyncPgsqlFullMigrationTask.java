@@ -6,28 +6,28 @@ package org.opengauss.migration.tasks.impl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.config.FullMigrationToolConfig;
+import org.opengauss.constants.config.OgDatasyncConfig;
 import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
-import org.opengauss.domain.model.FullMigrationToolConfigBundle;
+import org.opengauss.domain.model.OgDatasyncConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.migration.helper.config.DebeziumPgsqlMigrationConfigHelper;
-import org.opengauss.migration.helper.config.FullMigrationToolPgsqlMigrationConfigHelper;
-import org.opengauss.migration.helper.tool.FullMigrationToolHelper;
+import org.opengauss.migration.helper.config.OgDatasyncPgsqlMigrationConfigHelper;
+import org.opengauss.migration.helper.tool.OgDatasyncHelper;
 import org.opengauss.migration.tasks.phase.FullMigrationTask;
-import org.opengauss.migration.tasks.tool.FullMigrationToolTask;
+import org.opengauss.migration.tasks.tool.OgDatasyncTask;
 import org.opengauss.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 /**
- * full migration tool pgsql full migration task
+ * oG_datasync_full_migration pgsql full migration task
  *
  * @since 2025/5/29
  */
-public class FullMigrationToolPgsqlFullMigrationTask extends FullMigrationToolTask implements FullMigrationTask {
-    private static final Logger LOGGER = LogManager.getLogger(FullMigrationToolPgsqlFullMigrationTask.class);
+public class OgDatasyncPgsqlFullMigrationTask extends OgDatasyncTask implements FullMigrationTask {
+    private static final Logger LOGGER = LogManager.getLogger(OgDatasyncPgsqlFullMigrationTask.class);
 
     private final PgsqlMigrationConfigDto migrationConfigDto;
     private boolean isTableMigrated = false;
@@ -37,9 +37,9 @@ public class FullMigrationToolPgsqlFullMigrationTask extends FullMigrationToolTa
     private boolean isProcedureMigrated = false;
     private boolean isForeignKeyMigrated = false;
 
-    public FullMigrationToolPgsqlFullMigrationTask(
+    public OgDatasyncPgsqlFullMigrationTask(
             TaskWorkspace taskWorkspace, MigrationStopIndicator migrationStopIndicator,
-            PgsqlMigrationConfigDto migrationConfigDto, FullMigrationToolConfigBundle fullMigrationToolConfig) {
+            PgsqlMigrationConfigDto migrationConfigDto, OgDatasyncConfigBundle fullMigrationToolConfig) {
         super(taskWorkspace, migrationStopIndicator, fullMigrationToolConfig, migrationConfigDto.getFullProcessJvm());
         this.migrationConfigDto = migrationConfigDto;
     }
@@ -126,15 +126,15 @@ public class FullMigrationToolPgsqlFullMigrationTask extends FullMigrationToolTa
     }
 
     private void cleanHistoryFiles() {
-        String csvDirPath = FullMigrationToolPgsqlMigrationConfigHelper.generateCsvDirPath(taskWorkspace);
-        String logPath = FullMigrationToolHelper.generateFullMigrationLogPath(taskWorkspace);
+        String csvDirPath = OgDatasyncPgsqlMigrationConfigHelper.generateCsvDirPath(taskWorkspace);
+        String logPath = OgDatasyncHelper.generateFullMigrationLogPath(taskWorkspace);
         String statusDirPath = taskWorkspace.getStatusFullDirPath();
         try {
             FileUtils.deletePath(csvDirPath);
             FileUtils.deletePath(logPath);
             FileUtils.cleanDirectory(statusDirPath);
         } catch (IOException e) {
-            LOGGER.warn("Failed to delete full-migration tool history files, error: {}", e.getMessage());
+            LOGGER.warn("Failed to delete oG_datasync_full_migration history files, error: {}", e.getMessage());
         }
     }
 
@@ -142,7 +142,7 @@ public class FullMigrationToolPgsqlFullMigrationTask extends FullMigrationToolTa
         String slotName = DebeziumPgsqlMigrationConfigHelper.generateIncrementalSlotName(migrationConfigDto,
                 taskWorkspace);
         HashMap<String, Object> changeParams = new HashMap<>();
-        changeParams.put(FullMigrationToolConfig.SLOT_NAME, slotName);
+        changeParams.put(OgDatasyncConfig.SLOT_NAME, slotName);
         fullConfig.changeConfig(changeParams);
     }
 }

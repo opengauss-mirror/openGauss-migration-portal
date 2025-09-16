@@ -56,69 +56,64 @@ public class ProcessNameConstants {
     public static final String CHAMELEON_DETACH_REPLICA = "chameleon full detach replica process";
 
     /**
-     * full migration tool order table process name
+     * oG_datasync_full_migration order table process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_TABLE = "full-migration tool migration table process";
+    public static final String OG_DATASYNC_MIGRATION_TABLE = "oG_datasync_full_migration migration table process";
 
     /**
-     * full migration tool order sequence process name
+     * oG_datasync_full_migration order sequence process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_SEQUENCE =
-            "full-migration tool migration sequence process";
+    public static final String OG_DATASYNC_MIGRATION_SEQUENCE = "oG_datasync_full_migration migration sequence process";
 
     /**
-     * full migration tool order primary key process name
+     * oG_datasync_full_migration order primary key process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_PRIMARY_KEY =
-            "full-migration tool migration primary key process";
+    public static final String OG_DATASYNC_MIGRATION_PRIMARY_KEY =
+            "oG_datasync_full_migration migration primary key process";
 
     /**
-     * full migration tool order index process name
+     * oG_datasync_full_migration order index process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_INDEX =
-            "full-migration tool migration index process";
+    public static final String OG_DATASYNC_MIGRATION_INDEX = "oG_datasync_full_migration migration index process";
 
     /**
-     * full migration tool order constraint process name
+     * oG_datasync_full_migration order constraint process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_CONSTRAINT =
-            "full-migration tool migration constraint process";
+    public static final String OG_DATASYNC_MIGRATION_CONSTRAINT =
+            "oG_datasync_full_migration migration constraint process";
 
     /**
-     * full migration tool order view process name
+     * oG_datasync_full_migration order view process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_VIEW =
-            "full-migration tool migration view process";
+    public static final String OG_DATASYNC_MIGRATION_VIEW = "oG_datasync_full_migration migration view process";
 
     /**
-     * full migration tool order function process name
+     * oG_datasync_full_migration order function process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_FUNCTION =
-            "full-migration tool migration function process";
+    public static final String OG_DATASYNC_MIGRATION_FUNCTION = "oG_datasync_full_migration migration function process";
 
     /**
-     * full migration tool order procedure process name
+     * oG_datasync_full_migration order procedure process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_PROCEDURE =
-            "full-migration tool migration procedure process";
+    public static final String OG_DATASYNC_MIGRATION_PROCEDURE =
+            "oG_datasync_full_migration migration procedure process";
 
     /**
-     * full migration tool order trigger process name
+     * oG_datasync_full_migration order trigger process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_TRIGGER =
-            "full-migration tool migration trigger process";
+    public static final String OG_DATASYNC_MIGRATION_TRIGGER = "oG_datasync_full_migration migration trigger process";
 
     /**
-     * full migration tool order foreign key process name
+     * oG_datasync_full_migration order foreign key process name
      */
-    public static final String FULL_MIGRATION_TOOL_MIGRATION_FOREIGN_KEY =
-            "full-migration tool migration foreign key process";
+    public static final String OG_DATASYNC_MIGRATION_FOREIGN_KEY =
+            "oG_datasync_full_migration migration foreign key process";
 
     /**
-     * full migration tool order drop replica schema process name
+     * oG_datasync_full_migration order drop replica schema process name
      */
-    public static final String FULL_MIGRATION_TOOL_DROP_REPLICA_SCHEMA =
-            "full-migration tool drop replica schema process";
+    public static final String OG_DATASYNC_DROP_REPLICA_SCHEMA =
+            "oG_datasync_full_migration drop replica schema process";
 
     /**
      * debezium incremental connect source process name

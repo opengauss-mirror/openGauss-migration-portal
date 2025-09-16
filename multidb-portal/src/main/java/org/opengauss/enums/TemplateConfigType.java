@@ -29,10 +29,10 @@ public enum TemplateConfigType {
             "the chameleon config file", null),
 
     /**
-     * full migration tool config template file
+     * oG_datasync_full_migration config template file
      */
-    FULL_MIGRATION_TOOL_CONFIG("config.yml", FileFormat.YML, false, "config/full-migration",
-            "the full migration tool config file", null),
+    OG_DATASYNC_CONFIG("config.yml", FileFormat.YML, false, "config/oG_datasync",
+            "the oG_datasync_full_migration config file", null),
 
     /**
      * datachecker config template files

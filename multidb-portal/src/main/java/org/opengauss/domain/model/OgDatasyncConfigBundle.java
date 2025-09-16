@@ -7,12 +7,12 @@ package org.opengauss.domain.model;
 import lombok.Data;
 
 /**
- * full migration tool config file bundle
+ * oG_datasync_full_migration config file bundle
  *
  * @since 2025/7/2
  */
 @Data
-public class FullMigrationToolConfigBundle extends AbstractToolConfigBundle {
+public class OgDatasyncConfigBundle extends AbstractToolConfigBundle {
     private ConfigFile configFile;
 
     @Override
