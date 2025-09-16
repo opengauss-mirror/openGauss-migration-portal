@@ -7,13 +7,13 @@ package org.opengauss.migration.progress;
 import com.alibaba.fastjson2.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.tool.FullMigrationToolConstants;
+import org.opengauss.constants.tool.OgDatasyncConstants;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.migration.helper.MigrationStatusHelper;
-import org.opengauss.migration.helper.tool.FullMigrationToolHelper;
+import org.opengauss.migration.helper.tool.OgDatasyncHelper;
 import org.opengauss.migration.progress.model.FullEntry;
 import org.opengauss.migration.progress.model.FullTotalInfo;
-import org.opengauss.migration.progress.model.tool.FullMigrationToolStatusEntry;
+import org.opengauss.migration.progress.model.tool.OgDatasyncStatusEntry;
 import org.opengauss.migration.status.StatusMonitor;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.StringUtils;
@@ -36,32 +36,32 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
 
     @Override
     void readFullMigrationProgress() {
-        String tableJsonPath = FullMigrationToolHelper.generateOrderStatusFilePath(taskWorkspace,
-                FullMigrationToolConstants.ORDER_TABLE);
+        String tableJsonPath = OgDatasyncHelper.generateOrderStatusFilePath(taskWorkspace,
+                OgDatasyncConstants.ORDER_TABLE);
         if (isFileModified(tableJsonPath)) {
             readTableProgress(tableJsonPath);
         }
 
-        String viewJsonPath = FullMigrationToolHelper.generateOrderStatusFilePath(taskWorkspace,
-                FullMigrationToolConstants.ORDER_VIEW);
+        String viewJsonPath = OgDatasyncHelper.generateOrderStatusFilePath(taskWorkspace,
+                OgDatasyncConstants.ORDER_VIEW);
         if (isFileModified(viewJsonPath)) {
             readViewProgress(viewJsonPath);
         }
 
-        String funcJsonPath = FullMigrationToolHelper.generateOrderStatusFilePath(taskWorkspace,
-                FullMigrationToolConstants.ORDER_FUNCTION);
+        String funcJsonPath = OgDatasyncHelper.generateOrderStatusFilePath(taskWorkspace,
+                OgDatasyncConstants.ORDER_FUNCTION);
         if (isFileModified(funcJsonPath)) {
             readFuncProgress(funcJsonPath);
         }
 
-        String triggerJsonPath = FullMigrationToolHelper.generateOrderStatusFilePath(taskWorkspace,
-                FullMigrationToolConstants.ORDER_TRIGGER);
+        String triggerJsonPath = OgDatasyncHelper.generateOrderStatusFilePath(taskWorkspace,
+                OgDatasyncConstants.ORDER_TRIGGER);
         if (isFileModified(triggerJsonPath)) {
             readTriggerProgress(triggerJsonPath);
         }
 
-        String procJsonPath = FullMigrationToolHelper.generateOrderStatusFilePath(taskWorkspace,
-                FullMigrationToolConstants.ORDER_PROCEDURE);
+        String procJsonPath = OgDatasyncHelper.generateOrderStatusFilePath(taskWorkspace,
+                OgDatasyncConstants.ORDER_PROCEDURE);
         if (isFileModified(procJsonPath)) {
             readProcProgress(procJsonPath);
         }
@@ -83,12 +83,12 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
     }
 
     private void readTableProgress(String filePath) {
-        Optional<FullMigrationToolStatusEntry> entryOptional = FullMigrationToolHelper.parseToolStatusFile(filePath);
+        Optional<OgDatasyncStatusEntry> entryOptional = OgDatasyncHelper.parseToolStatusFile(filePath);
         if (entryOptional.isEmpty()) {
             return;
         }
 
-        FullMigrationToolStatusEntry statusEntry = entryOptional.get();
+        OgDatasyncStatusEntry statusEntry = entryOptional.get();
         FullTotalInfo total = statusEntry.getTotal();
         if (total != null) {
             String totalJsonString = JSON.toJSONString(total);
@@ -108,7 +108,7 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
     }
 
     private void readViewProgress(String jsonPath) {
-        Optional<FullMigrationToolStatusEntry> entryOptional = FullMigrationToolHelper.parseToolStatusFile(jsonPath);
+        Optional<OgDatasyncStatusEntry> entryOptional = OgDatasyncHelper.parseToolStatusFile(jsonPath);
         if (entryOptional.isEmpty()) {
             return;
         }
@@ -120,7 +120,7 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
     }
 
     private void readFuncProgress(String jsonPath) {
-        Optional<FullMigrationToolStatusEntry> entryOptional = FullMigrationToolHelper.parseToolStatusFile(jsonPath);
+        Optional<OgDatasyncStatusEntry> entryOptional = OgDatasyncHelper.parseToolStatusFile(jsonPath);
         if (entryOptional.isEmpty()) {
             return;
         }
@@ -132,7 +132,7 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
     }
 
     private void readTriggerProgress(String jsonPath) {
-        Optional<FullMigrationToolStatusEntry> entryOptional = FullMigrationToolHelper.parseToolStatusFile(jsonPath);
+        Optional<OgDatasyncStatusEntry> entryOptional = OgDatasyncHelper.parseToolStatusFile(jsonPath);
         if (entryOptional.isEmpty()) {
             return;
         }
@@ -144,7 +144,7 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
     }
 
     private void readProcProgress(String jsonPath) {
-        Optional<FullMigrationToolStatusEntry> entryOptional = FullMigrationToolHelper.parseToolStatusFile(jsonPath);
+        Optional<OgDatasyncStatusEntry> entryOptional = OgDatasyncHelper.parseToolStatusFile(jsonPath);
         if (entryOptional.isEmpty()) {
             return;
         }

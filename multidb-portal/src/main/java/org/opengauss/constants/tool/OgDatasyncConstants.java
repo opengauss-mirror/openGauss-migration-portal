@@ -5,40 +5,40 @@
 package org.opengauss.constants.tool;
 
 /**
- * full migration tool constants
+ * oG_datasync_full_migration constants
  *
  * @since 2025/5/29
  */
-public class FullMigrationToolConstants {
+public class OgDatasyncConstants {
     /**
      * tool name
      */
-    public static final String TOOL_NAME = "Full-Migration";
+    public static final String TOOL_NAME = "OG_datasync_full_migration";
 
     /**
      * install package directory name
      */
-    public static final String INSTALL_PKG_DIR_NAME = "full-migration";
+    public static final String INSTALL_PKG_DIR_NAME = "oG_datasync";
 
     /**
      * install package name
      */
-    public static final String INSTALL_PKG_NAME = "full-migration-tool-%s.tar.gz";
+    public static final String INSTALL_PKG_NAME = "oG_datasync_full_migration-%s.tar.gz";
 
     /**
      * install directory name
      */
-    public static final String INSTALL_DIR_NAME = "full-migration";
+    public static final String INSTALL_DIR_NAME = "oG_datasync";
 
     /**
-     * full migration jar name model
+     * oG_datasync_full_migration jar name model
      */
-    public static final String FULL_MIGRATION_JAR_NAME_MODEL = "full-migration-tool-%s.jar";
+    public static final String OG_DATASYNC_JAR_NAME_MODEL = "oG_datasync_full_migration-%s.jar";
 
     /**
-     * full migration jar name
+     * oG_datasync_full_migration jar name
      */
-    public static final String FULL_MIGRATION_JAR_HOME_NAME = "full-migration-tool";
+    public static final String OG_DATASYNC_JAR_HOME_NAME = "oG_datasync_full_migration";
 
     /**
      * wait process start millis
@@ -105,6 +105,6 @@ public class FullMigrationToolConstants {
      */
     public static final String SUPPORT_SOURCE_DB_TYPE_PGSQL = "postgresql";
 
-    private FullMigrationToolConstants() {
+    private OgDatasyncConstants() {
     }
 }

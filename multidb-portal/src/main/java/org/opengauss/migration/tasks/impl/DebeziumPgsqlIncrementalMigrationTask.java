@@ -14,7 +14,7 @@ import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;
 import org.opengauss.migration.helper.config.DebeziumPgsqlMigrationConfigHelper;
-import org.opengauss.migration.helper.config.FullMigrationToolPgsqlMigrationConfigHelper;
+import org.opengauss.migration.helper.config.OgDatasyncPgsqlMigrationConfigHelper;
 import org.opengauss.migration.process.ProcessMonitor;
 import org.opengauss.migration.process.task.DebeziumProcess;
 import org.opengauss.migration.tasks.phase.IncrementalMigrationTask;
@@ -135,7 +135,7 @@ public class DebeziumPgsqlIncrementalMigrationTask extends DebeziumTask implemen
 
     private void alterTableReplicaIdentityDefault(PgConnection connection) {
         try {
-            Map<String, String> schemaMappings = FullMigrationToolPgsqlMigrationConfigHelper.getMigrationSchemaMappings(
+            Map<String, String> schemaMappings = OgDatasyncPgsqlMigrationConfigHelper.getMigrationSchemaMappings(
                     migrationConfigDto);
             for (Map.Entry<String, String> entry : schemaMappings.entrySet()) {
                 String sourceSchema = entry.getKey();

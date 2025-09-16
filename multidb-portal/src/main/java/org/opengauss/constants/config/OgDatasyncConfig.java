@@ -5,11 +5,11 @@
 package org.opengauss.constants.config;
 
 /**
- * full migration tool config
+ * oG_datasync_full_migration config
  *
  * @since 2025/5/29
  */
-public class FullMigrationToolConfig {
+public class OgDatasyncConfig {
     /**
      * is dump json
      */
@@ -100,6 +100,6 @@ public class FullMigrationToolConfig {
      */
     public static final String PLUGIN_NAME = "sourceConfig.pluginName";
 
-    private FullMigrationToolConfig() {
+    private OgDatasyncConfig() {
     }
 }

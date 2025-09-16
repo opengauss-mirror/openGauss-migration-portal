@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.tools.Chameleon;
 import org.opengauss.migration.tools.DataChecker;
 import org.opengauss.migration.tools.Debezium;
-import org.opengauss.migration.tools.FullMigrationTool;
+import org.opengauss.migration.tools.OgDatasync;
 import org.opengauss.migration.tools.Kafka;
 
 /**
@@ -26,7 +26,7 @@ public class UninstallCommandReceiver implements CommandReceiver {
     public void migrationTools() {
         Kafka.getInstance().unInstall();
         Chameleon.getInstance().unInstall();
-        FullMigrationTool.getInstance().unInstall();
+        OgDatasync.getInstance().unInstall();
         DataChecker.getInstance().unInstall();
         Debezium.getInstance().unInstall();
         LOGGER.info("Uninstall all migration tools successfully");
