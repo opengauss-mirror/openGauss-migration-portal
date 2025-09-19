@@ -57,6 +57,21 @@ public class StatusMonitor {
     }
 
     /**
+     * Whether current status is not running
+     *
+     * @return true if it is not running
+     */
+    public boolean isNotRunning() {
+        MigrationStatusEnum status = currentStatus.getStatus();
+        return MigrationStatusEnum.NOT_START.equals(status)
+                || MigrationStatusEnum.MIGRATION_STARTING.equals(status)
+                || MigrationStatusEnum.MIGRATION_STOPPING.equals(status)
+                || MigrationStatusEnum.MIGRATION_FINISHED.equals(status)
+                || MigrationStatusEnum.MIGRATION_FAILED.equals(status)
+                || MigrationStatusEnum.PRE_MIGRATION_VERIFY_FAILED.equals(status);
+    }
+
+    /**
      * Whether current status is full migration status
      *
      * @return true if is full migration status

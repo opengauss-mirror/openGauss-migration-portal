@@ -8,6 +8,7 @@ import lombok.Getter;
 import org.opengauss.constants.config.MigrationConfig;
 import org.opengauss.domain.model.DatabaseConnectInfo;
 import org.opengauss.domain.model.OpenGaussDatabaseConnectInfo;
+import org.opengauss.utils.ConsoleReader;
 
 import java.util.Map;
 
@@ -81,11 +82,11 @@ public class PgsqlMigrationConfigDto extends AbstractMigrationConfigDto {
         dto.isMigrationObject = getConfigFromMap(MigrationConfig.IS_MIGRATION_OBJECT, migrationConfigMap, "true");
         dto.isAdjustKernelParam = getConfigFromMap(MigrationConfig.IS_ADJUST_KERNEL_PARAM, migrationConfigMap, "false");
 
+        readDatabasePassword(dto, migrationConfigMap);
         dto.pgsqlDatabaseIp = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_IP, migrationConfigMap);
         dto.pgsqlDatabasePort = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_PORT, migrationConfigMap);
         dto.pgsqlDatabaseName = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_NAME, migrationConfigMap);
         dto.pgsqlDatabaseUsername = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_USERNAME, migrationConfigMap);
-        dto.pgsqlDatabasePassword = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_PASSWORD, migrationConfigMap);
         dto.pgsqlDatabaseSchemas = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_SCHEMAS, migrationConfigMap);
 
         dto.opengaussDatabaseIp = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_IP, migrationConfigMap);
@@ -93,8 +94,6 @@ public class PgsqlMigrationConfigDto extends AbstractMigrationConfigDto {
         dto.opengaussDatabaseName = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_NAME, migrationConfigMap);
         dto.opengaussDatabaseUsername =
                 getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_USERNAME, migrationConfigMap);
-        dto.opengaussDatabasePassword =
-                getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_PASSWORD, migrationConfigMap);
 
         dto.opengaussDatabaseStandbyHosts =
                 getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_STANDBY_HOSTS, migrationConfigMap, "");
@@ -113,6 +112,17 @@ public class PgsqlMigrationConfigDto extends AbstractMigrationConfigDto {
         dto.reverseMigrationSinkProcessJvm =
                 getConfigFromMap(MigrationConfig.REVERSE_MIGRATION_SINK_PROCESS_JVM, migrationConfigMap);
         return dto;
+    }
+
+    private static void readDatabasePassword(PgsqlMigrationConfigDto dto, Map<String, Object> configMap) {
+        dto.useInteractivePassword = getConfigFromMap(MigrationConfig.USE_INTERACTIVE_PASSWORD, configMap, "false");
+        if (dto.isUseInteractivePassword()) {
+            dto.pgsqlDatabasePassword = ConsoleReader.readPassword("Please input PostgreSQL database password: ");
+            dto.opengaussDatabasePassword = ConsoleReader.readPassword("Please input openGauss database password: ");
+        } else {
+            dto.pgsqlDatabasePassword = getConfigFromMap(MigrationConfig.PGSQL_DATABASE_PASSWORD, configMap);
+            dto.opengaussDatabasePassword = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_PASSWORD, configMap);
+        }
     }
 
     /**

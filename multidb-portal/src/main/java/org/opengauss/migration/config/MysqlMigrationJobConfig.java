@@ -23,6 +23,7 @@ import org.opengauss.migration.helper.tool.ChameleonHelper;
 import org.opengauss.migration.helper.tool.DataCheckerHelper;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * MySQL Migration Job Config
@@ -197,6 +198,13 @@ public class MysqlMigrationJobConfig extends AbstractMigrationJobConfig {
         incrementalConfigBundle.getWorkerSinkConfigFile().getConfigMap().putAll(workerSinkParams);
         incrementalConfigBundle.getLog4jSourceConfigFile().getConfigMap().putAll(log4jSourceParams);
         incrementalConfigBundle.getLog4jSinkConfigFile().getConfigMap().putAll(log4jSinkParams);
+
+        Set<String> sourceDeleteKeySet = DebeziumMysqlMigrationConfigHelper.incrementalSourceConfigDeleteKeySet(
+                migrationConfigDto);
+        Set<String> sinkDeleteKeySet = DebeziumMysqlMigrationConfigHelper.incrementalSinkConfigDeleteKeySet(
+                migrationConfigDto);
+        incrementalConfigBundle.getConnectSourceConfigFile().getDeleteConfigKeySet().addAll(sourceDeleteKeySet);
+        incrementalConfigBundle.getConnectSinkConfigFile().getDeleteConfigKeySet().addAll(sinkDeleteKeySet);
     }
 
     private void changeIncrementalDataCheckConfig() {
@@ -225,6 +233,13 @@ public class MysqlMigrationJobConfig extends AbstractMigrationJobConfig {
                 migrationConfigDto, taskWorkspace);
         reverseConfigBundle.getConnectSourceConfigFile().getConfigMap().putAll(connectSourceParams);
         reverseConfigBundle.getConnectSinkConfigFile().getConfigMap().putAll(connectSinkParams);
+
+        Set<String> sourceDeleteKeySet = DebeziumMysqlMigrationConfigHelper.reverseSourceConfigDeleteKeySet(
+                migrationConfigDto);
+        Set<String> sinkDeleteKeySet = DebeziumMysqlMigrationConfigHelper.reverseSinkConfigDeleteKeySet(
+                migrationConfigDto);
+        reverseConfigBundle.getConnectSourceConfigFile().getDeleteConfigKeySet().addAll(sourceDeleteKeySet);
+        reverseConfigBundle.getConnectSinkConfigFile().getDeleteConfigKeySet().addAll(sinkDeleteKeySet);
 
         Map<String, Object> workerSourceParams = DebeziumMysqlMigrationConfigHelper.reverseWorkerSourceConfig(
                 taskWorkspace);

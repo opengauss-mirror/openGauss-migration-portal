@@ -6,16 +6,23 @@ package org.opengauss.migration.process.task;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.constants.config.OgDatasyncConfig;
 import org.opengauss.constants.tool.OgDatasyncConstants;
+import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;
+import org.opengauss.migration.MigrationContext;
+import org.opengauss.migration.config.AbstractMigrationJobConfig;
+import org.opengauss.migration.config.PgsqlMigrationJobConfig;
 import org.opengauss.migration.helper.tool.OgDatasyncHelper;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.ProcessUtils;
 import org.opengauss.utils.ThreadUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * oG_datasync_full_migration process
@@ -59,7 +66,7 @@ public class OgDatasyncProcess extends TaskProcess {
 
         try {
             ProcessUtils.executeCommand(startCommand, workDirPath, logPath,
-                    OgDatasyncConstants.WAIT_PROCESS_START_MILLIS);
+                    OgDatasyncConstants.WAIT_PROCESS_START_MILLIS, generateProcessEnv());
             LOGGER.info("{} started", processName);
             LOGGER.info("{} is running", processName);
         } catch (IOException | InterruptedException e) {
@@ -96,5 +103,21 @@ public class OgDatasyncProcess extends TaskProcess {
         }
 
         return isNormal;
+    }
+
+    private Map<String, String> generateProcessEnv() {
+        AbstractMigrationJobConfig migrationJobConfig = MigrationContext.getInstance().getMigrationJobConfig();
+        if (!(migrationJobConfig instanceof PgsqlMigrationJobConfig pgsqlMigrationJobConfig)) {
+            return new HashMap<>();
+        }
+        PgsqlMigrationConfigDto migrationConfigDto = pgsqlMigrationJobConfig.getMigrationConfigDto();
+
+        Map<String, String> env = new HashMap<>();
+        if (migrationConfigDto.isUseInteractivePassword()) {
+            env.put(OgDatasyncConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(OgDatasyncConfig.OG_CONN_PASSWORD, migrationConfigDto.getOpengaussDatabasePassword());
+            env.put(OgDatasyncConfig.SOURCE_DB_CONN_PASSWORD, migrationConfigDto.getPgsqlDatabasePassword());
+        }
+        return env;
     }
 }

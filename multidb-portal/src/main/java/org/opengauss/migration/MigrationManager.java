@@ -6,21 +6,12 @@ package org.opengauss.migration;
 
 import org.opengauss.Main;
 import org.opengauss.domain.model.MigrationStopIndicator;
-import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.enums.DatabaseType;
 import org.opengauss.enums.MigrationStatusEnum;
-import org.opengauss.exceptions.MigrationException;
 import org.opengauss.migration.config.AbstractMigrationJobConfig;
-import org.opengauss.migration.config.MysqlMigrationJobConfig;
-import org.opengauss.migration.config.PgsqlMigrationJobConfig;
-import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.job.AbstractMigrationJob;
-import org.opengauss.migration.job.MysqlMigrationJob;
-import org.opengauss.migration.job.PgsqlMigrationJob;
 import org.opengauss.migration.monitor.MigrationAliveMonitor;
 import org.opengauss.migration.process.ProcessMonitor;
 import org.opengauss.migration.progress.ProgressMonitor;
-import org.opengauss.migration.progress.ProgressMonitorFactory;
 import org.opengauss.migration.status.StatusMonitor;
 
 /**
@@ -31,8 +22,6 @@ import org.opengauss.migration.status.StatusMonitor;
 public class MigrationManager {
     private static volatile MigrationManager instance;
 
-    private TaskWorkspace taskWorkspace;
-    private DatabaseType sourceDbType;
     private AbstractMigrationJobConfig migrationJobConfig;
     private MigrationStopIndicator migrationStopIndicator;
     private ProgressMonitor progressMonitor;
@@ -42,23 +31,14 @@ public class MigrationManager {
     private AbstractMigrationJob migrationJob;
 
     private MigrationManager() {
-    }
-
-    /**
-     * Initialize migration context
-     *
-     * @param taskWorkspace task workspace
-     */
-    public static void initialize(TaskWorkspace taskWorkspace) {
-        if (instance == null) {
-            synchronized (MigrationManager.class) {
-                if (instance == null) {
-                    initMigrationContext(taskWorkspace);
-                }
-            }
-        } else {
-            throw new IllegalStateException("Migration context already initialized");
-        }
+        MigrationContext migrationContext = MigrationContext.getInstance();
+        this.migrationJobConfig = migrationContext.getMigrationJobConfig();
+        this.migrationStopIndicator = migrationContext.getMigrationStopIndicator();
+        this.progressMonitor = migrationContext.getProgressMonitor();
+        this.processMonitor = migrationContext.getProcessMonitor();
+        this.statusMonitor = migrationContext.getStatusMonitor();
+        this.migrationAliveMonitor = migrationContext.getMigrationAliveMonitor();
+        this.migrationJob = migrationContext.getMigrationJob();
     }
 
     /**
@@ -70,7 +50,7 @@ public class MigrationManager {
         if (instance == null) {
             synchronized (MigrationManager.class) {
                 if (instance == null) {
-                    throw new IllegalStateException("Migration context has not initialized");
+                    instance = new MigrationManager();
                 }
             }
         }
@@ -184,36 +164,5 @@ public class MigrationManager {
         processMonitor.startMonitoring(this, statusMonitor);
         progressMonitor.start();
         migrationAliveMonitor.start();
-    }
-
-    private static void initMigrationContext(TaskWorkspace taskWorkspace) {
-        MigrationManager migrationManager = new MigrationManager();
-        DatabaseType sourceDbType = TaskHelper.loadSourceDbType(taskWorkspace);
-        migrationManager.taskWorkspace = taskWorkspace;
-        migrationManager.sourceDbType = sourceDbType;
-
-        if (DatabaseType.MYSQL.equals(sourceDbType)) {
-            MysqlMigrationJobConfig migrationJobConfig = new MysqlMigrationJobConfig(taskWorkspace);
-            TaskHelper.loadConfig(migrationJobConfig);
-            migrationManager.migrationJobConfig = migrationJobConfig;
-            migrationManager.migrationJob = new MysqlMigrationJob(migrationJobConfig);
-        } else if (DatabaseType.POSTGRESQL.equals(sourceDbType)) {
-            PgsqlMigrationJobConfig migrationJobConfig = new PgsqlMigrationJobConfig(taskWorkspace);
-            TaskHelper.loadConfig(migrationJobConfig);
-            migrationManager.migrationJobConfig = migrationJobConfig;
-            migrationManager.migrationJob = new PgsqlMigrationJob(migrationJobConfig);
-        } else {
-            throw new MigrationException("Unsupported source database type: " + sourceDbType);
-        }
-
-        StatusMonitor statusMonitor = new StatusMonitor(taskWorkspace);
-        migrationManager.statusMonitor = statusMonitor;
-        migrationManager.progressMonitor = ProgressMonitorFactory.createProgressMonitor(
-                sourceDbType, statusMonitor, taskWorkspace);
-        migrationManager.migrationStopIndicator = new MigrationStopIndicator();
-        migrationManager.migrationAliveMonitor = new MigrationAliveMonitor(taskWorkspace);
-        migrationManager.processMonitor = new ProcessMonitor();
-
-        instance = migrationManager;
     }
 }

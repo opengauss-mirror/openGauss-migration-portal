@@ -7,22 +7,24 @@ package org.opengauss.migration.tasks.impl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.ProcessNameConstants;
+import org.opengauss.constants.config.DebeziumConfig;
 import org.opengauss.domain.dto.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.DebeziumConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;
 import org.opengauss.migration.helper.config.DebeziumMysqlMigrationConfigHelper;
-import org.opengauss.migration.tasks.phase.IncrementalMigrationTask;
-import org.opengauss.migration.tasks.tool.DebeziumTask;
 import org.opengauss.migration.process.ProcessMonitor;
 import org.opengauss.migration.process.task.DebeziumProcess;
+import org.opengauss.migration.tasks.phase.IncrementalMigrationTask;
+import org.opengauss.migration.tasks.tool.DebeziumTask;
 import org.opengauss.migration.tools.Kafka;
 import org.opengauss.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Debezium mysql incremental migration task
@@ -46,7 +48,7 @@ public class DebeziumMysqlIncrementalMigrationTask extends DebeziumTask implemen
         // is alert log collection is enabled, add alert config after the jvm config
         String commandPrefix = String.format("export KAFKA_HEAP_OPTS=\"%s\"", processJvm);
         return new DebeziumProcess(ProcessNameConstants.DEBEZIUM_INCREMENTAL_CONNECT_SOURCE, taskWorkspace,
-                sourceConnectConfig, sourceWorkerConfig, sourceLog4jConfig, commandPrefix);
+                sourceConnectConfig, sourceWorkerConfig, sourceLog4jConfig, commandPrefix, generateSourceProcessEnv());
     }
 
     @Override
@@ -55,7 +57,7 @@ public class DebeziumMysqlIncrementalMigrationTask extends DebeziumTask implemen
         // is alert log collection is enabled, add alert config after the jvm config
         String commandPrefix = String.format("export KAFKA_HEAP_OPTS=\"%s\"", jvmPrefix);
         return new DebeziumProcess(ProcessNameConstants.DEBEZIUM_INCREMENTAL_CONNECT_SINK, taskWorkspace,
-                sinkConnectConfig, sinkWorkerConfig, sinkLog4jConfig, commandPrefix);
+                sinkConnectConfig, sinkWorkerConfig, sinkLog4jConfig, commandPrefix, generateSinkProcessEnv());
     }
 
     @Override
@@ -160,5 +162,23 @@ public class DebeziumMysqlIncrementalMigrationTask extends DebeziumTask implemen
                 throw new MigrationException("Failed to restart Kafka before start incremental task");
             }
         }
+    }
+
+    private Map<String, String> generateSinkProcessEnv() {
+        Map<String, String> env = new HashMap<>();
+        if (migrationConfigDto.isUseInteractivePassword()) {
+            env.put(DebeziumConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(DebeziumConfig.ENV_DATABASE_PASSWORD, migrationConfigDto.getOpengaussDatabasePassword());
+        }
+        return env;
+    }
+
+    private Map<String, String> generateSourceProcessEnv() {
+        Map<String, String> env = new HashMap<>();
+        if (migrationConfigDto.isUseInteractivePassword()) {
+            env.put(DebeziumConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(DebeziumConfig.ENV_DATABASE_PASSWORD, migrationConfigDto.getMysqlDatabasePassword());
+        }
+        return env;
     }
 }

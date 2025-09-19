@@ -84,7 +84,7 @@ public class ProcessMonitor extends Thread {
                 }
             }
 
-            if (statusMonitor.isFullMigrationStatus()) {
+            if (statusMonitor.isFullMigrationStatus() || statusMonitor.isNotRunning()) {
                 continue;
             }
 

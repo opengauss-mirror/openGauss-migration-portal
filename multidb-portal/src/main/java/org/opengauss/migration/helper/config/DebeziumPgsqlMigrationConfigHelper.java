@@ -61,7 +61,9 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumPgsqlSourceConfig.DATABASE_HOSTNAME, dto.getPgsqlDatabaseIp());
         changeParams.put(DebeziumPgsqlSourceConfig.DATABASE_PORT, dto.getPgsqlDatabasePort());
         changeParams.put(DebeziumPgsqlSourceConfig.DATABASE_USER, dto.getPgsqlDatabaseUsername());
-        changeParams.put(DebeziumPgsqlSourceConfig.DATABASE_PASSWORD, dto.getPgsqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumPgsqlSourceConfig.DATABASE_PASSWORD, dto.getPgsqlDatabasePassword());
+        }
         changeParams.put(DebeziumPgsqlSourceConfig.DATABASE_NAME, dto.getPgsqlDatabaseName());
         changeParams.put(DebeziumPgsqlSourceConfig.SCHEMA_INCLUDE_LIST, dto.getPgsqlDatabaseSchemas());
 
@@ -97,13 +99,17 @@ public class DebeziumPgsqlMigrationConfigHelper {
     /**
      * get pgsql incremental migration source process delete key set
      *
+     * @param dto pgsql migration config dto
      * @return Set delete key set
      */
-    public static Set<String> incrementalSourceConfigDeleteKeySet() {
+    public static Set<String> incrementalSourceConfigDeleteKeySet(PgsqlMigrationConfigDto dto) {
         Set<String> deleteKeySet = new HashSet<>();
         deleteKeySet.add(DebeziumPgsqlSourceConfig.TABLE_INCLUDE_LIST);
         deleteKeySet.add(DebeziumPgsqlSourceConfig.SCHEMA_EXCLUDE_LIST);
         deleteKeySet.add(DebeziumPgsqlSourceConfig.TABLE_EXCLUDE_LIST);
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumPgsqlSourceConfig.DATABASE_PASSWORD);
+        }
         return deleteKeySet;
     }
 
@@ -118,7 +124,9 @@ public class DebeziumPgsqlMigrationConfigHelper {
         HashMap<String, Object> changeParams = new HashMap<>();
 
         changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_USERNAME, dto.getOpengaussDatabaseUsername());
-        changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
         changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_NAME, dto.getOpengaussDatabaseName());
         changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_PORT, dto.getOpengaussDatabasePort());
         changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_IP, dto.getOpengaussDatabaseIp());
@@ -143,6 +151,20 @@ public class DebeziumPgsqlMigrationConfigHelper {
         String xlogPath = generateXlogPath(taskWorkspace);
         changeParams.put(DebeziumPgsqlSinkConfig.XLOG_LOCATION, xlogPath);
         return changeParams;
+    }
+
+    /**
+     * get pgsql incremental migration sink process delete key set
+     *
+     * @param dto pgsql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> incrementalSinkConfigDeleteKeySet(PgsqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumPgsqlSinkConfig.DATABASE_PASSWORD);
+        }
+        return deleteKeySet;
     }
 
     /**
@@ -196,7 +218,9 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_HOSTNAME, dto.getOpengaussDatabaseIp());
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_PORT, dto.getOpengaussDatabasePort());
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_USER, dto.getOpengaussDatabaseUsername());
-        changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_NAME, dto.getOpengaussDatabaseName());
 
         Map<String, String> schemaMappings =
@@ -237,6 +261,20 @@ public class DebeziumPgsqlMigrationConfigHelper {
     }
 
     /**
+     * get pgsql reverse migration source process delete key set
+     *
+     * @param dto pgsql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> reverseSourceConfigDeleteKeySet(PgsqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumOpenGaussSourceConfig.DATABASE_PASSWORD);
+        }
+        return deleteKeySet;
+    }
+
+    /**
      * get pgsql reverse migration sink process config map
      *
      * @param dto pgsql migration config dto
@@ -249,7 +287,9 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_IP, dto.getPgsqlDatabaseIp());
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_PORT, dto.getPgsqlDatabasePort());
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_USERNAME, dto.getPgsqlDatabaseUsername());
-        changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_PASSWORD, dto.getPgsqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_PASSWORD, dto.getPgsqlDatabasePassword());
+        }
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_NAME, dto.getPgsqlDatabaseName());
 
         Map<String, String> schemaMappings =
@@ -276,6 +316,20 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSinkConfig.RECORD_BREAKPOINT_KAFKA_BOOTSTRAP_SERVERS, kafkaServer);
 
         return changeParams;
+    }
+
+    /**
+     * get pgsql reverse migration sink process delete key set
+     *
+     * @param dto pgsql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> reverseSinkConfigDeleteKeySet(PgsqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumOpenGaussSinkConfig.DATABASE_PASSWORD);
+        }
+        return deleteKeySet;
     }
 
     /**

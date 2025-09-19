@@ -6,14 +6,15 @@ package org.opengauss.migration.process.task;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.migration.helper.tool.DebeziumHelper;
 import org.opengauss.constants.tool.DebeziumConstants;
 import org.opengauss.domain.model.ConfigFile;
+import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;
+import org.opengauss.migration.helper.tool.DebeziumHelper;
 import org.opengauss.utils.ProcessUtils;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * debezium process
@@ -26,15 +27,18 @@ public class DebeziumProcess extends TaskProcess {
     private final ConfigFile connectorConfig;
     private final ConfigFile workerConfig;
     private final ConfigFile log4jConfig;
+    private final Map<String, String> processEnv;
 
     public DebeziumProcess(String processName, TaskWorkspace taskWorkspace, ConfigFile connectorConfig,
-                           ConfigFile workerConfig, ConfigFile log4jConfig, String commandPrefix) {
+                           ConfigFile workerConfig, ConfigFile log4jConfig, String commandPrefix,
+                           Map<String, String> processEnv) {
         super(processName, taskWorkspace,
                 DebeziumHelper.generateProcessStartCommand(connectorConfig, workerConfig, log4jConfig, commandPrefix),
                 DebeziumHelper.generateProcessCheckCommand(connectorConfig, workerConfig));
         this.connectorConfig = connectorConfig;
         this.workerConfig = workerConfig;
         this.log4jConfig = log4jConfig;
+        this.processEnv = processEnv;
     }
 
     @Override
@@ -42,7 +46,8 @@ public class DebeziumProcess extends TaskProcess {
         if (!isStarted) {
             try {
                 String workDirPath = taskWorkspace.getHomeDir();
-                ProcessUtils.executeCommand(startCommand, workDirPath, DebeziumConstants.WAIT_PROCESS_START_MILLIS);
+                ProcessUtils.executeCommand(startCommand, workDirPath, DebeziumConstants.WAIT_PROCESS_START_MILLIS,
+                        processEnv);
                 LOGGER.info("{} started", processName);
                 LOGGER.info("{} is running", processName);
             } catch (IOException | InterruptedException e) {

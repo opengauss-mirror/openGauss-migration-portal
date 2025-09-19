@@ -6,17 +6,24 @@ package org.opengauss.migration.process.task;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.constants.config.DataCheckerConfig;
 import org.opengauss.constants.tool.DataCheckerConstants;
+import org.opengauss.domain.dto.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.exceptions.MigrationException;
 import org.opengauss.enums.DataCheckerProcessType;
+import org.opengauss.exceptions.MigrationException;
+import org.opengauss.migration.MigrationContext;
+import org.opengauss.migration.config.AbstractMigrationJobConfig;
+import org.opengauss.migration.config.MysqlMigrationJobConfig;
 import org.opengauss.migration.helper.tool.DataCheckerHelper;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.ProcessUtils;
 import org.opengauss.utils.ThreadUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * data checker process
@@ -47,7 +54,8 @@ public class DataCheckerProcess extends TaskProcess {
         if (!isStarted) {
             String workDirPath = taskWorkspace.getHomeDir();
             try {
-                ProcessUtils.executeCommand(startCommand, workDirPath, DataCheckerConstants.WAIT_PROCESS_START_MILLIS);
+                ProcessUtils.executeCommand(startCommand, workDirPath, DataCheckerConstants.WAIT_PROCESS_START_MILLIS,
+                        generateDataCheckProcessEnv());
                 LOGGER.info("{} started", processName);
                 LOGGER.info("{} is running", processName);
             } catch (IOException | InterruptedException e) {
@@ -88,6 +96,27 @@ public class DataCheckerProcess extends TaskProcess {
             ThreadUtils.sleep(1000);
             checkStatus();
         }
+    }
+
+    private Map<String, String> generateDataCheckProcessEnv() {
+        AbstractMigrationJobConfig migrationJobConfig = MigrationContext.getInstance().getMigrationJobConfig();
+        if (!(migrationJobConfig instanceof MysqlMigrationJobConfig mysqlMigrationJobConfig)) {
+            return new HashMap<>();
+        }
+        MysqlMigrationConfigDto migrationConfigDto = mysqlMigrationJobConfig.getMigrationConfigDto();
+
+        Map<String, String> env = new HashMap<>();
+        if (migrationConfigDto.isUseInteractivePassword()) {
+            env.put(DataCheckerConfig.ENABLE_ENV_PASSWORD, "true");
+            if (DataCheckerProcessType.SOURCE.equals(processType)) {
+                env.put(DataCheckerConfig.ENV_DATABASE_PASSWORD, migrationConfigDto.getMysqlDatabasePassword());
+            } else if (DataCheckerProcessType.SINK.equals(processType)) {
+                env.put(DataCheckerConfig.ENV_DATABASE_PASSWORD, migrationConfigDto.getOpengaussDatabasePassword());
+            } else {
+                return new HashMap<>();
+            }
+        }
+        return env;
     }
 
     private boolean checkExitSign() {

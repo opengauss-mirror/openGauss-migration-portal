@@ -6,9 +6,14 @@ package org.opengauss.migration.process.task;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.constants.config.ChameleonConfig;
 import org.opengauss.constants.tool.ChameleonConstants;
+import org.opengauss.domain.dto.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;
+import org.opengauss.migration.MigrationContext;
+import org.opengauss.migration.config.AbstractMigrationJobConfig;
+import org.opengauss.migration.config.MysqlMigrationJobConfig;
 import org.opengauss.migration.helper.tool.ChameleonHelper;
 import org.opengauss.migration.tools.Chameleon;
 import org.opengauss.utils.FileUtils;
@@ -16,6 +21,8 @@ import org.opengauss.utils.ProcessUtils;
 import org.opengauss.utils.ThreadUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * chameleon process
@@ -43,13 +50,13 @@ public class ChameleonProcess extends TaskProcess {
         String logPath = ChameleonHelper.generateFullMigrationLogPath(taskWorkspace);
 
         try {
+            Map<String, String> env = generateChameleonProcessEnv();
             if (ChameleonConstants.ORDER_DETACH_REPLICA.equals(chameleonOrder)) {
                 String[] interactArgs = new String[]{"YES"};
-                ProcessUtils.executeInteractiveCommand(startCommand, workDirPath, logPath,
-                        ChameleonConstants.WAIT_PROCESS_START_MILLIS, interactArgs);
+                ProcessUtils.executeInteractiveCommand(startCommand, workDirPath, logPath, env, interactArgs);
             } else {
                 ProcessUtils.executeCommand(startCommand, workDirPath, logPath,
-                        ChameleonConstants.WAIT_PROCESS_START_MILLIS);
+                        ChameleonConstants.WAIT_PROCESS_START_MILLIS, env);
             }
             LOGGER.info("{} started", processName);
             LOGGER.info("{} is running", processName);
@@ -95,5 +102,21 @@ public class ChameleonProcess extends TaskProcess {
             ThreadUtils.sleep(1000);
             checkStatus();
         }
+    }
+
+    private Map<String, String> generateChameleonProcessEnv() {
+        AbstractMigrationJobConfig migrationJobConfig = MigrationContext.getInstance().getMigrationJobConfig();
+        if (!(migrationJobConfig instanceof MysqlMigrationJobConfig mysqlMigrationJobConfig)) {
+            return new HashMap<>();
+        }
+        MysqlMigrationConfigDto mysqlMigrationConfigDto = mysqlMigrationJobConfig.getMigrationConfigDto();
+
+        Map<String, String> env = new HashMap<>();
+        if (mysqlMigrationConfigDto.isUseInteractivePassword()) {
+            env.put(ChameleonConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(ChameleonConfig.ENV_SOURCES_DB_CONN_PASSWORD, mysqlMigrationConfigDto.getMysqlDatabasePassword());
+            env.put(ChameleonConfig.PG_DATABASE_PASSWORD, mysqlMigrationConfigDto.getOpengaussDatabasePassword());
+        }
+        return env;
     }
 }

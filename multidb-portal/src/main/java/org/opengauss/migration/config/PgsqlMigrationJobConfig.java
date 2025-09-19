@@ -142,12 +142,16 @@ public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
         Map<String, Object> connectSourceParams = DebeziumPgsqlMigrationConfigHelper.incrementalSourceConfig(
                 migrationConfigDto, taskWorkspace);
         incrementalConfigBundle.getConnectSourceConfigFile().getConfigMap().putAll(connectSourceParams);
-        Set<String> deleteKeySet = DebeziumPgsqlMigrationConfigHelper.incrementalSourceConfigDeleteKeySet();
-        incrementalConfigBundle.getConnectSourceConfigFile().getDeleteConfigKeySet().addAll(deleteKeySet);
+        Set<String> sourceDeleteKeySet = DebeziumPgsqlMigrationConfigHelper.incrementalSourceConfigDeleteKeySet(
+                migrationConfigDto);
+        incrementalConfigBundle.getConnectSourceConfigFile().getDeleteConfigKeySet().addAll(sourceDeleteKeySet);
 
         Map<String, Object> connectSinkParams = DebeziumPgsqlMigrationConfigHelper.incrementalSinkConfig(
                 migrationConfigDto, taskWorkspace);
         incrementalConfigBundle.getConnectSinkConfigFile().getConfigMap().putAll(connectSinkParams);
+        Set<String> sinkDeleteKeySet = DebeziumPgsqlMigrationConfigHelper.incrementalSinkConfigDeleteKeySet(
+                migrationConfigDto);
+        incrementalConfigBundle.getConnectSinkConfigFile().getDeleteConfigKeySet().addAll(sinkDeleteKeySet);
 
         Map<String, Object> workerSourceParams = DebeziumPgsqlMigrationConfigHelper.incrementalWorkerSourceConfig(
                 taskWorkspace);
@@ -168,9 +172,15 @@ public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
         Map<String, Object> connectSourceParams = DebeziumPgsqlMigrationConfigHelper.reverseSourceConfig(
                 migrationConfigDto, taskWorkspace);
         reverseConfigBundle.getConnectSourceConfigFile().getConfigMap().putAll(connectSourceParams);
+        Set<String> sourceDeleteKeySet = DebeziumPgsqlMigrationConfigHelper.reverseSourceConfigDeleteKeySet(
+                migrationConfigDto);
+        reverseConfigBundle.getConnectSourceConfigFile().getDeleteConfigKeySet().addAll(sourceDeleteKeySet);
         Map<String, Object> connectSinkParams = DebeziumPgsqlMigrationConfigHelper.reverseSinkConfig(
                 migrationConfigDto, taskWorkspace);
         reverseConfigBundle.getConnectSinkConfigFile().getConfigMap().putAll(connectSinkParams);
+        Set<String> sinkDeleteKeySet = DebeziumPgsqlMigrationConfigHelper.reverseSinkConfigDeleteKeySet(
+                migrationConfigDto);
+        reverseConfigBundle.getConnectSinkConfigFile().getDeleteConfigKeySet().addAll(sinkDeleteKeySet);
 
         Map<String, Object> workerSourceParams = DebeziumPgsqlMigrationConfigHelper.reverseWorkerSourceConfig(
                 taskWorkspace);

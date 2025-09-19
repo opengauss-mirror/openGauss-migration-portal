@@ -44,7 +44,9 @@ public class DataCheckerMysqlMigrationConfigHelper {
                 mysqlDatabaseIp, mysqlDatabasePort, mysqlDatabaseName);
         changeParams.put(DataCheckerSourceConfig.DATABASE_URL, mysqlDatabaseUrl);
         changeParams.put(DataCheckerSourceConfig.DATABASE_USERNAME, dto.getMysqlDatabaseUsername());
-        changeParams.put(DataCheckerSourceConfig.DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DataCheckerSourceConfig.DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        }
         changeParams.put(DataCheckerSourceConfig.EXTRACT_SCHEMA, mysqlDatabaseName);
 
         Kafka kafka = Kafka.getInstance();
@@ -76,7 +78,9 @@ public class DataCheckerMysqlMigrationConfigHelper {
                 opengaussDatabaseIp, opengaussDatabasePort, opengaussDatabaseName);
         changeParams.put(DataCheckerSinkConfig.DATABASE_URL, opengaussDatabaseUrl);
         changeParams.put(DataCheckerSinkConfig.DATABASE_USERNAME, dto.getOpengaussDatabaseUsername());
-        changeParams.put(DataCheckerSinkConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DataCheckerSinkConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
 
         if (StringUtils.isNullOrBlank(dto.getOpengaussDatabaseSchema())) {
             changeParams.put(DataCheckerSinkConfig.EXTRACT_SCHEMA, dto.getMysqlDatabaseName());

@@ -8,6 +8,7 @@ import lombok.Getter;
 import org.opengauss.constants.config.MigrationConfig;
 import org.opengauss.domain.model.DatabaseConnectInfo;
 import org.opengauss.domain.model.OpenGaussDatabaseConnectInfo;
+import org.opengauss.utils.ConsoleReader;
 
 import java.util.Map;
 
@@ -85,19 +86,18 @@ public class MysqlMigrationConfigDto extends AbstractMigrationConfigDto {
         dto.isMigrationObject = getConfigFromMap(MigrationConfig.IS_MIGRATION_OBJECT, configMap, "true");
         dto.isAdjustKernelParam = getConfigFromMap(MigrationConfig.IS_ADJUST_KERNEL_PARAM, configMap, "false");
 
+        readDatabasePassword(dto, configMap);
         dto.mysqlDatabaseIp = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_IP, configMap);
         dto.mysqlDatabasePort = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_PORT, configMap);
         String mysqlDbName = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_NAME, configMap);
         dto.mysqlDatabaseName = mysqlDbName;
         dto.mysqlDatabaseUsername = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_USERNAME, configMap);
-        dto.mysqlDatabasePassword = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_PASSWORD, configMap);
         dto.mysqlDatabaseTables = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_TABLES, configMap, "");
 
         dto.opengaussDatabaseIp = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_IP, configMap);
         dto.opengaussDatabasePort = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_PORT, configMap);
         dto.opengaussDatabaseName = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_NAME, configMap);
         dto.opengaussDatabaseUsername = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_USERNAME, configMap);
-        dto.opengaussDatabasePassword = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_PASSWORD, configMap);
         dto.opengaussDatabaseSchema =
                 getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_SCHEMA, configMap, mysqlDbName);
 
@@ -125,6 +125,17 @@ public class MysqlMigrationConfigDto extends AbstractMigrationConfigDto {
         dto.reverseMigrationSinkProcessJvm =
                 getConfigFromMap(MigrationConfig.REVERSE_MIGRATION_SINK_PROCESS_JVM, configMap);
         return dto;
+    }
+
+    private static void readDatabasePassword(MysqlMigrationConfigDto dto, Map<String, Object> configMap) {
+        dto.useInteractivePassword = getConfigFromMap(MigrationConfig.USE_INTERACTIVE_PASSWORD, configMap, "false");
+        if (dto.isUseInteractivePassword()) {
+            dto.mysqlDatabasePassword = ConsoleReader.readPassword("Please input MySQL database password: ");
+            dto.opengaussDatabasePassword = ConsoleReader.readPassword("Please input openGauss database password: ");
+        } else {
+            dto.mysqlDatabasePassword = getConfigFromMap(MigrationConfig.MYSQL_DATABASE_PASSWORD, configMap);
+            dto.opengaussDatabasePassword = getConfigFromMap(MigrationConfig.OPENGAUSS_DATABASE_PASSWORD, configMap);
+        }
     }
 
     /**

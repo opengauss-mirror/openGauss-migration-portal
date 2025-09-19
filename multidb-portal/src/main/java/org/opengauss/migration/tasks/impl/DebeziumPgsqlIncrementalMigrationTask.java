@@ -7,6 +7,7 @@ package org.opengauss.migration.tasks.impl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.ProcessNameConstants;
+import org.opengauss.constants.config.DebeziumConfig;
 import org.opengauss.constants.config.DebeziumPgsqlSourceConfig;
 import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.DebeziumConfigBundle;
@@ -55,7 +56,7 @@ public class DebeziumPgsqlIncrementalMigrationTask extends DebeziumTask implemen
         String processJvm = migrationConfigDto.getIncrementalMigrationSourceProcessJvm();
         String commandPrefix = String.format("export KAFKA_HEAP_OPTS=\"%s\"", processJvm);
         return new DebeziumProcess(ProcessNameConstants.DEBEZIUM_INCREMENTAL_CONNECT_SOURCE, taskWorkspace,
-                sourceConnectConfig, sourceWorkerConfig, sourceLog4jConfig, commandPrefix);
+                sourceConnectConfig, sourceWorkerConfig, sourceLog4jConfig, commandPrefix, generateSourceProcessEnv());
     }
 
     @Override
@@ -63,7 +64,7 @@ public class DebeziumPgsqlIncrementalMigrationTask extends DebeziumTask implemen
         String jvmPrefix = migrationConfigDto.getIncrementalMigrationSinkProcessJvm();
         String commandPrefix = String.format("export KAFKA_HEAP_OPTS=\"%s\"", jvmPrefix);
         return new DebeziumProcess(ProcessNameConstants.DEBEZIUM_INCREMENTAL_CONNECT_SINK, taskWorkspace,
-                sinkConnectConfig, sinkWorkerConfig, sinkLog4jConfig, commandPrefix);
+                sinkConnectConfig, sinkWorkerConfig, sinkLog4jConfig, commandPrefix, generateSinkProcessEnv());
     }
 
     @Override
@@ -213,5 +214,23 @@ public class DebeziumPgsqlIncrementalMigrationTask extends DebeziumTask implemen
                 throw new MigrationException("Failed to restart Kafka before start incremental task");
             }
         }
+    }
+
+    private Map<String, String> generateSinkProcessEnv() {
+        Map<String, String> env = new HashMap<>();
+        if (migrationConfigDto.isUseInteractivePassword()) {
+            env.put(DebeziumConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(DebeziumConfig.ENV_DATABASE_PASSWORD, migrationConfigDto.getOpengaussDatabasePassword());
+        }
+        return env;
+    }
+
+    private Map<String, String> generateSourceProcessEnv() {
+        Map<String, String> env = new HashMap<>();
+        if (migrationConfigDto.isUseInteractivePassword()) {
+            env.put(DebeziumConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(DebeziumConfig.ENV_DATABASE_PASSWORD, migrationConfigDto.getPgsqlDatabasePassword());
+        }
+        return env;
     }
 }

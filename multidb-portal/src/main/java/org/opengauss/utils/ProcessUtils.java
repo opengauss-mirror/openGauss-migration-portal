@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -133,6 +134,23 @@ public class ProcessUtils {
      *
      * @param command command string
      * @param workDirectory work directory
+     * @param waitMilliseconds wait milliseconds
+     * @param env environment variables
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the current thread is interrupted while waiting for the process to finish
+     */
+    public static void executeCommand(
+            String command, String workDirectory, long waitMilliseconds, Map<String, String> env)
+            throws IOException, InterruptedException {
+        String[] commands = new String[]{"bash", "-c", command};
+        executeCommand(commands, workDirectory, waitMilliseconds, env);
+    }
+
+    /**
+     * Execute command
+     *
+     * @param command command string
+     * @param workDirectory work directory
      * @param logPath log path
      * @param waitMilliseconds wait milliseconds
      * @throws IOException if an I/O error occurs
@@ -142,6 +160,24 @@ public class ProcessUtils {
             throws IOException, InterruptedException {
         String[] commands = new String[]{"bash", "-c", command};
         executeCommand(commands, workDirectory, logPath, waitMilliseconds);
+    }
+
+    /**
+     * Execute command
+     *
+     * @param command command string
+     * @param workDirectory work directory
+     * @param logPath log path
+     * @param waitMilliseconds wait milliseconds
+     * @param env environment variables
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the current thread is interrupted while waiting for the process to finish
+     */
+    public static void executeCommand(
+            String command, String workDirectory, String logPath, long waitMilliseconds, Map<String, String> env)
+            throws IOException, InterruptedException {
+        String[] commands = new String[]{"bash", "-c", command};
+        executeCommand(commands, workDirectory, logPath, waitMilliseconds, env);
     }
 
     /**
@@ -226,6 +262,25 @@ public class ProcessUtils {
      *
      * @param command command array
      * @param workDirectory work directory
+     * @param waitMilliseconds wait milliseconds
+     * @param env environment variables
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the current thread is interrupted while waiting for the process to finish
+     */
+    public static void executeCommand(
+            String[] command, String workDirectory, long waitMilliseconds, Map<String, String> env)
+            throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.environment().putAll(env);
+        processBuilder.directory(new File(workDirectory));
+        executeCommand(processBuilder, waitMilliseconds);
+    }
+
+    /**
+     * Execute command
+     *
+     * @param command command array
+     * @param workDirectory work directory
      * @param logPath log path
      * @param waitMilliseconds wait milliseconds
      * @throws IOException if an I/O error occurs
@@ -242,27 +297,51 @@ public class ProcessUtils {
     }
 
     /**
+     * Execute command
+     *
+     * @param command command array
+     * @param workDirectory work directory
+     * @param logPath log path
+     * @param waitMilliseconds wait milliseconds
+     * @param env environment variables
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the current thread is interrupted while waiting for the process to finish
+     */
+    public static void executeCommand(
+            String[] command, String workDirectory, String logPath, long waitMilliseconds, Map<String, String> env)
+            throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.environment().putAll(env);
+        processBuilder.directory(new File(workDirectory));
+        processBuilder.redirectErrorStream(true);
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(logPath)));
+
+        executeCommand(processBuilder, waitMilliseconds);
+    }
+
+    /**
      * Execute interactive command
      *
      * @param command command string
      * @param workDirectory work directory
      * @param logPath log path
-     * @param waitMilliseconds wait milliseconds
+     * @param env environment variables
      * @param inputs inputs to be sent to the process
      * @throws IOException if an I/O error occurs
      * @throws InterruptedException if the current thread is interrupted while waiting for the process to finish
      */
-    public static void executeInteractiveCommand(
-            String command, String workDirectory, String logPath, long waitMilliseconds, String[] inputs)
+    public static void executeInteractiveCommand(String command, String workDirectory, String logPath,
+                                                 Map<String, String> env, String[] inputs)
             throws IOException, InterruptedException {
         String[] commands = new String[]{"bash", "-c", command};
         ProcessBuilder processBuilder = new ProcessBuilder(commands);
+        processBuilder.environment().putAll(env);
         processBuilder.directory(new File(workDirectory));
         processBuilder.redirectErrorStream(true);
         processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(logPath)));
 
         Process process = processBuilder.start();
-        process.waitFor(waitMilliseconds, TimeUnit.MILLISECONDS);
+        process.waitFor(1000, TimeUnit.MILLISECONDS);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(process.getOutputStream(),
                 StandardCharsets.UTF_8))) {
             for (String outputOrder : inputs) {
