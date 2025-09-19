@@ -86,7 +86,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
         statusMonitor.setCurrentStatus(MigrationStatusEnum.INCREMENTAL_MIGRATION_STOPPING);
         incrementalMigrationTask.stopTask();
 
-        if (hasFullMigration && fullMigrationTask.isForeignKeyMigrated()) {
+        if (hasFullMigration && !fullMigrationTask.isForeignKeyMigrated()) {
             LOGGER.info("Migrate foreign key");
             fullMigrationTask.migrateForeignKey();
         }
@@ -277,7 +277,7 @@ public class PgsqlMigrationJob extends AbstractMigrationJob {
         if (hasIncrementalMigration) {
             incrementalMigrationTask.stopTask();
 
-            if (hasFullMigration && fullMigrationTask.isForeignKeyMigrated()) {
+            if (hasFullMigration && !fullMigrationTask.isForeignKeyMigrated()) {
                 LOGGER.info("Migrate foreign key");
                 fullMigrationTask.migrateForeignKey();
             }

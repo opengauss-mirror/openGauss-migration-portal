@@ -29,7 +29,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * debezium mysql migration config helper
@@ -54,7 +56,9 @@ public class DebeziumMysqlMigrationConfigHelper {
         changeParams.put(DebeziumMysqlSourceConfig.DATABASE_HOSTNAME, dto.getMysqlDatabaseIp());
         changeParams.put(DebeziumMysqlSourceConfig.DATABASE_PORT, dto.getMysqlDatabasePort());
         changeParams.put(DebeziumMysqlSourceConfig.DATABASE_USER, dto.getMysqlDatabaseUsername());
-        changeParams.put(DebeziumMysqlSourceConfig.DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumMysqlSourceConfig.DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        }
         changeParams.put(DebeziumMysqlSourceConfig.DATABASE_INCLUDE_LIST, dto.getMysqlDatabaseName());
         if (!StringUtils.isNullOrBlank(dto.getMysqlDatabaseTables())) {
             changeParams.put(DebeziumMysqlSourceConfig.TABLE_INCLUDE_LIST, dto.getMysqlDatabaseTables());
@@ -85,6 +89,20 @@ public class DebeziumMysqlMigrationConfigHelper {
     }
 
     /**
+     * get mysql incremental migration source process delete key set
+     *
+     * @param dto mysql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> incrementalSourceConfigDeleteKeySet(MysqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumMysqlSourceConfig.DATABASE_PASSWORD);
+        }
+        return deleteKeySet;
+    }
+
+    /**
      * get mysql incremental migration sink process config
      *
      * @param dto mysql migration config dto
@@ -98,7 +116,9 @@ public class DebeziumMysqlMigrationConfigHelper {
                 dto.getOpengaussDatabaseIp(), dto.getOpengaussDatabasePort(), dto.getOpengaussDatabaseName());
         changeParams.put(DebeziumMysqlSinkConfig.OPENGAUSS_URL, opengaussUrl);
         changeParams.put(DebeziumMysqlSinkConfig.OPENGAUSS_USERNAME, dto.getOpengaussDatabaseUsername());
-        changeParams.put(DebeziumMysqlSinkConfig.OPENGAUSS_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumMysqlSinkConfig.OPENGAUSS_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
 
         String schemaMappings = generateIncrementalSchemaMappings(dto);
         changeParams.put(DebeziumMysqlSinkConfig.SCHEMA_MAPPINGS, schemaMappings);
@@ -126,6 +146,20 @@ public class DebeziumMysqlMigrationConfigHelper {
         changeParams.put(DebeziumMysqlSinkConfig.XLOG_LOCATION, xlogPath);
 
         return changeParams;
+    }
+
+    /**
+     * get mysql incremental migration sink process delete key set
+     *
+     * @param dto mysql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> incrementalSinkConfigDeleteKeySet(MysqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumMysqlSinkConfig.OPENGAUSS_PASSWORD);
+        }
+        return deleteKeySet;
     }
 
     /**
@@ -201,7 +235,9 @@ public class DebeziumMysqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_HOSTNAME, dto.getOpengaussDatabaseIp());
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_PORT, dto.getOpengaussDatabasePort());
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_USER, dto.getOpengaussDatabaseUsername());
-        changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_NAME, dto.getOpengaussDatabaseName());
         if (!StringUtils.isNullOrBlank(dto.getMysqlDatabaseTables())) {
             changeParams.put(DebeziumOpenGaussSourceConfig.TABLE_INCLUDE_LIST, dto.getMysqlDatabaseTables());
@@ -247,6 +283,20 @@ public class DebeziumMysqlMigrationConfigHelper {
     }
 
     /**
+     * get mysql reverse migration source process delete key set
+     *
+     * @param dto mysql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> reverseSourceConfigDeleteKeySet(MysqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumOpenGaussSourceConfig.DATABASE_PASSWORD);
+        }
+        return deleteKeySet;
+    }
+
+    /**
      * get mysql incremental migration sink process config
      *
      * @param dto mysql migration config dto
@@ -260,7 +310,9 @@ public class DebeziumMysqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_IP, dto.getMysqlDatabaseIp());
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_PORT, dto.getMysqlDatabasePort());
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_USERNAME, dto.getMysqlDatabaseUsername());
-        changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        }
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_NAME, dto.getMysqlDatabaseName());
 
         String schemaMappings = generateReverseSchemaMappings(dto);
@@ -284,6 +336,20 @@ public class DebeziumMysqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSinkConfig.RECORD_BREAKPOINT_KAFKA_BOOTSTRAP_SERVERS, kafkaServer);
 
         return changeParams;
+    }
+
+    /**
+     * get mysql reverse migration sink process delete key set
+     *
+     * @param dto mysql migration config dto
+     * @return Set delete key set
+     */
+    public static Set<String> reverseSinkConfigDeleteKeySet(MysqlMigrationConfigDto dto) {
+        Set<String> deleteKeySet = new HashSet<>();
+        if (dto.isUseInteractivePassword()) {
+            deleteKeySet.add(DebeziumOpenGaussSinkConfig.DATABASE_PASSWORD);
+        }
+        return deleteKeySet;
     }
 
     /**

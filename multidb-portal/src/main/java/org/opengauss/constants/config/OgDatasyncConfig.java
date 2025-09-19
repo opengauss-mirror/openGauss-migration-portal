@@ -100,6 +100,11 @@ public class OgDatasyncConfig {
      */
     public static final String PLUGIN_NAME = "sourceConfig.pluginName";
 
+    /**
+     * enable env password
+     */
+    public static final String ENABLE_ENV_PASSWORD = "enable.env.password";
+
     private OgDatasyncConfig() {
     }
 }

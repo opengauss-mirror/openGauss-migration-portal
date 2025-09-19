@@ -35,7 +35,9 @@ public class ChameleonMysqlMigrationConfigHelper {
         changeParams.put(ChameleonConfig.MYSQL_DATABASE_IP, dto.getMysqlDatabaseIp());
         changeParams.put(ChameleonConfig.MYSQL_DATABASE_PORT, dto.getMysqlDatabasePort());
         changeParams.put(ChameleonConfig.MYSQL_DATABASE_USER, dto.getMysqlDatabaseUsername());
-        changeParams.put(ChameleonConfig.MYSQL_DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(ChameleonConfig.MYSQL_DATABASE_PASSWORD, dto.getMysqlDatabasePassword());
+        }
         String mysqlDbName = dto.getMysqlDatabaseName();
         changeParams.put(ChameleonConfig.MYSQL_DATABASE_NAME, mysqlDbName);
 
@@ -54,7 +56,9 @@ public class ChameleonMysqlMigrationConfigHelper {
         changeParams.put(ChameleonConfig.PG_DATABASE_IP, dto.getOpengaussDatabaseIp());
         changeParams.put(ChameleonConfig.PG_DATABASE_PORT, dto.getOpengaussDatabasePort());
         changeParams.put(ChameleonConfig.PG_DATABASE_USER, dto.getOpengaussDatabaseUsername());
-        changeParams.put(ChameleonConfig.PG_DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(ChameleonConfig.PG_DATABASE_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
         changeParams.put(ChameleonConfig.PG_DATABASE_NAME, dto.getOpengaussDatabaseName());
 
         String csvDir = generateCsvDir(workspace);

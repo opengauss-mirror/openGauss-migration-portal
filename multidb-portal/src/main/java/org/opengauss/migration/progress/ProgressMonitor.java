@@ -90,6 +90,11 @@ public abstract class ProgressMonitor extends Thread {
             MigrationPhase currentPhase = getPhaseByStatus(currentStatus);
             readPhaseProgress(currentPhase);
 
+            if (MigrationStatusEnum.NOT_START.equals(latestStatus)) {
+                latestStatus = currentStatus;
+                continue;
+            }
+
             MigrationPhase latestPhase = getPhaseByStatus(latestStatus);
             if (!latestPhase.equals(currentPhase)) {
                 readPhaseProgress(latestPhase);
@@ -236,19 +241,19 @@ public abstract class ProgressMonitor extends Thread {
     }
 
     private MigrationPhase getPhaseByStatus(MigrationStatusEnum currentStatus) {
-        if (statusMonitor.isFullMigrationStatus()) {
+        if (MigrationStatusHelper.isFullMigrationStatus(currentStatus)) {
             return MigrationPhase.FULL_MIGRATION;
         }
 
-        if (statusMonitor.isFullDataCheckStatus()) {
+        if (MigrationStatusHelper.isFullDataCheckStatus(currentStatus)) {
             return MigrationPhase.FULL_DATA_CHECK;
         }
 
-        if (statusMonitor.isIncrementalMigrationStatus()) {
+        if (MigrationStatusHelper.isIncrementalMigrationStatus(currentStatus)) {
             return MigrationPhase.INCREMENTAL_MIGRATION;
         }
 
-        if (statusMonitor.isReverseMigrationStatus()) {
+        if (MigrationStatusHelper.isReverseMigrationStatus(currentStatus)) {
             return MigrationPhase.REVERSE_MIGRATION;
         }
         throw new IllegalArgumentException("Invalid status: " + currentStatus);

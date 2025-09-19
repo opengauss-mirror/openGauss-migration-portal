@@ -51,13 +51,17 @@ public class OgDatasyncPgsqlMigrationConfigHelper {
         changeParams.put(OgDatasyncConfig.OG_CONN_HOST, dto.getOpengaussDatabaseIp());
         changeParams.put(OgDatasyncConfig.OG_CONN_PORT, dto.getOpengaussDatabasePort());
         changeParams.put(OgDatasyncConfig.OG_CONN_USER, dto.getOpengaussDatabaseUsername());
-        changeParams.put(OgDatasyncConfig.OG_CONN_PASSWORD, dto.getOpengaussDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(OgDatasyncConfig.OG_CONN_PASSWORD, dto.getOpengaussDatabasePassword());
+        }
         changeParams.put(OgDatasyncConfig.OG_CONN_DATABASE, dto.getOpengaussDatabaseName());
 
         changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_HOST, dto.getPgsqlDatabaseIp());
         changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_PORT, dto.getPgsqlDatabasePort());
         changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_USER, dto.getPgsqlDatabaseUsername());
-        changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_PASSWORD, dto.getPgsqlDatabasePassword());
+        if (!dto.isUseInteractivePassword()) {
+            changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_PASSWORD, dto.getPgsqlDatabasePassword());
+        }
         changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_DATABASE, dto.getPgsqlDatabaseName());
 
         changeParams.put(OgDatasyncConfig.SOURCE_SCHEMA_MAPPINGS, getMigrationSchemaMappings(dto));

@@ -38,6 +38,11 @@ public abstract class AbstractMigrationConfigDto {
     protected String isAdjustKernelParam;
 
     /**
+     * Whether to use interactive password input
+     */
+    protected String useInteractivePassword;
+
+    /**
      * Get config from map
      *
      * @param key config key
@@ -94,4 +99,13 @@ public abstract class AbstractMigrationConfigDto {
      * @return OpenGaussDatabaseConnectInfo openGauss database connect info
      */
     public abstract OpenGaussDatabaseConnectInfo getOpenGaussConnectInfo();
+
+    /**
+     * Check whether to use interactive password input
+     *
+     * @return true if to use interactive password input
+     */
+    public boolean isUseInteractivePassword() {
+        return "true".equals(useInteractivePassword);
+    }
 }

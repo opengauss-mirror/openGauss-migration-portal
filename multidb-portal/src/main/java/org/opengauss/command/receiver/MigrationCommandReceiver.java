@@ -12,7 +12,7 @@ import org.opengauss.config.ApplicationConfig;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DatabaseType;
 import org.opengauss.exceptions.PortalException;
-import org.opengauss.migration.MigrationManager;
+import org.opengauss.migration.MigrationContext;
 import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.status.StatusManager;
 import org.opengauss.migration.status.model.ObjectStatusEntry;
@@ -55,7 +55,7 @@ public class MigrationCommandReceiver implements CommandReceiver {
         }
 
         if (workspaceManager.checkTaskIdExists(taskId)) {
-            MigrationManager.initialize(taskWorkspace);
+            MigrationContext.initialize(taskWorkspace);
             setQuarkusPort(taskWorkspace);
             Main.startQuarkus();
         } else {

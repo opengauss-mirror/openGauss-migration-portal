@@ -185,6 +185,11 @@ public class MigrationConfig {
      */
     public static final String REVERSE_MIGRATION_SINK_PROCESS_JVM = "reverse.sink.jvm";
 
+    /**
+     * Whether to use interactive password input
+     */
+    public static final String USE_INTERACTIVE_PASSWORD = "use.interactive.password";
+
     private MigrationConfig() {
     }
 }

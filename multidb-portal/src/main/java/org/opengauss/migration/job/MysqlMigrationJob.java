@@ -94,7 +94,7 @@ public class MysqlMigrationJob extends AbstractMigrationJob {
         }
         incrementalMigrationTask.stopTask();
 
-        if (hasFullMigration && fullMigrationTask.isForeignKeyMigrated()) {
+        if (hasFullMigration && !fullMigrationTask.isForeignKeyMigrated()) {
             LOGGER.info("Migrate foreign key");
             fullMigrationTask.migrateForeignKey();
         }
@@ -296,7 +296,7 @@ public class MysqlMigrationJob extends AbstractMigrationJob {
             }
             incrementalMigrationTask.stopTask();
 
-            if (hasFullMigration && fullMigrationTask.isForeignKeyMigrated()) {
+            if (hasFullMigration && !fullMigrationTask.isForeignKeyMigrated()) {
                 LOGGER.info("Migrate foreign key");
                 fullMigrationTask.migrateForeignKey();
             }

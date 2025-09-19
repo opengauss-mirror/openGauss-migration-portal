@@ -59,7 +59,7 @@ public class ProcessErrorHandler {
      * handle confluent process error
      */
     public void handleConfluentError() {
-        if (statusMonitor.isFullMigrationStatus()) {
+        if (statusMonitor.isNotRunning() || statusMonitor.isFullMigrationStatus()) {
             return;
         }
 

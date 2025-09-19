@@ -110,6 +110,16 @@ public class ChameleonConfig {
      */
     public static final String ALERT_LOG_KAFKA_TOPIC = "alert_log_kafka_topic";
 
+    /**
+     * enable env password
+     */
+    public static final String ENABLE_ENV_PASSWORD = "enable.env.password";
+
+    /**
+     * env sources db conn password
+     */
+    public static final String ENV_SOURCES_DB_CONN_PASSWORD = "sources.db_conn.password";
+
     private ChameleonConfig() {
     }
 }

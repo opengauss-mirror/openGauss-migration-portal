@@ -11,11 +11,12 @@
 
     <Loggers>
         <Root level="DEBUG">
-            <AppenderRef ref="console"/>
+            <AppenderRef ref="console" level="INFO"/>
             <AppenderRef ref="file"/>
         </Root>
         <logger name="org.apache.kafka" level="ERROR"/>
         <logger name="org.opengauss.core" level="ERROR" />
+        <logger name="io.smallrye" level="ERROR" />
         <logger name="io.quarkus" level="ERROR" />
         <logger name="org.jboss" level="ERROR" />
     </Loggers>
