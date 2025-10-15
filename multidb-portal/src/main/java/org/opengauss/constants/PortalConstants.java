@@ -13,7 +13,7 @@ public class PortalConstants {
     /**
      * portal version
      */
-    public static final String PORTAL_VERSION = "7.0.0rc2";
+    public static final String PORTAL_VERSION = "7.0.0rc3";
 
     /**
      * bin dir name
