@@ -1,5 +1,5 @@
 #!/bin/bash
-APP_NAME=portalControl-7.0.0rc2-exec.jar
+APP_NAME=portalControl-7.0.0rc3-exec.jar
 
 #根据参数决定迁移模式
 case "$2" in
