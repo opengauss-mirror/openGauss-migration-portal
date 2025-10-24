@@ -16,7 +16,7 @@ import java.util.List;
  * @since 2025/6/24
  */
 @Data
-public class OgDatasyncStatusEntry {
+public class FullReplicateStatusEntry {
     private FullTotalInfo total;
     private List<FullEntry> table;
     private List<FullEntry> view;

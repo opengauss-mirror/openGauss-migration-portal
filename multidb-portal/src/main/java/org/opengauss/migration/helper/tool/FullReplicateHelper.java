@@ -10,11 +10,11 @@ import com.alibaba.fastjson2.JSONReader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.tool.OgDatasyncConstants;
+import org.opengauss.constants.tool.FullReplicateConstants;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.migration.progress.model.tool.OgDatasyncStatusEntry;
-import org.opengauss.migration.tools.OgDatasync;
+import org.opengauss.migration.progress.model.tool.FullReplicateStatusEntry;
+import org.opengauss.migration.tools.FullReplicateTool;
 import org.opengauss.utils.StringUtils;
 
 import java.io.IOException;
@@ -28,10 +28,10 @@ import java.util.Optional;
  * @since 2025/5/29
  */
 @Slf4j
-public class OgDatasyncHelper {
-    private static final Logger LOGGER = LogManager.getLogger(OgDatasyncHelper.class);
+public class FullReplicateHelper {
+    private static final Logger LOGGER = LogManager.getLogger(FullReplicateHelper.class);
 
-    private OgDatasyncHelper() {
+    private FullReplicateHelper() {
     }
 
     /**
@@ -47,7 +47,7 @@ public class OgDatasyncHelper {
             ConfigFile fullConfig, String sourceDbType, String fullMigrationToolOrder, String jvmPrefixOptions) {
         StringBuilder commandBuilder = new StringBuilder();
 
-        String jarPath = OgDatasync.getInstance().getJarPath();
+        String jarPath = FullReplicateTool.getInstance().getJarPath();
         commandBuilder.append("java").append(" ")
                 .append(jvmPrefixOptions).append(" ")
                 .append("-jar").append(" ").append(jarPath).append(" ")
@@ -89,7 +89,7 @@ public class OgDatasyncHelper {
      * @return process stop sign
      */
     public static String getProcessStopSign(String fullMigrationToolOrder) {
-        if (OgDatasyncConstants.ORDER_DROP_REPLICA_SCHEMA.equals(fullMigrationToolOrder)) {
+        if (FullReplicateConstants.ORDER_DROP_REPLICA_SCHEMA.equals(fullMigrationToolOrder)) {
             return "drop replica schema(sch_debezium) success.";
         }
         return fullMigrationToolOrder + " migration complete. full report thread is close.";
@@ -112,7 +112,7 @@ public class OgDatasyncHelper {
      * @param statusFilePath status file path
      * @return oG_datasync_full_migration status entry
      */
-    public static Optional<OgDatasyncStatusEntry> parseToolStatusFile(String statusFilePath) {
+    public static Optional<FullReplicateStatusEntry> parseToolStatusFile(String statusFilePath) {
         Path statusPath = Path.of(statusFilePath);
         try {
             if (!Files.exists(statusPath)) {
@@ -121,7 +121,7 @@ public class OgDatasyncHelper {
 
             String text = Files.readString(statusPath);
             if (!StringUtils.isNullOrBlank(text)) {
-                return Optional.ofNullable(JSON.parseObject(text, OgDatasyncStatusEntry.class,
+                return Optional.ofNullable(JSON.parseObject(text, FullReplicateStatusEntry.class,
                         JSONReader.Feature.IgnoreAutoTypeNotMatch));
             }
         } catch (IOException | JSONException e) {

@@ -9,7 +9,7 @@ package org.opengauss.constants.config;
  *
  * @since 2025/5/29
  */
-public class OgDatasyncConfig {
+public class FullReplicateConfig {
     /**
      * is dump json
      */
@@ -105,6 +105,6 @@ public class OgDatasyncConfig {
      */
     public static final String ENABLE_ENV_PASSWORD = "enable.env.password";
 
-    private OgDatasyncConfig() {
+    private FullReplicateConfig() {
     }
 }

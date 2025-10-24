@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.config.ApplicationConfig;
 import org.opengauss.constants.PortalConstants;
-import org.opengauss.constants.tool.OgDatasyncConstants;
+import org.opengauss.constants.tool.FullReplicateConstants;
 import org.opengauss.exceptions.InstallException;
 
 /**
@@ -18,28 +18,28 @@ import org.opengauss.exceptions.InstallException;
  * @since 2025/5/29
  */
 @Getter
-public class OgDatasync extends Tool {
-    private static final Logger LOGGER = LogManager.getLogger(OgDatasync.class);
+public class FullReplicateTool extends Tool {
+    private static final Logger LOGGER = LogManager.getLogger(FullReplicateTool.class);
 
-    private static volatile OgDatasync instance;
+    private static volatile FullReplicateTool instance;
 
     private final String pkgDirPath;
     private final String pkgName;
     private final String installDirPath;
     private final String jarPath;
 
-    private OgDatasync() {
+    private FullReplicateTool() {
         ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
 
         this.pkgDirPath = String.format("%s/%s", applicationConfig.getPortalPkgDirPath(),
-                OgDatasyncConstants.INSTALL_PKG_DIR_NAME);
-        this.pkgName = String.format(OgDatasyncConstants.INSTALL_PKG_NAME, PortalConstants.PORTAL_VERSION);
+                FullReplicateConstants.INSTALL_PKG_DIR_NAME);
+        this.pkgName = String.format(FullReplicateConstants.INSTALL_PKG_NAME, PortalConstants.PORTAL_VERSION);
         this.installDirPath = String.format("%s/%s", applicationConfig.getPortalToolsDirPath(),
-                OgDatasyncConstants.INSTALL_DIR_NAME);
-        String jarName = String.format(OgDatasyncConstants.OG_DATASYNC_JAR_NAME_MODEL,
+                FullReplicateConstants.INSTALL_DIR_NAME);
+        String jarName = String.format(FullReplicateConstants.FULL_REPLICATE_JAR_NAME_MODEL,
                 PortalConstants.PORTAL_VERSION);
         this.jarPath = String.format("%s/%s/%s", this.installDirPath,
-                OgDatasyncConstants.OG_DATASYNC_JAR_HOME_NAME, jarName);
+                FullReplicateConstants.FULL_REPLICATE_JAR_HOME_NAME, jarName);
     }
 
     /**
@@ -47,11 +47,11 @@ public class OgDatasync extends Tool {
      *
      * @return FullMigrationTool instance
      */
-    public static OgDatasync getInstance() {
+    public static FullReplicateTool getInstance() {
         if (instance == null) {
-            synchronized (OgDatasync.class) {
+            synchronized (FullReplicateTool.class) {
                 if (instance == null) {
-                    instance = new OgDatasync();
+                    instance = new FullReplicateTool();
                 }
             }
         }
@@ -62,37 +62,37 @@ public class OgDatasync extends Tool {
     @Override
     public void install() {
         if (checkInstall()) {
-            LOGGER.info("OG_datasync_full_migration tool is already installed");
+            LOGGER.info("openGauss-FullReplicate tool is already installed");
             return;
         }
 
-        LOGGER.info("Start to install OG_datasync_full_migration tool");
-        LOGGER.info("Create OG_datasync_full_migration tool install directory");
+        LOGGER.info("Start to install openGauss-FullReplicate tool");
+        LOGGER.info("Create openGauss-FullReplicate tool install directory");
         createInstallDirPath(installDirPath);
 
-        LOGGER.info("Copy OG_datasync_full_migration tool jar to install directory");
+        LOGGER.info("Copy openGauss-FullReplicate tool jar to install directory");
         unzipPackage(pkgDirPath, pkgName, installDirPath);
 
-        LOGGER.info("Check OG_datasync_full_migration install files");
+        LOGGER.info("Check openGauss-FullReplicate install files");
         checkKeyFileExists(jarPath);
-        LOGGER.info("Install OG_datasync_full_migration tool successfully");
+        LOGGER.info("Install openGauss-FullReplicate tool successfully");
     }
 
     @Override
     public void unInstall() {
         if (!checkInstall()) {
-            LOGGER.info("OG_datasync_full_migration tool is not installed");
+            LOGGER.info("openGauss-FullReplicate tool is not installed");
             return;
         }
 
-        LOGGER.info("Start uninstall OG_datasync_full_migration tool");
+        LOGGER.info("Start uninstall openGauss-FullReplicate tool");
         deletePath(installDirPath);
-        LOGGER.info("Uninstall OG_datasync_full_migration tool successfully");
+        LOGGER.info("Uninstall openGauss-FullReplicate tool successfully");
     }
 
     @Override
     public String getToolName() {
-        return OgDatasyncConstants.TOOL_NAME;
+        return FullReplicateConstants.TOOL_NAME;
     }
 
     @Override

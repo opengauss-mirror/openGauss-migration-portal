@@ -59,7 +59,7 @@ public class FileUtils {
         while (!(new File(filePath).exists()) && timeOutCount < timeout) {
             try {
                 TimeUnit.SECONDS.sleep(1);
-                log.info("check file exist sleep : {} s", timeOutCount);
+                log.info("check file exist sleep :{} {} s", filePath, timeOutCount);
             } catch (InterruptedException e) {
                 log.error("sleep exception:", e);
             }

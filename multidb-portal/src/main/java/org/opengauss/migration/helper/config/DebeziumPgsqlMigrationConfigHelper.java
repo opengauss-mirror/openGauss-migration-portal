@@ -81,7 +81,7 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumPgsqlSourceConfig.SLOT_DROP_ON_STOP, "false");
         changeParams.put(DebeziumPgsqlSourceConfig.MIGRATION_TYPE, "incremental");
 
-        int majorPgsqlVersion = OgDatasyncPgsqlMigrationConfigHelper.getMajorPgsqlVersion(dto);
+        int majorPgsqlVersion = FullReplicatePgsqlMigrationConfigHelper.getMajorPgsqlVersion(dto);
         if (majorPgsqlVersion >= 11) {
             changeParams.put(DebeziumPgsqlSourceConfig.TRUNCATE_HANDLING_MODE, "include");
             changeParams.put(DebeziumPgsqlSourceConfig.PLUGIN_NAME, "pgoutput");
@@ -132,7 +132,7 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumPgsqlSinkConfig.DATABASE_IP, dto.getOpengaussDatabaseIp());
 
         Map<String, String> schemaMappings =
-                OgDatasyncPgsqlMigrationConfigHelper.getMigrationSchemaMappings(dto);
+                FullReplicatePgsqlMigrationConfigHelper.getMigrationSchemaMappings(dto);
         StringBuilder mappingStrBuilder = new StringBuilder();
         for (Map.Entry<String, String> entry : schemaMappings.entrySet()) {
             mappingStrBuilder.append(entry.getKey()).append(":").append(entry.getValue()).append(";");
@@ -224,7 +224,7 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSourceConfig.DATABASE_NAME, dto.getOpengaussDatabaseName());
 
         Map<String, String> schemaMappings =
-                OgDatasyncPgsqlMigrationConfigHelper.getMigrationSchemaMappings(dto);
+                FullReplicatePgsqlMigrationConfigHelper.getMigrationSchemaMappings(dto);
         StringBuilder includeSchemasBuilder = new StringBuilder();
         schemaMappings.forEach((key, value) -> includeSchemasBuilder.append(value).append(","));
         if (!StringUtils.isNullOrBlank(dto.getPgsqlDatabaseSchemas())) {
@@ -293,7 +293,7 @@ public class DebeziumPgsqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSinkConfig.DATABASE_NAME, dto.getPgsqlDatabaseName());
 
         Map<String, String> schemaMappings =
-                OgDatasyncPgsqlMigrationConfigHelper.getMigrationSchemaMappings(dto);
+                FullReplicatePgsqlMigrationConfigHelper.getMigrationSchemaMappings(dto);
         StringBuilder mappingStrBuilder = new StringBuilder();
         for (Map.Entry<String, String> entry : schemaMappings.entrySet()) {
             mappingStrBuilder.append(entry.getValue()).append(":").append(entry.getKey()).append(";");

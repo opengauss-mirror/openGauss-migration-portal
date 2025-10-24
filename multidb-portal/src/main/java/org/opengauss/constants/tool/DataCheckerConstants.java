@@ -23,7 +23,7 @@ public class DataCheckerConstants {
     /**
      * install pkg name model
      */
-    public static final String INSTALL_PKG_NAME_MODEL = "gs_datacheck-%s.tar.gz";
+    public static final String INSTALL_PKG_NAME_MODEL = "openGauss-DataCheck-%s.tar.gz";
 
     /**
      * install dir name
@@ -33,7 +33,7 @@ public class DataCheckerConstants {
     /**
      * data checker home dir name model
      */
-    public static final String DATA_CHECKER_HOME_DIR_NAME_MODEL = "gs_datacheck-%s";
+    public static final String DATA_CHECKER_HOME_DIR_NAME_MODEL = "openGauss-DataCheck-%s";
 
     /**
      * check jar name model

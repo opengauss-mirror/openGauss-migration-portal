@@ -6,16 +6,16 @@ package org.opengauss.migration.tasks.impl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.config.OgDatasyncConfig;
+import org.opengauss.constants.config.FullReplicateConfig;
 import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
-import org.opengauss.domain.model.OgDatasyncConfigBundle;
+import org.opengauss.domain.model.FullReplicateConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.migration.helper.config.DebeziumPgsqlMigrationConfigHelper;
-import org.opengauss.migration.helper.config.OgDatasyncPgsqlMigrationConfigHelper;
-import org.opengauss.migration.helper.tool.OgDatasyncHelper;
+import org.opengauss.migration.helper.config.FullReplicatePgsqlMigrationConfigHelper;
+import org.opengauss.migration.helper.tool.FullReplicateHelper;
 import org.opengauss.migration.tasks.phase.FullMigrationTask;
-import org.opengauss.migration.tasks.tool.OgDatasyncTask;
+import org.opengauss.migration.tasks.tool.FullReplicateTask;
 import org.opengauss.utils.FileUtils;
 
 import java.io.IOException;
@@ -26,8 +26,8 @@ import java.util.HashMap;
  *
  * @since 2025/5/29
  */
-public class OgDatasyncPgsqlFullMigrationTask extends OgDatasyncTask implements FullMigrationTask {
-    private static final Logger LOGGER = LogManager.getLogger(OgDatasyncPgsqlFullMigrationTask.class);
+public class FullReplicatePgsqlFullMigrationTask extends FullReplicateTask implements FullMigrationTask {
+    private static final Logger LOGGER = LogManager.getLogger(FullReplicatePgsqlFullMigrationTask.class);
 
     private final PgsqlMigrationConfigDto migrationConfigDto;
     private boolean isTableMigrated = false;
@@ -37,9 +37,9 @@ public class OgDatasyncPgsqlFullMigrationTask extends OgDatasyncTask implements 
     private boolean isProcedureMigrated = false;
     private boolean isForeignKeyMigrated = false;
 
-    public OgDatasyncPgsqlFullMigrationTask(
+    public FullReplicatePgsqlFullMigrationTask(
             TaskWorkspace taskWorkspace, MigrationStopIndicator migrationStopIndicator,
-            PgsqlMigrationConfigDto migrationConfigDto, OgDatasyncConfigBundle fullMigrationToolConfig) {
+            PgsqlMigrationConfigDto migrationConfigDto, FullReplicateConfigBundle fullMigrationToolConfig) {
         super(taskWorkspace, migrationStopIndicator, fullMigrationToolConfig, migrationConfigDto.getFullProcessJvm());
         this.migrationConfigDto = migrationConfigDto;
     }
@@ -126,8 +126,8 @@ public class OgDatasyncPgsqlFullMigrationTask extends OgDatasyncTask implements 
     }
 
     private void cleanHistoryFiles() {
-        String csvDirPath = OgDatasyncPgsqlMigrationConfigHelper.generateCsvDirPath(taskWorkspace);
-        String logPath = OgDatasyncHelper.generateFullMigrationLogPath(taskWorkspace);
+        String csvDirPath = FullReplicatePgsqlMigrationConfigHelper.generateCsvDirPath(taskWorkspace);
+        String logPath = FullReplicateHelper.generateFullMigrationLogPath(taskWorkspace);
         String statusDirPath = taskWorkspace.getStatusFullDirPath();
         try {
             FileUtils.deletePath(csvDirPath);
@@ -142,7 +142,7 @@ public class OgDatasyncPgsqlFullMigrationTask extends OgDatasyncTask implements 
         String slotName = DebeziumPgsqlMigrationConfigHelper.generateIncrementalSlotName(migrationConfigDto,
                 taskWorkspace);
         HashMap<String, Object> changeParams = new HashMap<>();
-        changeParams.put(OgDatasyncConfig.SLOT_NAME, slotName);
+        changeParams.put(FullReplicateConfig.SLOT_NAME, slotName);
         fullConfig.changeConfig(changeParams);
     }
 }

@@ -6,8 +6,8 @@ package org.opengauss.migration.process.task;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.config.OgDatasyncConfig;
-import org.opengauss.constants.tool.OgDatasyncConstants;
+import org.opengauss.constants.config.FullReplicateConfig;
+import org.opengauss.constants.tool.FullReplicateConstants;
 import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
@@ -15,7 +15,7 @@ import org.opengauss.exceptions.MigrationException;
 import org.opengauss.migration.MigrationContext;
 import org.opengauss.migration.config.AbstractMigrationJobConfig;
 import org.opengauss.migration.config.PgsqlMigrationJobConfig;
-import org.opengauss.migration.helper.tool.OgDatasyncHelper;
+import org.opengauss.migration.helper.tool.FullReplicateHelper;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.ProcessUtils;
 import org.opengauss.utils.ThreadUtils;
@@ -29,18 +29,18 @@ import java.util.Map;
  *
  * @since 2025/5/29
  */
-public class OgDatasyncProcess extends TaskProcess {
-    private static final Logger LOGGER = LogManager.getLogger(OgDatasyncProcess.class);
+public class FullReplicateProcess extends TaskProcess {
+    private static final Logger LOGGER = LogManager.getLogger(FullReplicateProcess.class);
 
     private final ConfigFile fullConfig;
     private final String sourceDbType;
     private final String order;
 
-    public OgDatasyncProcess(String processName, TaskWorkspace taskWorkspace, ConfigFile fullConfig,
+    public FullReplicateProcess(String processName, TaskWorkspace taskWorkspace, ConfigFile fullConfig,
                              String sourceDbType, String order, String jvmPrefixOptions) {
         super(processName, taskWorkspace,
-                OgDatasyncHelper.generateProcessStartCommand(fullConfig, sourceDbType, order, jvmPrefixOptions),
-                OgDatasyncHelper.generateProcessCheckCommand(fullConfig, sourceDbType, order, jvmPrefixOptions));
+                FullReplicateHelper.generateProcessStartCommand(fullConfig, sourceDbType, order, jvmPrefixOptions),
+                FullReplicateHelper.generateProcessCheckCommand(fullConfig, sourceDbType, order, jvmPrefixOptions));
 
         this.fullConfig = fullConfig;
         this.sourceDbType = sourceDbType;
@@ -62,11 +62,11 @@ public class OgDatasyncProcess extends TaskProcess {
         }
 
         String workDirPath = taskWorkspace.getStatusFullDirPath();
-        String logPath = OgDatasyncHelper.generateFullMigrationLogPath(taskWorkspace);
+        String logPath = FullReplicateHelper.generateFullMigrationLogPath(taskWorkspace);
 
         try {
             ProcessUtils.executeCommand(startCommand, workDirPath, logPath,
-                    OgDatasyncConstants.WAIT_PROCESS_START_MILLIS, generateProcessEnv());
+                    FullReplicateConstants.WAIT_PROCESS_START_MILLIS, generateProcessEnv());
             LOGGER.info("{} started", processName);
             LOGGER.info("{} is running", processName);
         } catch (IOException | InterruptedException e) {
@@ -86,8 +86,8 @@ public class OgDatasyncProcess extends TaskProcess {
 
         try {
             if (!isAlive() && !isStopped) {
-                String logPath = OgDatasyncHelper.generateFullMigrationLogPath(taskWorkspace);
-                String endFlag = OgDatasyncHelper.getProcessStopSign(order);
+                String logPath = FullReplicateHelper.generateFullMigrationLogPath(taskWorkspace);
+                String endFlag = FullReplicateHelper.getProcessStopSign(order);
                 String lastLine = FileUtils.readFileLastLine(logPath);
 
                 if (lastLine.contains(endFlag)) {
@@ -114,9 +114,9 @@ public class OgDatasyncProcess extends TaskProcess {
 
         Map<String, String> env = new HashMap<>();
         if (migrationConfigDto.isUseInteractivePassword()) {
-            env.put(OgDatasyncConfig.ENABLE_ENV_PASSWORD, "true");
-            env.put(OgDatasyncConfig.OG_CONN_PASSWORD, migrationConfigDto.getOpengaussDatabasePassword());
-            env.put(OgDatasyncConfig.SOURCE_DB_CONN_PASSWORD, migrationConfigDto.getPgsqlDatabasePassword());
+            env.put(FullReplicateConfig.ENABLE_ENV_PASSWORD, "true");
+            env.put(FullReplicateConfig.OG_CONN_PASSWORD, migrationConfigDto.getOpengaussDatabasePassword());
+            env.put(FullReplicateConfig.SOURCE_DB_CONN_PASSWORD, migrationConfigDto.getPgsqlDatabasePassword());
         }
         return env;
     }

@@ -56,64 +56,64 @@ public class ProcessNameConstants {
     public static final String CHAMELEON_DETACH_REPLICA = "chameleon full detach replica process";
 
     /**
-     * oG_datasync_full_migration order table process name
+     * full_replicate order table process name
      */
-    public static final String OG_DATASYNC_MIGRATION_TABLE = "oG_datasync_full_migration migration table process";
+    public static final String FULL_REPLICATE_MIGRATION_TABLE = "full_replicate migration table process";
 
     /**
-     * oG_datasync_full_migration order sequence process name
+     * full_replicate order sequence process name
      */
-    public static final String OG_DATASYNC_MIGRATION_SEQUENCE = "oG_datasync_full_migration migration sequence process";
+    public static final String FULL_REPLICATE_MIGRATION_SEQUENCE = "full_replicate migration sequence process";
 
     /**
-     * oG_datasync_full_migration order primary key process name
+     * full_replicate order primary key process name
      */
-    public static final String OG_DATASYNC_MIGRATION_PRIMARY_KEY =
-            "oG_datasync_full_migration migration primary key process";
+    public static final String FULL_REPLICATE_MIGRATION_PRIMARY_KEY =
+            "full_replicate migration primary key process";
 
     /**
-     * oG_datasync_full_migration order index process name
+     * full_replicate order index process name
      */
-    public static final String OG_DATASYNC_MIGRATION_INDEX = "oG_datasync_full_migration migration index process";
+    public static final String FULL_REPLICATE_MIGRATION_INDEX = "full_replicate migration index process";
 
     /**
-     * oG_datasync_full_migration order constraint process name
+     * full_replicate order constraint process name
      */
-    public static final String OG_DATASYNC_MIGRATION_CONSTRAINT =
-            "oG_datasync_full_migration migration constraint process";
+    public static final String FULL_REPLICATE_MIGRATION_CONSTRAINT =
+            "full_replicate migration constraint process";
 
     /**
-     * oG_datasync_full_migration order view process name
+     * full_replicate order view process name
      */
-    public static final String OG_DATASYNC_MIGRATION_VIEW = "oG_datasync_full_migration migration view process";
+    public static final String FULL_REPLICATE_MIGRATION_VIEW = "full_replicate migration view process";
 
     /**
-     * oG_datasync_full_migration order function process name
+     * full_replicate order function process name
      */
-    public static final String OG_DATASYNC_MIGRATION_FUNCTION = "oG_datasync_full_migration migration function process";
+    public static final String FULL_REPLICATE_MIGRATION_FUNCTION = "full_replicate migration function process";
 
     /**
-     * oG_datasync_full_migration order procedure process name
+     * full_replicate order procedure process name
      */
-    public static final String OG_DATASYNC_MIGRATION_PROCEDURE =
-            "oG_datasync_full_migration migration procedure process";
+    public static final String FULL_REPLICATE_MIGRATION_PROCEDURE =
+            "full_replicate migration procedure process";
 
     /**
-     * oG_datasync_full_migration order trigger process name
+     * full_replicate order trigger process name
      */
-    public static final String OG_DATASYNC_MIGRATION_TRIGGER = "oG_datasync_full_migration migration trigger process";
+    public static final String FULL_REPLICATE_MIGRATION_TRIGGER = "full_replicate migration trigger process";
 
     /**
-     * oG_datasync_full_migration order foreign key process name
+     * full_replicate order foreign key process name
      */
-    public static final String OG_DATASYNC_MIGRATION_FOREIGN_KEY =
-            "oG_datasync_full_migration migration foreign key process";
+    public static final String FULL_REPLICATE_MIGRATION_FOREIGN_KEY =
+            "full_replicate migration foreign key process";
 
     /**
-     * oG_datasync_full_migration order drop replica schema process name
+     * full_replicate order drop replica schema process name
      */
-    public static final String OG_DATASYNC_DROP_REPLICA_SCHEMA =
-            "oG_datasync_full_migration drop replica schema process";
+    public static final String FULL_REPLICATE_DROP_REPLICA_SCHEMA =
+            "full_replicate drop replica schema process";
 
     /**
      * debezium incremental connect source process name

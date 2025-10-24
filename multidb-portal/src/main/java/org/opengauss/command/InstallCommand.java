@@ -40,9 +40,9 @@ public class InstallCommand implements Command {
                 LOGGER.info("Start command to install chameleon");
                 commandReceiver.chameleon();
                 break;
-            case "og_datasync":
-                LOGGER.info("Start command to install oG_datasync_full_migration");
-                commandReceiver.ogDatasync();
+            case "full_replicate":
+                LOGGER.info("Start command to install full_replicate");
+                commandReceiver.fullReplicate();
                 break;
             case "data_checker":
                 LOGGER.info("Start command to install data-checker");

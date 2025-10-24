@@ -31,8 +31,8 @@ public enum TemplateConfigType {
     /**
      * oG_datasync_full_migration config template file
      */
-    OG_DATASYNC_CONFIG("config.yml", FileFormat.YML, false, "config/oG_datasync",
-            "the oG_datasync_full_migration config file", null),
+    FULL_REPLICATE_CONFIG("config.yml", FileFormat.YML, false, "config/full_replicate",
+            "the full_replicate config file", null),
 
     /**
      * datachecker config template files

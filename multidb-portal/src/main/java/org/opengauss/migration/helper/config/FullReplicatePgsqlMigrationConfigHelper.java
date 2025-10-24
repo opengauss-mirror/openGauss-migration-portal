@@ -6,7 +6,7 @@ package org.opengauss.migration.helper.config;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.constants.config.OgDatasyncConfig;
+import org.opengauss.constants.config.FullReplicateConfig;
 import org.opengauss.constants.config.MigrationConfig;
 import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
@@ -27,12 +27,14 @@ import java.util.Map;
  *
  * @since 2025/5/29
  */
-public class OgDatasyncPgsqlMigrationConfigHelper {
-    private static final Logger LOGGER = LogManager.getLogger(OgDatasyncPgsqlMigrationConfigHelper.class);
+public class FullReplicatePgsqlMigrationConfigHelper {
+    private static final Logger LOGGER = LogManager.getLogger(FullReplicatePgsqlMigrationConfigHelper.class);
+    private static final String PLUGIN_PGOUTPUT = "pgoutput";
+    private static final String PLUGIN_WAL2JSON = "wal2json";
 
     private static int pgsqlMajorVersion = 0;
 
-    private OgDatasyncPgsqlMigrationConfigHelper() {
+    private FullReplicatePgsqlMigrationConfigHelper() {
     }
 
     /**
@@ -45,29 +47,29 @@ public class OgDatasyncPgsqlMigrationConfigHelper {
     public static Map<String, Object> pgsqlFullMigrationConfig(PgsqlMigrationConfigDto dto, TaskWorkspace workspace) {
         HashMap<String, Object> changeParams = new HashMap<>();
 
-        changeParams.put(OgDatasyncConfig.IS_DUMP_JSON, true);
-        changeParams.put(OgDatasyncConfig.STATUS_DIR, workspace.getStatusFullDirPath());
+        changeParams.put(FullReplicateConfig.IS_DUMP_JSON, true);
+        changeParams.put(FullReplicateConfig.STATUS_DIR, workspace.getStatusFullDirPath());
 
-        changeParams.put(OgDatasyncConfig.OG_CONN_HOST, dto.getOpengaussDatabaseIp());
-        changeParams.put(OgDatasyncConfig.OG_CONN_PORT, dto.getOpengaussDatabasePort());
-        changeParams.put(OgDatasyncConfig.OG_CONN_USER, dto.getOpengaussDatabaseUsername());
+        changeParams.put(FullReplicateConfig.OG_CONN_HOST, dto.getOpengaussDatabaseIp());
+        changeParams.put(FullReplicateConfig.OG_CONN_PORT, dto.getOpengaussDatabasePort());
+        changeParams.put(FullReplicateConfig.OG_CONN_USER, dto.getOpengaussDatabaseUsername());
         if (!dto.isUseInteractivePassword()) {
-            changeParams.put(OgDatasyncConfig.OG_CONN_PASSWORD, dto.getOpengaussDatabasePassword());
+            changeParams.put(FullReplicateConfig.OG_CONN_PASSWORD, dto.getOpengaussDatabasePassword());
         }
-        changeParams.put(OgDatasyncConfig.OG_CONN_DATABASE, dto.getOpengaussDatabaseName());
+        changeParams.put(FullReplicateConfig.OG_CONN_DATABASE, dto.getOpengaussDatabaseName());
 
-        changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_HOST, dto.getPgsqlDatabaseIp());
-        changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_PORT, dto.getPgsqlDatabasePort());
-        changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_USER, dto.getPgsqlDatabaseUsername());
+        changeParams.put(FullReplicateConfig.SOURCE_DB_CONN_HOST, dto.getPgsqlDatabaseIp());
+        changeParams.put(FullReplicateConfig.SOURCE_DB_CONN_PORT, dto.getPgsqlDatabasePort());
+        changeParams.put(FullReplicateConfig.SOURCE_DB_CONN_USER, dto.getPgsqlDatabaseUsername());
         if (!dto.isUseInteractivePassword()) {
-            changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_PASSWORD, dto.getPgsqlDatabasePassword());
+            changeParams.put(FullReplicateConfig.SOURCE_DB_CONN_PASSWORD, dto.getPgsqlDatabasePassword());
         }
-        changeParams.put(OgDatasyncConfig.SOURCE_DB_CONN_DATABASE, dto.getPgsqlDatabaseName());
+        changeParams.put(FullReplicateConfig.SOURCE_DB_CONN_DATABASE, dto.getPgsqlDatabaseName());
 
-        changeParams.put(OgDatasyncConfig.SOURCE_SCHEMA_MAPPINGS, getMigrationSchemaMappings(dto));
-        changeParams.put(OgDatasyncConfig.IS_DELETE_CSV, false);
-        changeParams.put(OgDatasyncConfig.SOURCE_CSV_DIR, generateCsvDirPath(workspace));
-        changeParams.put(OgDatasyncConfig.IS_RECORD_SNAPSHOT, false);
+        changeParams.put(FullReplicateConfig.SOURCE_SCHEMA_MAPPINGS, getMigrationSchemaMappings(dto));
+        changeParams.put(FullReplicateConfig.IS_DELETE_CSV, false);
+        changeParams.put(FullReplicateConfig.SOURCE_CSV_DIR, generateCsvDirPath(workspace));
+        changeParams.put(FullReplicateConfig.IS_RECORD_SNAPSHOT, false);
         return changeParams;
     }
 
@@ -79,12 +81,12 @@ public class OgDatasyncPgsqlMigrationConfigHelper {
      */
     public static Map<String, Object> pgsqlFullMigrationRecordSnapshotConfig(PgsqlMigrationConfigDto dto) {
         HashMap<String, Object> changeParams = new HashMap<>();
-        changeParams.put(OgDatasyncConfig.IS_RECORD_SNAPSHOT, true);
+        changeParams.put(FullReplicateConfig.IS_RECORD_SNAPSHOT, true);
         int majorPgsqlVersion = getMajorPgsqlVersion(dto);
         if (majorPgsqlVersion >= 10) {
-            changeParams.put(OgDatasyncConfig.PLUGIN_NAME, "pgoutput");
+            changeParams.put(FullReplicateConfig.PLUGIN_NAME, PLUGIN_PGOUTPUT);
         } else {
-            changeParams.put(OgDatasyncConfig.PLUGIN_NAME, "wal2json");
+            changeParams.put(FullReplicateConfig.PLUGIN_NAME, PLUGIN_WAL2JSON);
         }
         return changeParams;
     }
