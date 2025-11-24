@@ -9,36 +9,36 @@ package org.opengauss.constants.tool;
  *
  * @since 2025/5/29
  */
-public class OgDatasyncConstants {
+public class FullReplicateConstants {
     /**
      * tool name
      */
-    public static final String TOOL_NAME = "OG_datasync_full_migration";
+    public static final String TOOL_NAME = "openGauss-FullReplicate";
 
     /**
      * install package directory name
      */
-    public static final String INSTALL_PKG_DIR_NAME = "oG_datasync";
+    public static final String INSTALL_PKG_DIR_NAME = "full_replicate";
 
     /**
      * install package name
      */
-    public static final String INSTALL_PKG_NAME = "oG_datasync_full_migration-%s.tar.gz";
+    public static final String INSTALL_PKG_NAME = "openGauss-FullReplicate-%s.tar.gz";
 
     /**
      * install directory name
      */
-    public static final String INSTALL_DIR_NAME = "oG_datasync";
+    public static final String INSTALL_DIR_NAME = "full_replicate";
 
     /**
      * oG_datasync_full_migration jar name model
      */
-    public static final String OG_DATASYNC_JAR_NAME_MODEL = "oG_datasync_full_migration-%s.jar";
+    public static final String FULL_REPLICATE_JAR_NAME_MODEL = "openGauss-FullReplicate-%s.jar";
 
     /**
      * oG_datasync_full_migration jar name
      */
-    public static final String OG_DATASYNC_JAR_HOME_NAME = "oG_datasync_full_migration";
+    public static final String FULL_REPLICATE_JAR_HOME_NAME = "openGauss-FullReplicate";
 
     /**
      * wait process start millis
@@ -105,6 +105,6 @@ public class OgDatasyncConstants {
      */
     public static final String SUPPORT_SOURCE_DB_TYPE_PGSQL = "postgresql";
 
-    private OgDatasyncConstants() {
+    private FullReplicateConstants() {
     }
 }

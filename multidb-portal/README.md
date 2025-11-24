@@ -99,7 +99,7 @@ chameleon为MySQL全量迁移工具，不需要迁移MySQL时，可以跳过此�
 ```sh
 ./bin/install tools                 # 一键安装所有迁移工具命令，需提前完成chameleon依赖安装
 ./bin/install chameleon             # MySQL全量迁移工具安装命令，需提前完成chameleon依赖安装
-./bin/install og_datasync           # PostgreSQL全量迁移工具安装命令
+./bin/install full_replicate           # PostgreSQL全量迁移工具安装命令
 ./bin/install debezium              # 增量、反向迁移工具安装命令
 ./bin/install data_checker          # 数据校验工具安装命令
 ./bin/install kafka                 # 工具所需三方工具安装命令

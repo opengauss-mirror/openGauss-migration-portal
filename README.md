@@ -44,11 +44,11 @@ portal/
 		chameleon/
 			chameleon-7.0.0rc3-py3-none-any.whl
 		datacheck/
-			gs_datacheck-7.0.0rc3.tar.gz
+			openGauss-DataCheck-7.0.0rc3.tar.gz
 		debezium/
 			confluent-community-5.5.1-2.12.zip
-			replicate-mysql2openGauss-7.0.0rc3.tar.gz
-			replicate-openGauss2mysql-7.0.0rc3.tar.gz
+			openGauss-IncReplicateMysql2OpenGauss-7.0.0rc3.tar.gz
+			openGauss-IncReplicateOpenGauss2Mysql-7.0.0rc3.tar.gz
 	tmp/
 	tools/
 		chameleon/

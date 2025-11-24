@@ -10,13 +10,13 @@ import org.opengauss.constants.config.MigrationConfig;
 import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.DebeziumConfigBundle;
-import org.opengauss.domain.model.OgDatasyncConfigBundle;
+import org.opengauss.domain.model.FullReplicateConfigBundle;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DebeziumProcessType;
 import org.opengauss.enums.TemplateConfigType;
 import org.opengauss.exceptions.ConfigException;
 import org.opengauss.migration.helper.config.DebeziumPgsqlMigrationConfigHelper;
-import org.opengauss.migration.helper.config.OgDatasyncPgsqlMigrationConfigHelper;
+import org.opengauss.migration.helper.config.FullReplicatePgsqlMigrationConfigHelper;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +28,7 @@ import java.util.Set;
  */
 @Getter
 public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
-    private final OgDatasyncConfigBundle fullConfigBundle;
+    private final FullReplicateConfigBundle fullConfigBundle;
     private final DebeziumConfigBundle incrementalConfigBundle;
     private final DebeziumConfigBundle reverseConfigBundle;
 
@@ -129,10 +129,10 @@ public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
     }
 
     private void changeFullConfig(boolean hasIncremental) {
-        Map<String, Object> configMap = OgDatasyncPgsqlMigrationConfigHelper.pgsqlFullMigrationConfig(
+        Map<String, Object> configMap = FullReplicatePgsqlMigrationConfigHelper.pgsqlFullMigrationConfig(
                 migrationConfigDto, taskWorkspace);
         if (hasIncremental) {
-            configMap.putAll(OgDatasyncPgsqlMigrationConfigHelper.pgsqlFullMigrationRecordSnapshotConfig(
+            configMap.putAll(FullReplicatePgsqlMigrationConfigHelper.pgsqlFullMigrationRecordSnapshotConfig(
                     migrationConfigDto));
         }
         fullConfigBundle.getConfigFile().getConfigMap().putAll(configMap);
@@ -197,10 +197,10 @@ public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
         reverseConfigBundle.getLog4jSinkConfigFile().getConfigMap().putAll(log4jSinkParams);
     }
 
-    private OgDatasyncConfigBundle getFullConfigBundle(TaskWorkspace taskWorkspace) {
-        OgDatasyncConfigBundle result = new OgDatasyncConfigBundle();
+    private FullReplicateConfigBundle getFullConfigBundle(TaskWorkspace taskWorkspace) {
+        FullReplicateConfigBundle result = new FullReplicateConfigBundle();
         result.setConfigFile(new ConfigFile("config.yml", taskWorkspace.getConfigFullDirPath(), taskWorkspace,
-                TemplateConfigType.OG_DATASYNC_CONFIG));
+                TemplateConfigType.FULL_REPLICATE_CONFIG));
         return result;
     }
 

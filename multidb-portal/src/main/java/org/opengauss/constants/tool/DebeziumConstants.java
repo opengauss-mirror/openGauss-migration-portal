@@ -23,17 +23,19 @@ public class DebeziumConstants {
     /**
      * connect mysql install pkg name model
      */
-    public static final String CONNECT_MYSQL_INSTALL_PKG_NAME_MODEL = "replicate-mysql2openGauss-%s.tar.gz";
+    public static final String CONNECT_MYSQL_INSTALL_PKG_NAME_MODEL = "openGauss-IncReplicateMysql2OpenGauss-%s.tar.gz";
 
     /**
      * connect openGauss install pkg name model
      */
-    public static final String CONNECT_OPENGAUSS_INSTALL_PKG_NAME_MODEL = "replicate-openGauss2mysql-%s.tar.gz";
+    public static final String CONNECT_OPENGAUSS_INSTALL_PKG_NAME_MODEL
+        = "openGauss-IncReplicateOpenGauss2Mysql-%s.tar.gz";
 
     /**
      * connect postgresql install pkg name model
      */
-    public static final String CONNECT_PGSQL_INSTALL_PKG_NAME_MODEL = "replicate-postgresql2openGauss-%s.tar.gz";
+    public static final String CONNECT_PGSQL_INSTALL_PKG_NAME_MODEL
+        = "openGauss-IncReplicatePostgresql2OpenGauss-%s.tar.gz";
 
     /**
      * install dir name

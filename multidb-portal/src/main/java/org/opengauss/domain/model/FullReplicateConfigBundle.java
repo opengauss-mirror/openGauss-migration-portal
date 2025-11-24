@@ -12,7 +12,7 @@ import lombok.Data;
  * @since 2025/7/2
  */
 @Data
-public class OgDatasyncConfigBundle extends AbstractToolConfigBundle {
+public class FullReplicateConfigBundle extends AbstractToolConfigBundle {
     private ConfigFile configFile;
 
     @Override

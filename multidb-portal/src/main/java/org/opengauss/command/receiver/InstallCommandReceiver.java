@@ -11,7 +11,7 @@ import org.opengauss.exceptions.InstallException;
 import org.opengauss.migration.tools.Chameleon;
 import org.opengauss.migration.tools.DataChecker;
 import org.opengauss.migration.tools.Debezium;
-import org.opengauss.migration.tools.OgDatasync;
+import org.opengauss.migration.tools.FullReplicateTool;
 import org.opengauss.migration.tools.Kafka;
 import org.opengauss.config.ApplicationConfig;
 import org.opengauss.utils.FileUtils;
@@ -48,7 +48,7 @@ public class InstallCommandReceiver implements CommandReceiver {
      **/
     public void migrationTools() {
         checkLeastSpace();
-        OgDatasync.getInstance().install();
+        FullReplicateTool.getInstance().install();
         Chameleon.getInstance().install();
         DataChecker.getInstance().install();
         Debezium.getInstance().install();
@@ -64,10 +64,10 @@ public class InstallCommandReceiver implements CommandReceiver {
     }
 
     /**
-     * install oG_datasync_full_migration
+     * install fullReplicate
      **/
-    public void ogDatasync() {
-        OgDatasync.getInstance().install();
+    public void fullReplicate() {
+        FullReplicateTool.getInstance().install();
     }
 
     /**
@@ -103,10 +103,10 @@ public class InstallCommandReceiver implements CommandReceiver {
             isAllInstalled = false;
         }
 
-        if (OgDatasync.getInstance().checkInstall()) {
-            LOGGER.info("oG_datasync_full_migration is already installed");
+        if (FullReplicateTool.getInstance().checkInstall()) {
+            LOGGER.info("FullReplicateTool is already installed");
         } else {
-            LOGGER.error("oG_datasync_full_migration is not installed");
+            LOGGER.error("FullReplicateTool is not installed");
             isAllInstalled = false;
         }
 
