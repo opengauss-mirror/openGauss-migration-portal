@@ -93,4 +93,18 @@ public abstract class Tool {
             throw new InstallException("Failed to delete " + getToolName() + " install file - " + path, e);
         }
     }
+
+    /**
+     * Copy file
+     *
+     * @param sourcePath source file path
+     * @param targetPath target file path
+     */
+    protected void copyFile(String sourcePath, String targetPath) {
+        try {
+            FileUtils.copyFile(sourcePath, targetPath);
+        } catch (IOException e) {
+            throw new InstallException("Failed to copy " + getToolName() + " install file - " + sourcePath, e);
+        }
+    }
 }

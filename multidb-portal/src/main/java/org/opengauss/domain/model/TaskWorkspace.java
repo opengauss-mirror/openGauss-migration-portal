@@ -7,7 +7,7 @@ package org.opengauss.domain.model;
 import lombok.Getter;
 import org.opengauss.constants.TaskConstants;
 import org.opengauss.exceptions.TaskException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.utils.FileUtils;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class TaskWorkspace {
     private final String sourceDbTypeFilePath;
 
     public TaskWorkspace(String taskId) {
-        String portalWorkspaceDirPath = ApplicationConfig.getInstance().getPortalWorkspaceDirPath();
+        String portalWorkspaceDirPath = Portal.getInstance().getPortalWorkspaceDirPath();
         id = taskId;
         homeDir = String.format("%s/%s%s", portalWorkspaceDirPath, TaskConstants.TASK_WORKSPACE_DIR_SUFFIX, taskId);
 

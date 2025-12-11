@@ -45,16 +45,6 @@ public class TaskHelper {
     }
 
     /**
-     * Load migration config from config file
-     *
-     * @param migrationJobConfig migration job config
-     */
-    public static void loadConfig(AbstractMigrationJobConfig migrationJobConfig) {
-        migrationJobConfig.loadConfig();
-        migrationJobConfig.validateConfig();
-    }
-
-    /**
      * Change each migration phase's config
      *
      * @param migrationJobConfig migration job config

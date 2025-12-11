@@ -10,7 +10,9 @@ import org.opengauss.migration.tools.Chameleon;
 import org.opengauss.migration.tools.DataChecker;
 import org.opengauss.migration.tools.Debezium;
 import org.opengauss.migration.tools.FullReplicateTool;
+import org.opengauss.migration.tools.ElasticsearchMigrationTool;
 import org.opengauss.migration.tools.Kafka;
+import org.opengauss.migration.tools.MilvusMigrationTool;
 
 /**
  * uninstall command receiver
@@ -27,6 +29,8 @@ public class UninstallCommandReceiver implements CommandReceiver {
         Kafka.getInstance().unInstall();
         Chameleon.getInstance().unInstall();
         FullReplicateTool.getInstance().unInstall();
+        MilvusMigrationTool.getInstance().unInstall();
+        ElasticsearchMigrationTool.getInstance().unInstall();
         DataChecker.getInstance().unInstall();
         Debezium.getInstance().unInstall();
         LOGGER.info("Uninstall all migration tools successfully");

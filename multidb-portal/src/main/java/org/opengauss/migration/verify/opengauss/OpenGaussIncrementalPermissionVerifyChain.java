@@ -5,7 +5,7 @@
 package org.opengauss.migration.verify.opengauss;
 
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 
 /**
@@ -22,8 +22,7 @@ public class OpenGaussIncrementalPermissionVerifyChain extends OpenGaussFullPerm
     };
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void verify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         verifyPermission(PERMISSION_LIST, verifyDto);

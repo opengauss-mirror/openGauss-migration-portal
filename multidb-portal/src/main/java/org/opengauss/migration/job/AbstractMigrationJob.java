@@ -4,7 +4,7 @@
 
 package org.opengauss.migration.job;
 
-import org.opengauss.domain.dto.AbstractMigrationConfigDto;
+import org.opengauss.domain.migration.config.AbstractMigrationConfigDto;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.migration.process.ProcessMonitor;
 import org.opengauss.migration.status.StatusMonitor;

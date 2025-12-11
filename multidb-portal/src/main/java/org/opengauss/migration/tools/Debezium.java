@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.PortalConstants;
 import org.opengauss.constants.tool.DebeziumConstants;
 import org.opengauss.exceptions.InstallException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 
 /**
  * debezium
@@ -33,17 +33,17 @@ public class Debezium extends Tool {
     private final String connectPgsqlJarPath;
 
     private Debezium() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
         String portalVersion = PortalConstants.PORTAL_VERSION;
 
-        this.pkgDirPath = String.format("%s/%s", applicationConfig.getPortalPkgDirPath(),
+        this.pkgDirPath = String.format("%s/%s", portal.getPortalPkgDirPath(),
                 DebeziumConstants.INSTALL_PKG_DIR_NAME);
         this.connectMysqlPkgName = String.format(DebeziumConstants.CONNECT_MYSQL_INSTALL_PKG_NAME_MODEL, portalVersion);
         this.connectOpenGaussPkgName = String.format(DebeziumConstants.CONNECT_OPENGAUSS_INSTALL_PKG_NAME_MODEL,
                 portalVersion);
         this.connectPgsqlPkgName = String.format(DebeziumConstants.CONNECT_PGSQL_INSTALL_PKG_NAME_MODEL,
                 portalVersion);
-        this.installDirPath = String.format("%s/%s", applicationConfig.getPortalToolsDirPath(),
+        this.installDirPath = String.format("%s/%s", portal.getPortalToolsDirPath(),
                 DebeziumConstants.INSTALL_DIR_NAME);
         this.connectMysqlJarPath = String.format("%s/%s", installDirPath,
                 DebeziumConstants.CONNECT_MYSQL_JAR_RELATIVE_PATH);

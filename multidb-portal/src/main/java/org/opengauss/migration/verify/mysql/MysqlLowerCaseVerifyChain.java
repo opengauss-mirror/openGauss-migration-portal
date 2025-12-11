@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.mysql;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.MysqlUtils;
 import org.opengauss.utils.OpenGaussUtils;
@@ -24,15 +24,15 @@ public class MysqlLowerCaseVerifyChain extends AbstractMysqlVerifyChain {
     private static final String VERIFY_NAME = "MySQL lower_case_table_names Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(MysqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         try {
             String mysqlParamKey = "lower_case_table_names";
-            String mysqlValue = MysqlUtils.getVariableValue(mysqlParamKey, verifyDto.getSourceConnection());
+            String mysqlValue = MysqlUtils.getVariableValue(mysqlParamKey, verifyDto.getMysqlConnection());
             String openGaussParamKey = "dolphin.lower_case_table_names";
-            String openGaussValue = OpenGaussUtils.getVariableValue(openGaussParamKey, verifyDto.getTargetConnection());
+            String openGaussValue = OpenGaussUtils.getVariableValue(openGaussParamKey,
+                    verifyDto.getOpengaussConnection());
             if (!mysqlValue.equals(openGaussValue)) {
                 chainResult.setSuccess(false);
                 chainResult.setDetail(String.format("Parameter lower_case_table_names has not the same value, "

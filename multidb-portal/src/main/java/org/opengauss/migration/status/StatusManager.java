@@ -8,17 +8,22 @@ import com.alibaba.fastjson2.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.domain.model.TaskWorkspace;
+import org.opengauss.enums.DatabaseType;
 import org.opengauss.enums.MigrationStatusEnum;
 import org.opengauss.exceptions.PortalException;
+import org.opengauss.exceptions.TaskException;
 import org.opengauss.migration.helper.MigrationStatusHelper;
+import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.progress.model.CheckEntry;
 import org.opengauss.migration.progress.model.CheckFailEntry;
 import org.opengauss.migration.progress.model.FullEntry;
 import org.opengauss.migration.progress.model.FullTotalInfo;
 import org.opengauss.migration.progress.model.IncrementalAndReverseEntry;
+import org.opengauss.migration.status.model.MilvusElasticsearchStatusEntry;
 import org.opengauss.migration.status.model.ObjectStatusEntry;
 import org.opengauss.utils.FileUtils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +60,8 @@ public class StatusManager {
             } else {
                 return MigrationStatusEnum.NOT_START;
             }
+        } catch (FileNotFoundException e) {
+            return MigrationStatusEnum.NOT_START;
         } catch (IOException e) {
             throw new PortalException("Failed to read migration status file: " + statusFilePath, e);
         }
@@ -71,21 +78,24 @@ public class StatusManager {
         detailBuilder.append(System.lineSeparator()).append("Current migration status: ")
                 .append(currentStatus.getDescription()).append(System.lineSeparator());
 
-        if (shouldAppendFullMigrationStatus(currentStatus)) {
+        List<MigrationStatusEnum> statusEnumList = readMigrationStatusList(taskWorkspace)
+                .stream()
+                .map(MigrationStatus::getStatus)
+                .toList();
+
+        if (statusEnumList.stream().anyMatch(MigrationStatusHelper::isFullMigrationStatus)) {
             appendFullMigrationStatus(detailBuilder);
-        } else {
-            return detailBuilder.toString();
         }
 
-        if (shouldAppendFullCheckStatus(currentStatus)) {
+        if (statusEnumList.stream().anyMatch(MigrationStatusHelper::isFullDataCheckStatus)) {
             appendFullCheckStatus(detailBuilder);
         }
 
-        if (shouldAppendIncrementalMigrationStatus(currentStatus)) {
+        if (statusEnumList.stream().anyMatch(MigrationStatusHelper::isIncrementalMigrationStatus)) {
             appendIncrementalMigrationStatus(detailBuilder);
         }
 
-        if (shouldAppendReverseMigrationStatus(currentStatus)) {
+        if (statusEnumList.stream().anyMatch(MigrationStatusHelper::isReverseMigrationStatus)) {
             appendReverseMigrationStatus(detailBuilder);
         }
         return detailBuilder.toString();
@@ -97,7 +107,11 @@ public class StatusManager {
      * @return object status entry list
      */
     public List<ObjectStatusEntry> getMysqlObjectStatusEntryList() {
-        if (!shouldAppendFullMigrationStatus(getCurrentMigrationStatus())) {
+        List<MigrationStatusEnum> statusEnumList = readMigrationStatusList(taskWorkspace)
+                .stream()
+                .map(MigrationStatus::getStatus)
+                .toList();
+        if (statusEnumList.stream().noneMatch(MigrationStatusHelper::isFullMigrationStatus)) {
             return new ArrayList<>();
         }
 
@@ -151,7 +165,12 @@ public class StatusManager {
      * @return object status entry list
      */
     public List<ObjectStatusEntry> getPgsqlObjectStatusEntryList() {
-        if (!shouldAppendFullMigrationStatus(getCurrentMigrationStatus())) {
+        List<MigrationStatusEnum> statusEnumList = readMigrationStatusList(taskWorkspace)
+                .stream()
+                .map(MigrationStatus::getStatus)
+                .toList();
+
+        if (statusEnumList.stream().noneMatch(MigrationStatusHelper::isFullMigrationStatus)) {
             return new ArrayList<>();
         }
         HashMap<String, ObjectStatusEntry> entryMap = new HashMap<>();
@@ -201,36 +220,40 @@ public class StatusManager {
         return resultList;
     }
 
-    private boolean shouldAppendFullMigrationStatus(MigrationStatusEnum currentStatus) {
-        return !MigrationStatusEnum.NOT_START.equals(currentStatus)
-                && !MigrationStatusEnum.PRE_MIGRATION_VERIFY_FAILED.equals(currentStatus);
+    /**
+     * Get Milvus/Elasticsearch status entry list
+     *
+     * @return Milvus/Elasticsearch status entry list
+     */
+    public List<MilvusElasticsearchStatusEntry> getMilvusElasticsearchStatusEntryList() {
+        List<String> successTableList = getMilvusElasticsearchSuccessTableList();
+        List<String> failedTableList = getMilvusElasticsearchFailedTableList();
+        List<MilvusElasticsearchStatusEntry> resultList = new ArrayList<>();
+        successTableList.forEach(table -> resultList.add(new MilvusElasticsearchStatusEntry(table, 0)));
+        failedTableList.forEach(table -> resultList.add(new MilvusElasticsearchStatusEntry(table, 1)));
+        return resultList;
     }
 
-    private boolean shouldAppendFullCheckStatus(MigrationStatusEnum currentStatus) {
-        return MigrationStatusHelper.isFullDataCheckStatus(currentStatus)
-                || MigrationStatusHelper.isIncrementalMigrationStatus(currentStatus)
-                || MigrationStatusHelper.isReverseMigrationStatus(currentStatus)
-                || MigrationStatusEnum.MIGRATION_FAILED.equals(currentStatus)
-                || MigrationStatusEnum.MIGRATION_FINISHED.equals(currentStatus)
-                || MigrationStatusEnum.PRE_REVERSE_PHASE_VERIFY_FAILED.equals(currentStatus);
-    }
-
-    private boolean shouldAppendIncrementalMigrationStatus(MigrationStatusEnum currentStatus) {
-        return MigrationStatusHelper.isIncrementalMigrationStatus(currentStatus)
-                || MigrationStatusHelper.isReverseMigrationStatus(currentStatus)
-                || MigrationStatusEnum.MIGRATION_FAILED.equals(currentStatus)
-                || MigrationStatusEnum.MIGRATION_FINISHED.equals(currentStatus)
-                || MigrationStatusEnum.PRE_REVERSE_PHASE_VERIFY_FAILED.equals(currentStatus);
-    }
-
-    private boolean shouldAppendReverseMigrationStatus(MigrationStatusEnum currentStatus) {
-        return MigrationStatusHelper.isReverseMigrationStatus(currentStatus)
-                || MigrationStatusEnum.MIGRATION_FAILED.equals(currentStatus)
-                || MigrationStatusEnum.MIGRATION_FINISHED.equals(currentStatus);
+    private List<MigrationStatus> readMigrationStatusList(TaskWorkspace taskWorkspace) {
+        String statusFilePath = MigrationStatusHelper.generateMigrationStatusFilePath(taskWorkspace);
+        try {
+            String statusContent = FileUtils.readFileContents(statusFilePath);
+            return JSON.parseArray(statusContent, MigrationStatus.class);
+        } catch (FileNotFoundException e) {
+            return new ArrayList<>();
+        } catch (IOException e) {
+            throw new TaskException("Failed to read migration status file: " + statusFilePath, e);
+        }
     }
 
     private void appendFullMigrationStatus(StringBuilder detailBuilder) {
         detailBuilder.append(System.lineSeparator()).append("[Full Migration]").append(System.lineSeparator());
+
+        DatabaseType sourceDbType = TaskHelper.loadSourceDbType(taskWorkspace);
+        if (DatabaseType.MILVUS.equals(sourceDbType) || DatabaseType.ELASTICSEARCH.equals(sourceDbType)) {
+            appendMilvusElasticsearchStatus(detailBuilder);
+            return;
+        }
 
         FullTotalInfo fullTotalInfo = getFullTotalInfo();
         String statusModel = "Total migration data: %s MB%s"
@@ -247,6 +270,18 @@ public class StatusManager {
                     "0", System.lineSeparator(), "0", "0", "0"));
         }
         detailBuilder.append(System.lineSeparator());
+    }
+
+    private void appendMilvusElasticsearchStatus(StringBuilder detailBuilder) {
+        List<String> successTableList = getMilvusElasticsearchSuccessTableList();
+        List<String> failedTableList = getMilvusElasticsearchFailedTableList();
+
+        detailBuilder.append("Success migration objects: ")
+                .append(successTableList.size())
+                .append(System.lineSeparator());
+        detailBuilder.append("Failed migration objects: ")
+                .append(failedTableList.size())
+                .append(System.lineSeparator());
     }
 
     private void appendFullCheckStatus(StringBuilder detailBuilder) {
@@ -305,6 +340,28 @@ public class StatusManager {
                     "0", System.lineSeparator(), "0", System.lineSeparator(), "0"));
         }
         detailBuilder.append(System.lineSeparator());
+    }
+
+    private List<String> getMilvusElasticsearchSuccessTableList() {
+        String successFilePath = MigrationStatusHelper.generateFullSuccessTableStatusFilePath(taskWorkspace);
+        try {
+            return FileUtils.readFileContents(successFilePath).trim().lines().collect(Collectors.toList());
+        } catch (FileNotFoundException e) {
+            return new ArrayList<>();
+        } catch (IOException e) {
+            throw new TaskException("Failed to read migration progress file: " + successFilePath, e);
+        }
+    }
+
+    private List<String> getMilvusElasticsearchFailedTableList() {
+        String failedFilePath = MigrationStatusHelper.generateFullFailedTableStatusFilePath(taskWorkspace);
+        try {
+            return FileUtils.readFileContents(failedFilePath).trim().lines().collect(Collectors.toList());
+        } catch (FileNotFoundException e) {
+            return new ArrayList<>();
+        } catch (IOException e) {
+            throw new TaskException("Failed to read migration progress file: " + failedFilePath, e);
+        }
     }
 
     private FullTotalInfo getFullTotalInfo() {

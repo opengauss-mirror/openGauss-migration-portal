@@ -165,6 +165,16 @@ public class ProcessNameConstants {
      */
     public static final String DATA_CHECKER_INCREMENTAL_CHECK = "data checker incremental check process";
 
+    /**
+     * Milvus migration tool process name
+     */
+    public static final String MILVUS_MIGRATION_TOOL = "Milvus migration tool process";
+
+    /**
+     * Elasticsearch migration tool process name
+     */
+    public static final String ELASTICSEARCH_MIGRATION_TOOL = "Elasticsearch migration tool process";
+
     private ProcessNameConstants() {
     }
 }

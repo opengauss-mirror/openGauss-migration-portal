@@ -10,10 +10,14 @@ import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DatabaseType;
 import org.opengauss.exceptions.MigrationException;
 import org.opengauss.migration.config.AbstractMigrationJobConfig;
+import org.opengauss.migration.config.ElasticsearchMigrationJobConfig;
+import org.opengauss.migration.config.MilvusMigrationJobConfig;
 import org.opengauss.migration.config.MysqlMigrationJobConfig;
 import org.opengauss.migration.config.PgsqlMigrationJobConfig;
 import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.job.AbstractMigrationJob;
+import org.opengauss.migration.job.ElasticsearchMigrationJob;
+import org.opengauss.migration.job.MilvusMigrationJob;
 import org.opengauss.migration.job.MysqlMigrationJob;
 import org.opengauss.migration.job.PgsqlMigrationJob;
 import org.opengauss.migration.monitor.MigrationAliveMonitor;
@@ -96,14 +100,24 @@ public class MigrationContext {
 
         if (DatabaseType.MYSQL.equals(sourceDbType)) {
             MysqlMigrationJobConfig migrationJobConfig = new MysqlMigrationJobConfig(taskWorkspace);
-            TaskHelper.loadConfig(migrationJobConfig);
+            migrationJobConfig.loadConfig();
             instance.migrationJobConfig = migrationJobConfig;
             instance.migrationJob = new MysqlMigrationJob(migrationJobConfig);
         } else if (DatabaseType.POSTGRESQL.equals(sourceDbType)) {
             PgsqlMigrationJobConfig migrationJobConfig = new PgsqlMigrationJobConfig(taskWorkspace);
-            TaskHelper.loadConfig(migrationJobConfig);
+            migrationJobConfig.loadConfig();
             instance.migrationJobConfig = migrationJobConfig;
             instance.migrationJob = new PgsqlMigrationJob(migrationJobConfig);
+        } else if (DatabaseType.MILVUS.equals(sourceDbType)) {
+            MilvusMigrationJobConfig migrationJobConfig = new MilvusMigrationJobConfig(taskWorkspace);
+            migrationJobConfig.loadConfig();
+            instance.migrationJobConfig = migrationJobConfig;
+            instance.migrationJob = new MilvusMigrationJob(migrationJobConfig);
+        } else if (DatabaseType.ELASTICSEARCH.equals(sourceDbType)) {
+            ElasticsearchMigrationJobConfig migrationJobConfig = new ElasticsearchMigrationJobConfig(taskWorkspace);
+            migrationJobConfig.loadConfig();
+            instance.migrationJobConfig = migrationJobConfig;
+            instance.migrationJob = new ElasticsearchMigrationJob(migrationJobConfig);
         } else {
             throw new MigrationException("Unsupported source database type: " + sourceDbType);
         }

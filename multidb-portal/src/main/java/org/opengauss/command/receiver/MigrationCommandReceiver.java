@@ -8,13 +8,14 @@ import com.opencsv.CSVWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.Main;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DatabaseType;
 import org.opengauss.exceptions.PortalException;
 import org.opengauss.migration.MigrationContext;
 import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.status.StatusManager;
+import org.opengauss.migration.status.model.MilvusElasticsearchStatusEntry;
 import org.opengauss.migration.status.model.ObjectStatusEntry;
 import org.opengauss.migration.workspace.TaskWorkspaceManager;
 import org.opengauss.utils.FileUtils;
@@ -162,29 +163,61 @@ public class MigrationCommandReceiver implements CommandReceiver {
         if (!isDetail) {
             String status = statusManager.getStatus();
             LOGGER.info("Migration status: {}{}", System.lineSeparator(), status);
-        } else {
-            DatabaseType sourceDbType = TaskHelper.loadSourceDbType(taskWorkspace);
-            List<ObjectStatusEntry> statusEntryList;
-            if (sourceDbType == DatabaseType.MYSQL) {
-                statusEntryList = statusManager.getMysqlObjectStatusEntryList();
-            } else if (sourceDbType == DatabaseType.POSTGRESQL) {
-                statusEntryList = statusManager.getPgsqlObjectStatusEntryList();
-            } else {
-                LOGGER.error("Unsupported database type: {}", sourceDbType);
-                return;
-            }
+            return;
+        }
 
-            if (statusEntryList.isEmpty()) {
+        DatabaseType sourceDbType = TaskHelper.loadSourceDbType(taskWorkspace);
+
+        if (DatabaseType.MILVUS.equals(sourceDbType) || DatabaseType.ELASTICSEARCH.equals(sourceDbType)) {
+            List<MilvusElasticsearchStatusEntry> statusEntries = statusManager.getMilvusElasticsearchStatusEntryList();
+            if (statusEntries.isEmpty()) {
                 LOGGER.info("No detail migration status found");
             } else {
-                exportCsv(statusEntryList);
+                exportMilvusElasticsearchCsv(statusEntries);
             }
+            return;
+        }
+
+        List<ObjectStatusEntry> statusEntryList;
+        if (DatabaseType.MYSQL.equals(sourceDbType)) {
+            statusEntryList = statusManager.getMysqlObjectStatusEntryList();
+        } else if (DatabaseType.POSTGRESQL.equals(sourceDbType)) {
+            statusEntryList = statusManager.getPgsqlObjectStatusEntryList();
+        } else {
+            LOGGER.error("Unsupported database type: {}", sourceDbType);
+            return;
+        }
+
+        if (statusEntryList.isEmpty()) {
+            LOGGER.info("No detail migration status found");
+        } else {
+            exportCsv(statusEntryList);
+        }
+    }
+
+    private void exportMilvusElasticsearchCsv(List<MilvusElasticsearchStatusEntry> statusEntryList) {
+        String csvFilePath = String.format("%s/task_%s_status.csv", Portal.getInstance().getPortalTmpDirPath(), taskId);
+        try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
+            String[] header = {"Object name", "Status"};
+            writer.writeNext(header);
+
+            ArrayList<String[]> rows = new ArrayList<>();
+            for (MilvusElasticsearchStatusEntry statusEntry : statusEntryList) {
+                rows.add(new String[] {
+                        statusEntry.getName(),
+                        statusEntry.getStatus() == 0 ? "success" : "fail"
+                });
+            }
+            writer.writeAll(rows);
+            LOGGER.info("Export csv file successfully, file path: {}", csvFilePath);
+        } catch (IOException e) {
+            LOGGER.error("Failed to export csv file", e);
         }
     }
 
     private void exportCsv(List<ObjectStatusEntry> statusEntryList) {
         String csvFilePath = String.format("%s/task_%s_status.csv",
-                ApplicationConfig.getInstance().getPortalTmpDirPath(), taskId);
+                Portal.getInstance().getPortalTmpDirPath(), taskId);
         try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
             String[] header = {
                 "Schema", "Name", "Type", "Status(1 - pending, 2 - migrating, 3,4,5 - completed, 6,7 - failed)",

@@ -6,8 +6,8 @@ package org.opengauss.migration.tasks.impl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.domain.dto.MysqlMigrationConfigDto;
-import org.opengauss.domain.model.DataCheckerConfigBundle;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
+import org.opengauss.domain.tool.config.DataCheckerConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;

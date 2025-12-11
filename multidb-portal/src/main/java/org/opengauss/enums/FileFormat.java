@@ -12,5 +12,6 @@ package org.opengauss.enums;
 public enum FileFormat {
     YML,
     PROPERTIES,
-    XML
+    XML,
+    INI
 }

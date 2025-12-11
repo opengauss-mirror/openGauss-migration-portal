@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.pgsql;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.PgsqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.PgsqlUtils;
 
@@ -23,14 +23,13 @@ public class PgsqlWalLevelVerifyChain extends AbstractPgsqlVerifyChain {
     private static final String VERIFY_NAME = "PostgreSQL Parameter wal_level Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(PgsqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         try {
             String param = "wal_level";
             String expectValue = "logical";
-            String actualValue = PgsqlUtils.getVariableValue(param, verifyDto.getSourceConnection());
+            String actualValue = PgsqlUtils.getVariableValue(param, verifyDto.getPgsqlConnection());
             if (!expectValue.equals(actualValue)) {
                 chainResult.setSuccess(false);
                 chainResult.setDetail(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL, param, expectValue,

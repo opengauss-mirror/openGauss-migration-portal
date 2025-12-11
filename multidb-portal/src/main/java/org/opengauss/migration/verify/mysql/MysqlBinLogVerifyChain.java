@@ -6,8 +6,9 @@ package org.opengauss.migration.verify.mysql;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.MysqlUtils;
 
@@ -24,11 +25,11 @@ public class MysqlBinLogVerifyChain extends AbstractMysqlVerifyChain {
     private static final String VERIFY_NAME = "MySQL Bin Log Variables Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(MysqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
-        Connection connection = verifyDto.getSourceConnection();
+        MysqlMigrationConfigDto migrationConfigDto = verifyDto.getMigrationConfigDto();
+        Connection connection = verifyDto.getMysqlConnection();
         try {
             StringBuilder detailBuilder = new StringBuilder();
 
@@ -38,7 +39,7 @@ public class MysqlBinLogVerifyChain extends AbstractMysqlVerifyChain {
             if (!logBinValue.equals(logBinExpectedValue)) {
                 chainResult.setSuccess(false);
                 detailBuilder.append(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL, logBinVariable,
-                        verifyDto.getTargetIp(), logBinValue)).append("; ");
+                        migrationConfigDto.getOpengaussDatabaseIp(), logBinValue)).append("; ");
             }
 
             String binlogFormatVariable = "binlog_format";
@@ -47,7 +48,7 @@ public class MysqlBinLogVerifyChain extends AbstractMysqlVerifyChain {
             if (!binlogFormatValue.equals(binlogFormatExpectedValue)) {
                 chainResult.setSuccess(false);
                 detailBuilder.append(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL, binlogFormatVariable,
-                        verifyDto.getTargetIp(), binlogFormatValue)).append("; ");
+                        migrationConfigDto.getOpengaussDatabaseIp(), binlogFormatValue)).append("; ");
             }
 
             String binlogRowImageVariable = "binlog_row_image";
@@ -56,7 +57,7 @@ public class MysqlBinLogVerifyChain extends AbstractMysqlVerifyChain {
             if (!binlogRowImageValue.equals(binlogRowImageExpectedValue)) {
                 chainResult.setSuccess(false);
                 detailBuilder.append(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL, binlogRowImageVariable,
-                        verifyDto.getTargetIp(), binlogRowImageValue)).append("; ");
+                        migrationConfigDto.getOpengaussDatabaseIp(), binlogRowImageValue)).append("; ");
             }
 
             if (!chainResult.isSuccess()) {

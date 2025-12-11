@@ -29,7 +29,9 @@ public class TaskConstants {
      */
     public static final List<DatabaseType> SUPPORTED_SOURCE_DB_TYPES = List.of(
             DatabaseType.MYSQL,
-            DatabaseType.POSTGRESQL
+            DatabaseType.POSTGRESQL,
+            DatabaseType.MILVUS,
+            DatabaseType.ELASTICSEARCH
     );
 
     /**

@@ -4,8 +4,8 @@
 
 package org.opengauss.utils;
 
-import org.opengauss.domain.model.DatabaseConnectInfo;
-import org.opengauss.domain.model.OpenGaussDatabaseConnectInfo;
+import org.opengauss.domain.database.connect.info.DatabaseConnectInfo;
+import org.opengauss.domain.database.connect.info.OpenGaussDatabaseConnectInfo;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

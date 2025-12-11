@@ -6,15 +6,18 @@ package org.opengauss.migration.verify;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.domain.dto.MysqlMigrationConfigDto;
-import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
-import org.opengauss.domain.model.OpenGaussDatabaseConnectInfo;
+import org.opengauss.domain.migration.config.ElasticsearchMigrationConfigDto;
+import org.opengauss.domain.migration.config.MilvusMigrationConfigDto;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.enums.DatabaseType;
 import org.opengauss.enums.MigrationPhase;
 import org.opengauss.exceptions.VerifyException;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.ElasticsearchVerifyDto;
+import org.opengauss.migration.verify.model.MilvusVerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
+import org.opengauss.migration.verify.model.PgsqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.FileUtils;
 
@@ -41,10 +44,10 @@ public class VerifyManager {
             List<MigrationPhase> migrationPhaseList, MysqlMigrationConfigDto migrationConfigDto,
             TaskWorkspace taskWorkspace) {
         VerifyResult mysqlVerifyResult = new VerifyResult();
-        VerifyDto verifyDto = genrateMysqlVerifyDto(migrationConfigDto);
+        MysqlVerifyDto mysqlVerifyDto = new MysqlVerifyDto(migrationConfigDto);
 
-        VerifyChainBuilder.getMysqlMigrationVerifyChain(migrationPhaseList).verify(verifyDto, mysqlVerifyResult);
-        verifyDto.closeConnection();
+        VerifyChainBuilder.getMysqlMigrationVerifyChain(migrationPhaseList).verify(mysqlVerifyDto, mysqlVerifyResult);
+        mysqlVerifyDto.closeConnection();
         outputVerifyResult(mysqlVerifyResult, taskWorkspace);
         return mysqlVerifyResult.isSuccess();
     }
@@ -59,10 +62,10 @@ public class VerifyManager {
     public static boolean mysqlReversePhaseVerify(
             MysqlMigrationConfigDto migrationConfigDto, TaskWorkspace taskWorkspace) {
         VerifyResult mysqlVerifyResult = new VerifyResult();
-        VerifyDto verifyDto = genrateMysqlVerifyDto(migrationConfigDto);
+        MysqlVerifyDto mysqlVerifyDto = new MysqlVerifyDto(migrationConfigDto);
 
-        VerifyChainBuilder.getMysqlReversePhaseVerifyChain().verify(verifyDto, mysqlVerifyResult);
-        verifyDto.closeConnection();
+        VerifyChainBuilder.getMysqlReversePhaseVerifyChain().verify(mysqlVerifyDto, mysqlVerifyResult);
+        mysqlVerifyDto.closeConnection();
         outputVerifyResult(mysqlVerifyResult, taskWorkspace);
         return mysqlVerifyResult.isSuccess();
     }
@@ -79,10 +82,10 @@ public class VerifyManager {
             List<MigrationPhase> migrationPhaseList, PgsqlMigrationConfigDto migrationConfigDto,
             TaskWorkspace taskWorkspace) {
         VerifyResult pgsqlVerifyResult = new VerifyResult();
-        VerifyDto verifyDto = genratePgsqlVerifyDto(migrationConfigDto);
+        PgsqlVerifyDto pgsqlVerifyDto = new PgsqlVerifyDto(migrationConfigDto);
 
-        VerifyChainBuilder.getPgsqlMigrationVerifyChain(migrationPhaseList).verify(verifyDto, pgsqlVerifyResult);
-        verifyDto.closeConnection();
+        VerifyChainBuilder.getPgsqlMigrationVerifyChain(migrationPhaseList).verify(pgsqlVerifyDto, pgsqlVerifyResult);
+        pgsqlVerifyDto.closeConnection();
         outputVerifyResult(pgsqlVerifyResult, taskWorkspace);
         return pgsqlVerifyResult.isSuccess();
     }
@@ -97,12 +100,50 @@ public class VerifyManager {
     public static boolean pgsqlReversePhaseVerify(
             PgsqlMigrationConfigDto migrationConfigDto, TaskWorkspace taskWorkspace) {
         VerifyResult pgsqlVerifyResult = new VerifyResult();
-        VerifyDto verifyDto = genratePgsqlVerifyDto(migrationConfigDto);
+        PgsqlVerifyDto pgsqlVerifyDto = new PgsqlVerifyDto(migrationConfigDto);
 
-        VerifyChainBuilder.getPgsqlReversePhaseVerifyChain().verify(verifyDto, pgsqlVerifyResult);
-        verifyDto.closeConnection();
+        VerifyChainBuilder.getPgsqlReversePhaseVerifyChain().verify(pgsqlVerifyDto, pgsqlVerifyResult);
+        pgsqlVerifyDto.closeConnection();
         outputVerifyResult(pgsqlVerifyResult, taskWorkspace);
         return pgsqlVerifyResult.isSuccess();
+    }
+
+    /**
+     * Verify before start Milvus migration
+     *
+     * @param migrationConfigDto migration config dto
+     * @param taskWorkspace task workspace
+     * @return true if verify is successful, false otherwise
+     */
+    public static boolean milvusMigrationVerify(
+            MilvusMigrationConfigDto migrationConfigDto, TaskWorkspace taskWorkspace
+    ) {
+        VerifyResult milvusVerifyResult = new VerifyResult();
+        MilvusVerifyDto milvusVerifyDto = new MilvusVerifyDto(migrationConfigDto);
+
+        VerifyChainBuilder.getMilvusMigrationVerifyChain().verify(milvusVerifyDto, milvusVerifyResult);
+        milvusVerifyDto.closeConnection();
+        outputVerifyResult(milvusVerifyResult, taskWorkspace);
+        return milvusVerifyResult.isSuccess();
+    }
+
+    /**
+     * Verify before start Elasticsearch migration
+     *
+     * @param migrationConfigDto migration config dto
+     * @param taskWorkspace task workspace
+     * @return true if verify is successful, false otherwise
+     */
+    public static boolean elasticsearchMigrationVerify(
+            ElasticsearchMigrationConfigDto migrationConfigDto, TaskWorkspace taskWorkspace
+    ) {
+        VerifyResult verifyResult = new VerifyResult();
+        ElasticsearchVerifyDto verifyDto = new ElasticsearchVerifyDto(migrationConfigDto);
+
+        VerifyChainBuilder.getElasticsearchMigrationVerifyChain().verify(verifyDto, verifyResult);
+        verifyDto.closeConnection();
+        outputVerifyResult(verifyResult, taskWorkspace);
+        return verifyResult.isSuccess();
     }
 
     private static void outputVerifyResult(VerifyResult verifyResult, TaskWorkspace taskWorkspace) {
@@ -121,42 +162,5 @@ public class VerifyManager {
         } catch (IOException e) {
             throw new VerifyException("Failed to write verify result to file: " + resultFilePath, e);
         }
-    }
-
-    private static VerifyDto genrateMysqlVerifyDto(MysqlMigrationConfigDto migrationConfigDto) {
-        VerifyDto verifyDto = new VerifyDto();
-        verifyDto.setSourceDbType(DatabaseType.MYSQL);
-        verifyDto.setSourceIp(migrationConfigDto.getMysqlDatabaseIp());
-        verifyDto.setSourcePort(migrationConfigDto.getMysqlDatabasePort());
-        verifyDto.setSourceUsername(migrationConfigDto.getMysqlDatabaseUsername());
-        verifyDto.setSourcePassword(migrationConfigDto.getMysqlDatabasePassword());
-        verifyDto.setSourceDatabase(migrationConfigDto.getMysqlDatabaseName());
-
-        setVerifyDtoOpenGaussParams(migrationConfigDto.getOpenGaussConnectInfo(), verifyDto);
-        return verifyDto;
-    }
-
-    private static VerifyDto genratePgsqlVerifyDto(PgsqlMigrationConfigDto migrationConfigDto) {
-        VerifyDto verifyDto = new VerifyDto();
-        verifyDto.setSourceDbType(DatabaseType.POSTGRESQL);
-        verifyDto.setSourceIp(migrationConfigDto.getPgsqlDatabaseIp());
-        verifyDto.setSourcePort(migrationConfigDto.getPgsqlDatabasePort());
-        verifyDto.setSourceUsername(migrationConfigDto.getPgsqlDatabaseUsername());
-        verifyDto.setSourcePassword(migrationConfigDto.getPgsqlDatabasePassword());
-        verifyDto.setSourceDatabase(migrationConfigDto.getPgsqlDatabaseName());
-
-        setVerifyDtoOpenGaussParams(migrationConfigDto.getOpenGaussConnectInfo(), verifyDto);
-        return verifyDto;
-    }
-
-    private static void setVerifyDtoOpenGaussParams(OpenGaussDatabaseConnectInfo connectInfo, VerifyDto verifyDto) {
-        verifyDto.setTargetIp(connectInfo.getIp());
-        verifyDto.setTargetPort(connectInfo.getPort());
-        verifyDto.setTargetUsername(connectInfo.getUsername());
-        verifyDto.setTargetPassword(connectInfo.getPassword());
-        verifyDto.setTargetDatabase(connectInfo.getDatabaseName());
-        verifyDto.setTargetCluster(connectInfo.isClusterAvailable());
-        verifyDto.setTargetStandbyHosts(connectInfo.getStandbyHosts());
-        verifyDto.setTargetStandbyPorts(connectInfo.getStandbyPorts());
     }
 }

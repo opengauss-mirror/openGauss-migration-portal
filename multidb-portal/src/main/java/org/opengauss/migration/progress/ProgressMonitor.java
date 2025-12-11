@@ -102,6 +102,10 @@ public abstract class ProgressMonitor extends Thread {
 
             latestStatus = currentStatus;
         }
+
+        if (!MigrationStatusEnum.NOT_START.equals(latestStatus)) {
+            readPhaseProgress(getPhaseByStatus(latestStatus));
+        }
     }
 
     /**
@@ -109,6 +113,10 @@ public abstract class ProgressMonitor extends Thread {
      */
     public void stopMonitoring() {
         this.isRunning = false;
+
+        if (!MigrationStatusEnum.NOT_START.equals(latestStatus)) {
+            readPhaseProgress(getPhaseByStatus(latestStatus));
+        }
     }
 
     /**

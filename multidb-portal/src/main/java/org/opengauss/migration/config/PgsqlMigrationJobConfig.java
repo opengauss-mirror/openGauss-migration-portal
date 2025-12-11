@@ -5,16 +5,13 @@
 package org.opengauss.migration.config;
 
 import lombok.Getter;
-import org.opengauss.constants.ConfigValidationConstants;
-import org.opengauss.constants.config.MigrationConfig;
-import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
-import org.opengauss.domain.model.DebeziumConfigBundle;
-import org.opengauss.domain.model.FullReplicateConfigBundle;
 import org.opengauss.domain.model.TaskWorkspace;
+import org.opengauss.domain.tool.config.DebeziumConfigBundle;
+import org.opengauss.domain.tool.config.FullReplicateConfigBundle;
 import org.opengauss.enums.DebeziumProcessType;
 import org.opengauss.enums.TemplateConfigType;
-import org.opengauss.exceptions.ConfigException;
 import org.opengauss.migration.helper.config.DebeziumPgsqlMigrationConfigHelper;
 import org.opengauss.migration.helper.config.FullReplicatePgsqlMigrationConfigHelper;
 
@@ -71,22 +68,6 @@ public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
 
         if (hasReverseMigration()) {
             reverseConfigBundle.loadConfigMap();
-        }
-    }
-
-    @Override
-    public void validateConfig() {
-        Map<String, Object> migrationConfig = migrationConfigFile.getConfigMap();
-        String pgsqlIp = migrationConfig.get(MigrationConfig.PGSQL_DATABASE_IP).toString();
-        String pgsqlPort = migrationConfig.get(MigrationConfig.PGSQL_DATABASE_PORT).toString();
-        String opengaussIp = migrationConfig.get(MigrationConfig.OPENGAUSS_DATABASE_IP).toString();
-        String opengaussPort = migrationConfig.get(MigrationConfig.OPENGAUSS_DATABASE_PORT).toString();
-
-        if (!ConfigValidationConstants.IP_REGEX.matcher(pgsqlIp).matches()
-                || !ConfigValidationConstants.PORT_REGEX.matcher(pgsqlPort).matches()
-                || !ConfigValidationConstants.IP_REGEX.matcher(opengaussIp).matches()
-                || !ConfigValidationConstants.PORT_REGEX.matcher(opengaussPort).matches()) {
-            throw new ConfigException("IP or Port is invalid");
         }
     }
 

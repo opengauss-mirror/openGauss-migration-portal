@@ -6,8 +6,9 @@ package org.opengauss.migration.verify.pgsql;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.domain.migration.config.PgsqlMigrationConfigDto;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.PgsqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.JdbcUtils;
 
@@ -24,24 +25,32 @@ public class PgsqlConnectVerifyChain extends AbstractPgsqlVerifyChain {
     private static final String VERIFY_NAME = "PostgreSQL Connect Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
+    public void doVerify(PgsqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
-        try (Connection connection = JdbcUtils.getPgsqlConnection(verifyDto.getSourceIp(), verifyDto.getSourcePort(),
-                verifyDto.getSourceDatabase(), verifyDto.getSourceUsername(), verifyDto.getSourcePassword())) {
-            transfer(verifyDto, verifyResult);
+        PgsqlMigrationConfigDto migrationConfigDto = verifyDto.getMigrationConfigDto();
+        try {
+            Connection connection = JdbcUtils.getPgsqlConnection(
+                    migrationConfigDto.getPgsqlDatabaseIp(), migrationConfigDto.getPgsqlDatabasePort(),
+                    migrationConfigDto.getPgsqlDatabaseName(), migrationConfigDto.getPgsqlDatabaseUsername(),
+                    migrationConfigDto.getPgsqlDatabasePassword());
+            verifyDto.setPgsqlConnection(connection);
         } catch (SQLException e) {
             String errorMsg = String.format(VerifyConstants.SQL_EXCEPTION_MODEL, e.getMessage());
             LOGGER.error(errorMsg, e);
             chainResult.setSuccess(false);
             chainResult.setDetail(errorMsg);
+            return;
         } catch (ClassNotFoundException e) {
             String errorMsg = String.format(VerifyConstants.EXCEPTION_MODEL, e.getMessage());
             LOGGER.error(errorMsg, e);
             chainResult.setSuccess(false);
             chainResult.setDetail(errorMsg);
+            return;
+        } finally {
+            addCurrentChainResult(verifyResult);
         }
 
-        addCurrentChainResult(verifyResult);
+        transfer(verifyDto, verifyResult);
     }
 }

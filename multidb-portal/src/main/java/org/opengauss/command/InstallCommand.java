@@ -44,6 +44,14 @@ public class InstallCommand implements Command {
                 LOGGER.info("Start command to install full_replicate");
                 commandReceiver.fullReplicate();
                 break;
+            case "milvus_migration_tool":
+                LOGGER.info("Start command to install milvus_migration_tool");
+                commandReceiver.milvusMigrationTool();
+                break;
+            case "elasticsearch_migration_tool":
+                LOGGER.info("Start command to install elasticsearch_migration_tool");
+                commandReceiver.elasticsearchMigrationTool();
+                break;
             case "data_checker":
                 LOGGER.info("Start command to install data-checker");
                 commandReceiver.dataChecker();

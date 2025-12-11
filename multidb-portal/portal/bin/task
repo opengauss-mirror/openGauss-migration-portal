@@ -19,20 +19,30 @@ Usage:
   Supported Source DB Types:
     mysql/MySQL
     postgresql/PostgreSQL
+    milvus/Milvus
+    elasticsearch/Elasticsearch
 
   Examples:
     $0 list
     $0 create 1 mysql
     $0 create 2 PostgreSQL
+    $0 create 3 Milvus
+    $0 create 4 Elasticsearch
     $0 delete 1
 
 Tips:
-  1. Requires Java 11 or later to be installed.
+  1. Requires Java 17 or later to be installed.
   2. Task ID must be unique.
   3. Source database type must be one of the supported types.
 EOF
     exit 1
 }
+
+# Check if the script is run as root
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Error: This script must not be run as root. Please switch to a regular user and try again." >&2
+    exit 1
+fi
 
 # Function to check if task exists
 task_exists() {
@@ -67,14 +77,14 @@ check_java_version() {
         version_num=$(echo "$java_version" | cut -d. -f1)
     fi
 
-    if [ "$version_num" -lt 11 ]; then
-        echo "Error: Java 11 or later is required (found Java $java_version)"
+    if [ "$version_num" -lt 17 ]; then
+        echo "Error: Java 17 or later is required (found Java $java_version)"
         return 1
     fi
     return 0
 }
 
-# Verify Java is available and version >= 11
+# Verify Java is available and version >= 17
 if ! check_java_version; then
     exit 1
 fi
@@ -117,10 +127,10 @@ case "$OPERATION" in
 
         # Validate source_db_type
         case "$SOURCE_DB_TYPE" in
-            mysql|MySQL|postgresql|PostgreSQL)
+            mysql|MySQL|postgresql|PostgreSQL|milvus|Milvus|elasticsearch|Elasticsearch)
                 ;;
             *)
-                echo "Error: Invalid source_db_type '$SOURCE_DB_TYPE'. Supported types: mysql/MySQL/postgresql/PostgreSQL"
+                echo "Error: Invalid source_db_type '$SOURCE_DB_TYPE'. Supported types: mysql/MySQL/postgresql/PostgreSQL/milvus/Milvus/elasticsearch/Elasticsearch"
                 usage
                 ;;
         esac

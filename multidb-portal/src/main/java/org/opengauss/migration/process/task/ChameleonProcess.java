@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.config.ChameleonConfig;
 import org.opengauss.constants.tool.ChameleonConstants;
-import org.opengauss.domain.dto.MysqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;
 import org.opengauss.migration.MigrationContext;

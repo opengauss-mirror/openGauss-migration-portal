@@ -123,11 +123,6 @@ public abstract class AbstractMigrationJobConfig {
     public abstract void loadConfig();
 
     /**
-     * Validate migration config
-     */
-    public abstract void validateConfig();
-
-    /**
      * Change migration tools config
      */
     public abstract void changeToolsConfig();

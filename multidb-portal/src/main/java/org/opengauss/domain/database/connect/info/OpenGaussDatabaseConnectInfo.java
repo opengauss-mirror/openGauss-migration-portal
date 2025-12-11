@@ -2,7 +2,7 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
-package org.opengauss.domain.model;
+package org.opengauss.domain.database.connect.info;
 
 import lombok.Data;
 

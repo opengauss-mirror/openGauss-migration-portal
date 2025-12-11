@@ -30,6 +30,16 @@ public class MigrationStatusConstants {
     public static final String FULL_TABLE_STATUS_FILE_NAME = "table.txt";
 
     /**
+     * full migration success status file name: table-success.txt
+     */
+    public static final String FULL_SUCCESS_TABLE_STATUS_FILE_NAME = "table-success.txt";
+
+    /**
+     * full migration failed status file name: table-failed.txt
+     */
+    public static final String FULL_FAILED_TABLE_STATUS_FILE_NAME = "table-failed.txt";
+
+    /**
      * full migration status file name: trigger.txt
      */
     public static final String FULL_TRIGGER_STATUS_FILE_NAME = "trigger.txt";

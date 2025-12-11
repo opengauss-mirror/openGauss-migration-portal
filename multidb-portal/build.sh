@@ -115,8 +115,13 @@ build_dirs() {
     cp ../target/openGauss-portal-*.jar ./
 
     mkdir -p pkg/chameleon pkg/confluent pkg/datachecker pkg/debezium pkg/full_replicate
-    mkdir -p template/config/chameleon template/config/datachecker template/config/debezium template/config/full_replicate
+    mkdir -p template/config/chameleon template/config/datachecker template/config/debezium template/config/full_replicate template/config/milvus template/config/elasticsearch
     echo "Build the directories successfully"
+}
+
+cp_config() {
+    cp pkg/milvus/config.ini template/config/milvus/
+    cp pkg/elasticsearch/config.ini template/config/elasticsearch/
 }
 
 check_param $@
@@ -124,5 +129,6 @@ config_properties $@
 download_dependencies $@
 package_portal
 build_dirs
+cp_config
 
 # Next, copy the migration tools installation packages and configuration files to the specified directories, and package the entire portal directory as a tar.gz file, complete the packaging.
