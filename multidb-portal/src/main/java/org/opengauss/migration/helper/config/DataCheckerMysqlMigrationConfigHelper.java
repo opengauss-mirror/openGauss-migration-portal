@@ -7,7 +7,7 @@ package org.opengauss.migration.helper.config;
 import org.opengauss.constants.config.DataCheckerCheckConfig;
 import org.opengauss.constants.config.DataCheckerSinkConfig;
 import org.opengauss.constants.config.DataCheckerSourceConfig;
-import org.opengauss.domain.dto.MysqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.migration.helper.tool.DataCheckerHelper;
 import org.opengauss.migration.tools.Kafka;

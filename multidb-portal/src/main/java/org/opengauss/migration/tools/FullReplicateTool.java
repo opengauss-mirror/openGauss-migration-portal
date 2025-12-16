@@ -7,7 +7,7 @@ package org.opengauss.migration.tools;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.constants.PortalConstants;
 import org.opengauss.constants.tool.FullReplicateConstants;
 import org.opengauss.exceptions.InstallException;
@@ -29,12 +29,12 @@ public class FullReplicateTool extends Tool {
     private final String jarPath;
 
     private FullReplicateTool() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
 
-        this.pkgDirPath = String.format("%s/%s", applicationConfig.getPortalPkgDirPath(),
+        this.pkgDirPath = String.format("%s/%s", portal.getPortalPkgDirPath(),
                 FullReplicateConstants.INSTALL_PKG_DIR_NAME);
         this.pkgName = String.format(FullReplicateConstants.INSTALL_PKG_NAME, PortalConstants.PORTAL_VERSION);
-        this.installDirPath = String.format("%s/%s", applicationConfig.getPortalToolsDirPath(),
+        this.installDirPath = String.format("%s/%s", portal.getPortalToolsDirPath(),
                 FullReplicateConstants.INSTALL_DIR_NAME);
         String jarName = String.format(FullReplicateConstants.FULL_REPLICATE_JAR_NAME_MODEL,
                 PortalConstants.PORTAL_VERSION);

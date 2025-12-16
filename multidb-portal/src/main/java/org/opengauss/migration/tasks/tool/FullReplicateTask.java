@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.ProcessNameConstants;
 import org.opengauss.constants.tool.FullReplicateConstants;
 import org.opengauss.domain.model.ConfigFile;
-import org.opengauss.domain.model.FullReplicateConfigBundle;
+import org.opengauss.domain.tool.config.FullReplicateConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;

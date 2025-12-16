@@ -11,6 +11,7 @@ import org.opengauss.enums.FileFormat;
 import org.opengauss.enums.TemplateConfigType;
 import org.opengauss.exceptions.ConfigException;
 import org.opengauss.utils.FileUtils;
+import org.opengauss.utils.IniUtils;
 import org.opengauss.utils.PropertiesUtils;
 import org.opengauss.utils.YmlUtils;
 
@@ -82,6 +83,11 @@ public class ConfigFile {
                 return;
             }
 
+            if (templateConfigType.getFileFormat().equals(FileFormat.INI)) {
+                configMap.putAll(IniUtils.loadIniAsMap(getFilePath()));
+                return;
+            }
+
             if (templateConfigType.getFileFormat().equals(FileFormat.XML)) {
                 return;
             }
@@ -132,10 +138,21 @@ public class ConfigFile {
                 PropertiesUtils.updateProperties(getFilePath(), changeParams);
                 return;
             }
+
             if (templateConfigType.getFileFormat().equals(FileFormat.YML)) {
                 YmlUtils.updateYaml(getFilePath(), configMap);
                 return;
             }
+
+            if (templateConfigType.getFileFormat().equals(FileFormat.INI)) {
+                HashMap<String, String> changeParams = new HashMap<>();
+                for (Map.Entry<String, Object> entry : configMap.entrySet()) {
+                    changeParams.put(entry.getKey(), String.valueOf(entry.getValue()));
+                }
+                IniUtils.changeIniConfig(changeParams, getFilePath());
+                return;
+            }
+
             if (templateConfigType.getFileFormat().equals(FileFormat.XML)) {
                 for (Map.Entry<String, Object> entry : configMap.entrySet()) {
                     FileUtils.replaceInFile(getFilePath(), entry.getKey(), String.valueOf(entry.getValue()));

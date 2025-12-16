@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.PortalConstants;
 import org.opengauss.constants.tool.DataCheckerConstants;
 import org.opengauss.exceptions.InstallException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 
 /**
  * data-checker
@@ -33,13 +33,13 @@ public class DataChecker extends Tool {
     private final String extractJarPath;
 
     private DataChecker() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
         String portalVersion = PortalConstants.PORTAL_VERSION;
 
-        this.pkgDirPath = String.format("%s/%s", applicationConfig.getPortalPkgDirPath(),
+        this.pkgDirPath = String.format("%s/%s", portal.getPortalPkgDirPath(),
                 DataCheckerConstants.INSTALL_PKG_DIR_NAME);
         this.pkgName = String.format(DataCheckerConstants.INSTALL_PKG_NAME_MODEL, portalVersion);
-        this.installDirPath = String.format("%s/%s", applicationConfig.getPortalToolsDirPath(),
+        this.installDirPath = String.format("%s/%s", portal.getPortalToolsDirPath(),
                 DataCheckerConstants.INSTALL_DIR_NAME);
 
         String dataCheckerDirName = String.format(DataCheckerConstants.DATA_CHECKER_HOME_DIR_NAME_MODEL, portalVersion);

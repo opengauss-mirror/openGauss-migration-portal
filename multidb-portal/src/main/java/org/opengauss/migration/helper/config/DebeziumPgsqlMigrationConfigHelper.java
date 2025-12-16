@@ -12,7 +12,7 @@ import org.opengauss.constants.config.DebeziumOpenGaussSinkConfig;
 import org.opengauss.constants.config.DebeziumOpenGaussSourceConfig;
 import org.opengauss.constants.config.DebeziumPgsqlSinkConfig;
 import org.opengauss.constants.config.DebeziumPgsqlSourceConfig;
-import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DebeziumProcessType;
 import org.opengauss.exceptions.ConfigException;

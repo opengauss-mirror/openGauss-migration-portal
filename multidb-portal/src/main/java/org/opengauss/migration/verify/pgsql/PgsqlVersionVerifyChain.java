@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.pgsql;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.PgsqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.PgsqlUtils;
 
@@ -23,17 +23,16 @@ public class PgsqlVersionVerifyChain extends AbstractPgsqlVerifyChain {
     private static final String VERIFY_NAME = "PostgreSQL Version Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(PgsqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
         doVerify(verifyDto);
         addCurrentChainResult(verifyResult);
         transfer(verifyDto, verifyResult);
     }
 
-    private void doVerify(VerifyDto verifyDto) {
+    private void doVerify(PgsqlVerifyDto verifyDto) {
         try {
-            String actualVersion = PgsqlUtils.getPgsqlVersion(verifyDto.getSourceConnection());
+            String actualVersion = PgsqlUtils.getPgsqlVersion(verifyDto.getPgsqlConnection());
             LOGGER.info("PostgreSQL version: {}", actualVersion);
 
             String[] versionParts = actualVersion.split("\\.");

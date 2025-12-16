@@ -7,8 +7,9 @@ package org.opengauss.migration.verify.mysql;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.SqlConstants;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 
 import java.sql.Connection;
@@ -26,13 +27,13 @@ public class MysqlAuthPluginVerifyChain extends AbstractMysqlVerifyChain {
     private static final String VERIFY_NAME = "MySQL Connect User Authentication Plugin Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
+    public void doVerify(MysqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
-        verifyDto.checkConnection();
 
-        Connection connection = verifyDto.getSourceConnection();
+        MysqlMigrationConfigDto migrationConfigDto = verifyDto.getMigrationConfigDto();
+        Connection connection = verifyDto.getMysqlConnection();
         try (PreparedStatement statement = connection.prepareStatement(SqlConstants.MYSQL_SELECT_USER_AUTH_PLUGIN)) {
-            statement.setString(1, verifyDto.getSourceUsername());
+            statement.setString(1, migrationConfigDto.getMysqlDatabaseUsername());
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     String plugin = resultSet.getString("plugin");
@@ -42,7 +43,7 @@ public class MysqlAuthPluginVerifyChain extends AbstractMysqlVerifyChain {
                     } else {
                         chainResult.setSuccess(false);
                         chainResult.setDetail(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL,
-                                "user authentication plugin", verifyDto.getTargetIp(), plugin));
+                                "user authentication plugin", migrationConfigDto.getOpengaussDatabaseIp(), plugin));
                     }
                 }
             }

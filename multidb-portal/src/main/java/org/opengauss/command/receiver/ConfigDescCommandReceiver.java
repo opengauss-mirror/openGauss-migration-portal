@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.enums.TemplateConfigType;
 import org.opengauss.exceptions.PortalException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.utils.FileUtils;
 
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class ConfigDescCommandReceiver implements CommandReceiver {
     private void exportDescFile(TemplateConfigType configType) {
         String configFilePath = configType.getFilePath();
         String configDescFilePath = configType.getConfigDescFilePath();
-        String targetDirPath = ApplicationConfig.getInstance().getPortalTmpDirPath();
+        String targetDirPath = Portal.getInstance().getPortalTmpDirPath();
         String targetConfigFilePath = String.format("%s/%s", targetDirPath, configType.getName());
         String targetConfigDescFilePath = String.format("%s/%s", targetDirPath, configType.getConfigDescFileName());
 

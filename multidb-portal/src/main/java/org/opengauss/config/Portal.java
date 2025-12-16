@@ -15,30 +15,30 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * Application config
+ * Portal
  *
  * @since 2025/3/21
  */
 @Getter
-public class ApplicationConfig {
-    private static volatile ApplicationConfig instance;
+public class Portal {
+    private static volatile Portal instance;
 
     private String portalHomeDirPath;
     private String systemName;
     private String systemArch;
 
-    private ApplicationConfig() {}
+    private Portal() {}
 
     /**
-     * Get instance of ApplicationConfig
+     * Get instance of Portal
      *
-     * @return instance of ApplicationConfig
+     * @return instance of Portal
      */
-    public static ApplicationConfig getInstance() {
+    public static Portal getInstance() {
         if (instance == null) {
-            synchronized (ApplicationConfig.class) {
+            synchronized (Portal.class) {
                 if (instance == null) {
-                    instance = new ApplicationConfig();
+                    instance = new Portal();
                     instance.loadConfig();
                     instance.initPortalDir();
                 }
@@ -165,7 +165,7 @@ public class ApplicationConfig {
     }
 
     private static String loadPortalHomeDir() {
-        String classPath = ApplicationConfig.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        String classPath = Portal.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         return new File(classPath).getParent();
     }
 }

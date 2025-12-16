@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.opengauss;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.OpenGaussUtils;
 
@@ -23,22 +23,21 @@ public class OpenGaussEnableSlotLogVerifyChain extends AbstractOpenGaussVerifyCh
     private static final String VERIFY_NAME = "OpenGauss GUC Parameter enable_slot_log Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void verify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
-        if (verifyDto.isTargetCluster()) {
+        if (verifyDto.getMigrationConfigDto().isOpenGaussClusterAvailable()) {
             doVerify(verifyDto);
             addCurrentChainResult(verifyResult);
         }
         transfer(verifyDto, verifyResult);
     }
 
-    private void doVerify(VerifyDto verifyDto) {
+    private void doVerify(AbstractVerifyDto verifyDto) {
         try {
             String param = "enable_slot_log";
             String expectValue = "on";
-            String actualValue = OpenGaussUtils.getVariableValue(param, verifyDto.getTargetConnection());
+            String actualValue = OpenGaussUtils.getVariableValue(param, verifyDto.getOpengaussConnection());
             if (!expectValue.equals(actualValue)) {
                 chainResult.setSuccess(false);
                 chainResult.setDetail(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL, param, expectValue,

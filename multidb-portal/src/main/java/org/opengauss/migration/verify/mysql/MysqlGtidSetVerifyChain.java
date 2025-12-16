@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.mysql;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.MysqlUtils;
 
@@ -24,12 +24,11 @@ public class MysqlGtidSetVerifyChain extends AbstractMysqlVerifyChain {
     private static final String VERIFY_NAME = "MySQL Executed_Gtid_Set Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(MysqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         try {
-            Connection connection = verifyDto.getSourceConnection();
+            Connection connection = verifyDto.getMysqlConnection();
             String executedGtidSet = MysqlUtils.getExecutedGtidSet(connection);
             if (executedGtidSet != null && executedGtidSet.contains(":1-")) {
                 chainResult.setSuccess(true);

@@ -4,7 +4,7 @@
 
 package org.opengauss.migration.tasks.impl;
 
-import org.opengauss.domain.model.ChameleonConfigBundle;
+import org.opengauss.domain.tool.config.SingleConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.migration.tasks.phase.FullMigrationTask;
@@ -24,7 +24,7 @@ public class ChameleonMysqlFullMigrationTask extends ChameleonTask implements Fu
     private boolean isForeignKeyMigrated = false;
 
     public ChameleonMysqlFullMigrationTask(TaskWorkspace taskWorkspace, MigrationStopIndicator migrationStopIndicator,
-                                           ChameleonConfigBundle chameleonConfig) {
+                                           SingleConfigBundle chameleonConfig) {
         super(taskWorkspace, migrationStopIndicator, chameleonConfig);
     }
 

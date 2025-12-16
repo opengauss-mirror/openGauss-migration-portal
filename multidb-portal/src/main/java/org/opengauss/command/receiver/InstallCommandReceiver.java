@@ -6,14 +6,16 @@ package org.opengauss.command.receiver;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.config.Portal;
 import org.opengauss.constants.PortalConstants;
 import org.opengauss.exceptions.InstallException;
 import org.opengauss.migration.tools.Chameleon;
 import org.opengauss.migration.tools.DataChecker;
 import org.opengauss.migration.tools.Debezium;
+import org.opengauss.migration.tools.ElasticsearchMigrationTool;
 import org.opengauss.migration.tools.FullReplicateTool;
 import org.opengauss.migration.tools.Kafka;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.migration.tools.MilvusMigrationTool;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.ProcessUtils;
 
@@ -50,6 +52,8 @@ public class InstallCommandReceiver implements CommandReceiver {
         checkLeastSpace();
         FullReplicateTool.getInstance().install();
         Chameleon.getInstance().install();
+        MilvusMigrationTool.getInstance().install();
+        ElasticsearchMigrationTool.getInstance().install();
         DataChecker.getInstance().install();
         Debezium.getInstance().install();
         Kafka.getInstance().install();
@@ -68,6 +72,20 @@ public class InstallCommandReceiver implements CommandReceiver {
      **/
     public void fullReplicate() {
         FullReplicateTool.getInstance().install();
+    }
+
+    /**
+     * install milvus_migration_tool
+     **/
+    public void milvusMigrationTool() {
+        MilvusMigrationTool.getInstance().install();
+    }
+
+    /**
+     * install elasticsearch_migration_tool
+     **/
+    public void elasticsearchMigrationTool() {
+        ElasticsearchMigrationTool.getInstance().install();
     }
 
     /**
@@ -110,6 +128,20 @@ public class InstallCommandReceiver implements CommandReceiver {
             isAllInstalled = false;
         }
 
+        if (MilvusMigrationTool.getInstance().checkInstall()) {
+            LOGGER.info("MilvusMigrationTool is already installed");
+        } else {
+            LOGGER.error("MilvusMigrationTool is not installed");
+            isAllInstalled = false;
+        }
+
+        if (ElasticsearchMigrationTool.getInstance().checkInstall()) {
+            LOGGER.info("ElasticsearchMigrationTool is already installed");
+        } else {
+            LOGGER.error("ElasticsearchMigrationTool is not installed");
+            isAllInstalled = false;
+        }
+
         if (DataChecker.getInstance().checkInstall()) {
             LOGGER.info("DataChecker is already installed");
         } else {
@@ -140,7 +172,7 @@ public class InstallCommandReceiver implements CommandReceiver {
 
     private void checkLeastSpace() {
         LOGGER.info("Check space is sufficient");
-        String portalHomeDir = ApplicationConfig.getInstance().getPortalHomeDirPath();
+        String portalHomeDir = Portal.getInstance().getPortalHomeDirPath();
         try {
             if (!FileUtils.isSpaceSufficient(portalHomeDir, PortalConstants.LEAST_SPACE_MB)) {
                 throw new InstallException("Not enough space in portal home directory to install migration tools, "
@@ -155,8 +187,8 @@ public class InstallCommandReceiver implements CommandReceiver {
         String osName = getSystemOs() + getSystemOsVersion();
         String osArch = getOsArch();
 
-        String portalSystemName = ApplicationConfig.getInstance().getSystemName();
-        String portalSystemArch = ApplicationConfig.getInstance().getSystemArch();
+        String portalSystemName = Portal.getInstance().getSystemName();
+        String portalSystemArch = Portal.getInstance().getSystemArch();
 
         if (!osName.equalsIgnoreCase(portalSystemName) || !osArch.equalsIgnoreCase(portalSystemArch)) {
             LOGGER.warn("System and architecture do not match, current portal install package supported "
@@ -219,7 +251,7 @@ public class InstallCommandReceiver implements CommandReceiver {
     private void installDependencies() {
         LOGGER.info("Check dependencies install script");
         String installScriptName = PortalConstants.DEPENDENCIES_INSTALL_SCRIPT_NAME;
-        String installScriptDirPath = String.format("%s/%s", ApplicationConfig.getInstance().getPortalPkgDirPath(),
+        String installScriptDirPath = String.format("%s/%s", Portal.getInstance().getPortalPkgDirPath(),
                 PortalConstants.DEPENDENCIES_INSTALL_SCRIPT_DIR_RELATIVE_PATH);
         String installScriptPath = String.format("%s/%s", installScriptDirPath, installScriptName);
         if (!FileUtils.checkFileExists(installScriptPath)) {

@@ -5,17 +5,14 @@
 package org.opengauss.migration.config;
 
 import lombok.Getter;
-import org.opengauss.constants.ConfigValidationConstants;
-import org.opengauss.constants.config.MigrationConfig;
-import org.opengauss.domain.dto.MysqlMigrationConfigDto;
-import org.opengauss.domain.model.ChameleonConfigBundle;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
-import org.opengauss.domain.model.DataCheckerConfigBundle;
-import org.opengauss.domain.model.DebeziumConfigBundle;
 import org.opengauss.domain.model.TaskWorkspace;
+import org.opengauss.domain.tool.config.DataCheckerConfigBundle;
+import org.opengauss.domain.tool.config.DebeziumConfigBundle;
+import org.opengauss.domain.tool.config.SingleConfigBundle;
 import org.opengauss.enums.DebeziumProcessType;
 import org.opengauss.enums.TemplateConfigType;
-import org.opengauss.exceptions.ConfigException;
 import org.opengauss.migration.helper.config.ChameleonMysqlMigrationConfigHelper;
 import org.opengauss.migration.helper.config.DataCheckerMysqlMigrationConfigHelper;
 import org.opengauss.migration.helper.config.DebeziumMysqlMigrationConfigHelper;
@@ -32,7 +29,7 @@ import java.util.Set;
  */
 @Getter
 public class MysqlMigrationJobConfig extends AbstractMigrationJobConfig {
-    private final ChameleonConfigBundle fullConfigBundle;
+    private final SingleConfigBundle fullConfigBundle;
     private final DataCheckerConfigBundle fullDataCheckConfigBundle;
     private final DataCheckerConfigBundle incrementalDataCheckConfigBundle;
     private final DebeziumConfigBundle incrementalConfigBundle;
@@ -85,22 +82,6 @@ public class MysqlMigrationJobConfig extends AbstractMigrationJobConfig {
 
         if (hasReverseMigration()) {
             reverseConfigBundle.loadConfigMap();
-        }
-    }
-
-    @Override
-    public void validateConfig() {
-        Map<String, Object> migrationConfig = migrationConfigFile.getConfigMap();
-        String mysqlIp = migrationConfig.get(MigrationConfig.MYSQL_DATABASE_IP).toString();
-        String mysqlPort = migrationConfig.get(MigrationConfig.MYSQL_DATABASE_PORT).toString();
-        String opengaussIp = migrationConfig.get(MigrationConfig.OPENGAUSS_DATABASE_IP).toString();
-        String opengaussPort = migrationConfig.get(MigrationConfig.OPENGAUSS_DATABASE_PORT).toString();
-
-        if (!ConfigValidationConstants.IP_REGEX.matcher(mysqlIp).matches()
-                || !ConfigValidationConstants.PORT_REGEX.matcher(mysqlPort).matches()
-                || !ConfigValidationConstants.IP_REGEX.matcher(opengaussIp).matches()
-                || !ConfigValidationConstants.PORT_REGEX.matcher(opengaussPort).matches()) {
-            throw new ConfigException("IP or Port is invalid");
         }
     }
 
@@ -256,8 +237,8 @@ public class MysqlMigrationJobConfig extends AbstractMigrationJobConfig {
         reverseConfigBundle.getLog4jSinkConfigFile().getConfigMap().putAll(log4jSinkParams);
     }
 
-    private ChameleonConfigBundle getFullConfigBundle(TaskWorkspace taskWorkspace) {
-        ChameleonConfigBundle result = new ChameleonConfigBundle();
+    private SingleConfigBundle getFullConfigBundle(TaskWorkspace taskWorkspace) {
+        SingleConfigBundle result = new SingleConfigBundle();
         String fullConfigName = ChameleonHelper.generateFullMigrationConfigFileName(taskWorkspace);
         result.setConfigFile(new ConfigFile(fullConfigName, taskWorkspace.getConfigFullDirPath(), taskWorkspace,
                 TemplateConfigType.CHAMELEON_CONFIG));

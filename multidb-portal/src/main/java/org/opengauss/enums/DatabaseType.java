@@ -16,6 +16,8 @@ public enum DatabaseType {
     MYSQL("MySQL"),
     OPENGAUSS("openGauss"),
     POSTGRESQL("PostgreSQL"),
+    MILVUS("Milvus"),
+    ELASTICSEARCH("Elasticsearch"),
     ;
 
     DatabaseType(String standardName) {

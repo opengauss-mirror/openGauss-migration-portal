@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.config.DataCheckerConfig;
 import org.opengauss.constants.tool.DataCheckerConstants;
-import org.opengauss.domain.dto.MysqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.MysqlMigrationConfigDto;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DataCheckerProcessType;

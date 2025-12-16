@@ -6,8 +6,9 @@ package org.opengauss.migration.verify.opengauss;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.domain.database.connect.info.OpenGaussDatabaseConnectInfo;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.OpenGaussUtils;
 import org.opengauss.utils.StringUtils;
@@ -28,8 +29,7 @@ public class OpenGaussFullPermissionVerifyChain extends AbstractOpenGaussVerifyC
     };
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void verify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         verifyPermission(PERMISSION_LIST, verifyDto);
@@ -43,15 +43,15 @@ public class OpenGaussFullPermissionVerifyChain extends AbstractOpenGaussVerifyC
      * @param permissionList permission list
      * @param verifyDto verify dto
      */
-    protected void verifyPermission(String[] permissionList, VerifyDto verifyDto) {
+    protected void verifyPermission(String[] permissionList, AbstractVerifyDto verifyDto) {
         if (isSystemAdmin(verifyDto)) {
             return;
         }
 
         try {
-            Connection connection = verifyDto.getTargetConnection();
-            String username = verifyDto.getTargetUsername();
-            String permissions = OpenGaussUtils.getDatabaseAccessPermissions(verifyDto.getTargetDatabase(), connection);
+            OpenGaussDatabaseConnectInfo connectInfo = verifyDto.getMigrationConfigDto().getOpenGaussConnectInfo();
+            String permissions = OpenGaussUtils.getDatabaseAccessPermissions(connectInfo.getDatabaseName(),
+                    verifyDto.getOpengaussConnection());
             StringBuilder detailBuilder = new StringBuilder("Does not have the following permissions: ");
             if (StringUtils.isNullOrBlank(permissions)) {
                 chainResult.setSuccess(false);
@@ -59,7 +59,7 @@ public class OpenGaussFullPermissionVerifyChain extends AbstractOpenGaussVerifyC
                     detailBuilder.append(permission).append(", ");
                 }
             } else {
-                String userPermission = parseUserPermission(permissions, username);
+                String userPermission = parseUserPermission(permissions, connectInfo.getUsername());
                 for (String permission : permissionList) {
                     if (!userPermission.contains(permission)) {
                         chainResult.setSuccess(false);
@@ -85,9 +85,9 @@ public class OpenGaussFullPermissionVerifyChain extends AbstractOpenGaussVerifyC
      * @param verifyDto verify dto
      * @return true if the user is a system administrator, false otherwise
      */
-    protected boolean isSystemAdmin(VerifyDto verifyDto) {
-        Connection connection = verifyDto.getTargetConnection();
-        String username = verifyDto.getTargetUsername();
+    protected boolean isSystemAdmin(AbstractVerifyDto verifyDto) {
+        Connection connection = verifyDto.getOpengaussConnection();
+        String username = verifyDto.getMigrationConfigDto().getOpenGaussConnectInfo().getUsername();
         try {
             return OpenGaussUtils.isSystemAdmin(username, connection);
         } catch (SQLException e) {

@@ -34,6 +34,12 @@ public class ProgressMonitorFactory {
         if (sourceDbType.equals(DatabaseType.POSTGRESQL)) {
             return new PgsqlProgressMonitor(statusMonitor, taskWorkspace);
         }
+        if (sourceDbType.equals(DatabaseType.MILVUS)) {
+            return new MilvusProgressMonitor(statusMonitor, taskWorkspace);
+        }
+        if (sourceDbType.equals(DatabaseType.ELASTICSEARCH)) {
+            return new ElasticsearchProgressMonitor(statusMonitor, taskWorkspace);
+        }
         throw new ConfigException("Unsupported database type");
     }
 }

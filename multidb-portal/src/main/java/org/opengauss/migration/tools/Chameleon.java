@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.PortalConstants;
 import org.opengauss.constants.tool.ChameleonConstants;
 import org.opengauss.exceptions.InstallException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.utils.ProcessUtils;
 
 import java.io.IOException;
@@ -35,14 +35,14 @@ public class Chameleon extends Tool {
     private final String chameleonVersion;
 
     private Chameleon() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
         String portalVersion = PortalConstants.PORTAL_VERSION;
 
-        this.pkgDirPath = String.format("%s/%s", applicationConfig.getPortalPkgDirPath(),
+        this.pkgDirPath = String.format("%s/%s", portal.getPortalPkgDirPath(),
                 ChameleonConstants.INSTALL_PKG_DIR_NAME);
         this.pkgName = String.format(ChameleonConstants.INSTALL_PKG_NAME_MODEL, portalVersion,
-                applicationConfig.getSystemArch());
-        this.installDirPath = String.format("%s/%s", applicationConfig.getPortalToolsDirPath(),
+                portal.getSystemArch());
+        this.installDirPath = String.format("%s/%s", portal.getPortalToolsDirPath(),
                 ChameleonConstants.INSTALL_DIR_NAME);
 
         String chameleonDirName = String.format(ChameleonConstants.CHAMELEON_DIR_HOME_NAME_MODEL, portalVersion);

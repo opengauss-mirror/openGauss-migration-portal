@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
 import org.opengauss.migration.verify.model.ChainResult;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.MysqlUtils;
 
@@ -29,8 +29,7 @@ public class MysqlFullPermissionVerifyChain extends AbstractMysqlVerifyChain {
     };
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(MysqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         verifyPermission(PERMISSION_COLUMN, verifyDto, chainResult);
@@ -45,10 +44,10 @@ public class MysqlFullPermissionVerifyChain extends AbstractMysqlVerifyChain {
      * @param verifyDto verify dto
      * @param verifyChainResult verify chain result
      */
-    protected void verifyPermission(String[] permissions, VerifyDto verifyDto, ChainResult verifyChainResult) {
+    protected void verifyPermission(String[] permissions, MysqlVerifyDto verifyDto, ChainResult verifyChainResult) {
         try {
-            Connection connection = verifyDto.getSourceConnection();
-            String sourceUsername = verifyDto.getSourceUsername();
+            Connection connection = verifyDto.getMysqlConnection();
+            String sourceUsername = verifyDto.getMigrationConfigDto().getMysqlDatabaseUsername();
             StringBuilder detailBuilder = new StringBuilder("Does not have the following permissions: ");
             for (String permission : permissions) {
                 if (!MysqlUtils.hasPermission(permission, sourceUsername, connection)) {

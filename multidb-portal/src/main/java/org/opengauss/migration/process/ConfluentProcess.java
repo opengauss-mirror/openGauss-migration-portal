@@ -8,7 +8,7 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.exceptions.KafkaException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.utils.ProcessUtils;
 import org.opengauss.utils.ThreadUtils;
 
@@ -44,7 +44,7 @@ public class ConfluentProcess implements Process {
     public void start() {
         try {
             if (!isAlive()) {
-                String workDirPath = ApplicationConfig.getInstance().getPortalTmpDirPath();
+                String workDirPath = Portal.getInstance().getPortalTmpDirPath();
                 ProcessUtils.executeCommand(startCommand, workDirPath, logPath, startWaitTime);
             } else {
                 LOGGER.info("Process {} is already started.", processName);

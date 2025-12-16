@@ -12,7 +12,7 @@ import org.opengauss.domain.dto.KafkaStatusDto;
 import org.opengauss.exceptions.InstallException;
 import org.opengauss.exceptions.KafkaException;
 import org.opengauss.migration.process.ConfluentProcess;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.PortUtils;
 import org.opengauss.utils.ProcessUtils;
@@ -68,23 +68,23 @@ public class Kafka extends Tool {
     private volatile ConfluentProcess schemaRegistryProcess;
 
     private Kafka() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
 
-        this.pkgDirPath = String.format("%s/%s", applicationConfig.getPortalPkgDirPath(),
+        this.pkgDirPath = String.format("%s/%s", portal.getPortalPkgDirPath(),
                 KafkaConstants.INSTALL_PKG_DIR_NAME);
         this.pkgName = KafkaConstants.INSTALL_PKG_NAME;
-        this.installDirPath = String.format("%s/%s", applicationConfig.getPortalToolsDirPath(),
+        this.installDirPath = String.format("%s/%s", portal.getPortalToolsDirPath(),
                 KafkaConstants.INSTALL_DIR_NAME);
         this.confluentDirPath = String.format("%s/%s", this.installDirPath, KafkaConstants.CONFLUENT_DIR_NAME);
 
-        this.kafkaTmpDirPath = String.format("%s/%s", applicationConfig.getPortalTmpDirPath(),
+        this.kafkaTmpDirPath = String.format("%s/%s", portal.getPortalTmpDirPath(),
                 KafkaConstants.KAFKA_TMP_DIR_NAME);
-        this.kafkaPortConfigPath = String.format("%s/%s", applicationConfig.getPortalDataDirPath(),
+        this.kafkaPortConfigPath = String.format("%s/%s", portal.getPortalDataDirPath(),
                 KafkaConstants.PORT_CONFIG_NAME);
         this.kafkaStarterPath = String.format("%s/%s", confluentDirPath, KafkaConstants.KAFKA_STARTER_RELATIVE_PATH);
         this.kafkaConfigPath = String.format("%s/%s", confluentDirPath, KafkaConstants.KAFKA_CONFIG_RELATIVE_PATH);
 
-        this.zookeeperTmpDirPath = String.format("%s/%s", applicationConfig.getPortalTmpDirPath(),
+        this.zookeeperTmpDirPath = String.format("%s/%s", portal.getPortalTmpDirPath(),
                 KafkaConstants.ZOOKEEPER_TMP_DIR_NAME);
         this.zookeeperStarterPath = String.format("%s/%s", confluentDirPath,
                 KafkaConstants.ZOOKEEPER_STARTER_RELATIVE_PATH);
@@ -98,7 +98,7 @@ public class Kafka extends Tool {
 
         this.connectStandalonePath = String.format("%s/%s", confluentDirPath,
                 KafkaConstants.CONNECT_STANDALONE_RELATIVE_PATH);
-        this.kafkaLogPath = String.format("%s/%s", applicationConfig.getPortalLogsDirPath(), "kafka.log");
+        this.kafkaLogPath = String.format("%s/%s", portal.getPortalLogsDirPath(), "kafka.log");
     }
 
     /**
@@ -476,10 +476,10 @@ public class Kafka extends Tool {
     }
 
     private ConfluentProcess getZookeeperProcess() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
         String zookeeperCmd = String.format("%s %s", zookeeperStarterPath, zookeeperConfigPath);
         String zookeeperCheckCmd = String.format("QuorumPeerMain %s", zookeeperConfigPath);
-        String zookeeperLogPath = String.format("%s/%s", applicationConfig.getPortalLogsDirPath(), "zookeeper.log");
+        String zookeeperLogPath = String.format("%s/%s", portal.getPortalLogsDirPath(), "zookeeper.log");
         if (zookeeperProcess == null) {
             zookeeperProcess = new ConfluentProcess("zookeeper", zookeeperCmd, zookeeperCheckCmd, zookeeperLogPath,
                     ZOOKEEPER_START_TIME);
@@ -497,10 +497,10 @@ public class Kafka extends Tool {
     }
 
     private ConfluentProcess getSchemaRegistryProcess() {
-        ApplicationConfig applicationConfig = ApplicationConfig.getInstance();
+        Portal portal = Portal.getInstance();
         String schemaRegistryCmd = String.format("%s %s", schemaRegistryStarterPath, schemaRegistryConfigPath);
         String schemaRegistryCheckCmd = String.format("SchemaRegistryMain %s", schemaRegistryConfigPath);
-        String schemaRegistryLogPath = String.format("%s/%s", applicationConfig.getPortalLogsDirPath(),
+        String schemaRegistryLogPath = String.format("%s/%s", portal.getPortalLogsDirPath(),
                 "schemaRegistry.log");
         if (schemaRegistryProcess == null) {
             schemaRegistryProcess = new ConfluentProcess("schema registry", schemaRegistryCmd, schemaRegistryCheckCmd,
@@ -575,10 +575,10 @@ public class Kafka extends Tool {
         String kafkaShellPath = String.format("%s/bin/kafka-topics", confluentDirPath);
         String kafkaServer = String.format("%s:%s", KafkaConstants.CONFLUENT_IP, kafkaPort);
         String checkCommand = String.format("%s --bootstrap-server %s --list", kafkaShellPath, kafkaServer);
-        String checkKafkaLogPath = String.format("%s/%s", ApplicationConfig.getInstance().getPortalLogsDirPath(),
+        String checkKafkaLogPath = String.format("%s/%s", Portal.getInstance().getPortalLogsDirPath(),
                 "check_kafka.log");
         long checkSleepTime = 3000L;
-        String workDirPath = ApplicationConfig.getInstance().getPortalTmpDirPath();
+        String workDirPath = Portal.getInstance().getPortalTmpDirPath();
         ProcessUtils.executeCommand(checkCommand, workDirPath, checkKafkaLogPath, checkSleepTime);
 
         String checkLog = FileUtils.readFileContents(checkKafkaLogPath);

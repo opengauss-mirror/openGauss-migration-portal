@@ -2,17 +2,18 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
-package org.opengauss.domain.model;
+package org.opengauss.domain.tool.config;
 
 import lombok.Data;
+import org.opengauss.domain.model.ConfigFile;
 
 /**
- * chameleon config file bundle
+ * full_migration config file bundle
  *
  * @since 2025/7/2
  */
 @Data
-public class ChameleonConfigBundle extends AbstractToolConfigBundle {
+public class FullReplicateConfigBundle extends AbstractToolConfigBundle {
     private ConfigFile configFile;
 
     @Override

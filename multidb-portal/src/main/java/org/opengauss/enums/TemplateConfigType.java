@@ -5,7 +5,7 @@
 package org.opengauss.enums;
 
 import lombok.Getter;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 
 /**
  * template config type
@@ -21,6 +21,10 @@ public enum TemplateConfigType {
             "the migration config file with MySQL source database", "mysql-migration-desc.properties"),
     PGSQL_MIGRATION_CONFIG("pgsql-migration.properties", FileFormat.PROPERTIES, true, "config",
             "the migration config file with PostgreSQL source database", "pgsql-migration-desc.properties"),
+    MILVUS_MIGRATION_CONFIG("milvus-migration.properties", FileFormat.PROPERTIES, true, "config",
+            "the migration config file with Milvus source database", null),
+    ELASTICSEARCH_MIGRATION_CONFIG("elasticsearch-migration.properties", FileFormat.PROPERTIES, true, "config",
+            "the migration config file with Elasticsearch source database", null),
 
     /**
      * chameleon config template file
@@ -65,6 +69,18 @@ public enum TemplateConfigType {
             "the debezium connect PostgreSQL sink process config file", null),
     DEBEZIUM_CONNECT_PGSQL_SOURCE_CONFIG("postgres-source.properties", FileFormat.PROPERTIES, false, "config/debezium",
             "the debezium connect PostgreSQL source process config file", null),
+
+    /**
+     * Milvus migration tool config template files
+     */
+    MILVUS_MIGRATION_TOOL_CONFIG("config.ini", FileFormat.INI, false, "config/milvus",
+            "the milvus migration tool config file", null),
+
+    /**
+     * Elasticsearch migration tool config template files
+     */
+    ELASTICSEARCH_MIGRATION_TOOL_CONFIG("config.ini", FileFormat.INI, false, "config/elasticsearch",
+            "the elasticsearch migration tool config file", null),
     ;
 
     TemplateConfigType(String name, FileFormat fileFormat, boolean isInResources, String filePath, String description,
@@ -94,7 +110,7 @@ public enum TemplateConfigType {
             return String.format("%s/%s", filePath, name);
         }
 
-        String templateDirPath = ApplicationConfig.getInstance().getPortalTemplateDirPath();
+        String templateDirPath = Portal.getInstance().getPortalTemplateDirPath();
         return String.format("%s/%s/%s", templateDirPath, filePath, name);
     }
 
@@ -112,7 +128,7 @@ public enum TemplateConfigType {
             return String.format("%s/%s", filePath, configDescFileName);
         }
 
-        String templateDirPath = ApplicationConfig.getInstance().getPortalTemplateDirPath();
+        String templateDirPath = Portal.getInstance().getPortalTemplateDirPath();
         return String.format("%s/%s/%s", templateDirPath, filePath, configDescFileName);
     }
 }

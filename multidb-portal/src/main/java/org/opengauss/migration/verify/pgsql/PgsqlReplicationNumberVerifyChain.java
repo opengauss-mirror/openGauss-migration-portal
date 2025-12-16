@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.pgsql;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.PgsqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.OpenGaussUtils;
 
@@ -24,12 +24,11 @@ public class PgsqlReplicationNumberVerifyChain extends AbstractPgsqlVerifyChain 
     private static final String VERIFY_NAME = "PostgreSQL Number Of Remaining Replication Slots Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(PgsqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         try {
-            Connection sourceConnection = verifyDto.getSourceConnection();
+            Connection sourceConnection = verifyDto.getPgsqlConnection();
             int countNumbers = OpenGaussUtils.countReplicationSlots(sourceConnection);
             String maxNumbers = OpenGaussUtils.getVariableValue("max_replication_slots", sourceConnection);
             if (countNumbers == Integer.parseInt(maxNumbers)) {

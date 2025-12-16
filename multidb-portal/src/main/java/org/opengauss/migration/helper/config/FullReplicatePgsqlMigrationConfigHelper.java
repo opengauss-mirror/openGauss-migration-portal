@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.config.FullReplicateConfig;
 import org.opengauss.constants.config.MigrationConfig;
-import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.ConfigException;
 import org.opengauss.utils.JdbcUtils;

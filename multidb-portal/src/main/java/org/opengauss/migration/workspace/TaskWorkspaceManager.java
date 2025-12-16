@@ -6,16 +6,19 @@ package org.opengauss.migration.workspace;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.opengauss.config.Portal;
 import org.opengauss.constants.TaskConstants;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.domain.vo.TaskListVo;
 import org.opengauss.enums.DatabaseType;
 import org.opengauss.exceptions.ConfigException;
+import org.opengauss.exceptions.MigrationException;
 import org.opengauss.exceptions.TaskException;
+import org.opengauss.migration.config.ElasticsearchMigrationJobConfig;
+import org.opengauss.migration.config.MilvusMigrationJobConfig;
 import org.opengauss.migration.config.MysqlMigrationJobConfig;
 import org.opengauss.migration.config.PgsqlMigrationJobConfig;
 import org.opengauss.migration.monitor.MigrationAliveMonitor;
-import org.opengauss.config.ApplicationConfig;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.StringUtils;
 
@@ -42,7 +45,7 @@ public class TaskWorkspaceManager {
     private final String workspaceDir;
 
     public TaskWorkspaceManager() {
-        workspaceDir = ApplicationConfig.getInstance().getPortalWorkspaceDirPath();
+        workspaceDir = Portal.getInstance().getPortalWorkspaceDirPath();
         createWorkspaceDir();
     }
 
@@ -195,10 +198,24 @@ public class TaskWorkspaceManager {
             new MysqlMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
         } else if (DatabaseType.POSTGRESQL.equals(sourceDbType)) {
             new PgsqlMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
+        } else if (DatabaseType.MILVUS.equals(sourceDbType)) {
+            new MilvusMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
+        } else if (DatabaseType.ELASTICSEARCH.equals(sourceDbType)) {
+            new ElasticsearchMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
         } else {
             throw new IllegalArgumentException("Unsupported source database type: " + sourceDbType);
         }
         generateSourceDbTypeConfigFile(taskWorkspace, sourceDbType);
+        copyLog4j2ConfigFile(taskWorkspace);
+    }
+
+    private void copyLog4j2ConfigFile(TaskWorkspace taskWorkspace) {
+        try {
+            String targetFilePath = String.format("%s/log4j2.xml", taskWorkspace.getConfigDirPath());
+            FileUtils.copyFile("config/log4j2.xml", targetFilePath);
+        } catch (IOException e) {
+            throw new MigrationException("Failed to copy log4j2 config file to task workspace", e);
+        }
     }
 
     private void generateSourceDbTypeConfigFile(TaskWorkspace taskWorkspace, DatabaseType sourceDbType) {

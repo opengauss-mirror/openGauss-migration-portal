@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.config.ConnectAvroStandaloneConfig;
 import org.opengauss.domain.model.ConfigFile;
-import org.opengauss.domain.model.DebeziumConfigBundle;
+import org.opengauss.domain.tool.config.DebeziumConfigBundle;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.MigrationException;

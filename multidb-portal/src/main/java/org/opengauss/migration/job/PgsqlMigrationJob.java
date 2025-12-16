@@ -6,7 +6,7 @@ package org.opengauss.migration.job;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opengauss.domain.dto.PgsqlMigrationConfigDto;
+import org.opengauss.domain.migration.config.PgsqlMigrationConfigDto;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.MigrationStatusEnum;

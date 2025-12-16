@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.ProcessNameConstants;
 import org.opengauss.constants.tool.ChameleonConstants;
-import org.opengauss.domain.model.ChameleonConfigBundle;
+import org.opengauss.domain.tool.config.SingleConfigBundle;
 import org.opengauss.domain.model.ConfigFile;
 import org.opengauss.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
@@ -40,7 +40,7 @@ public abstract class ChameleonTask extends ToolTask {
     private TaskProcess currentProcess;
 
     protected ChameleonTask(TaskWorkspace taskWorkspace, MigrationStopIndicator migrationStopIndicator,
-                            ChameleonConfigBundle chameleonConfig) {
+                            SingleConfigBundle chameleonConfig) {
         super(taskWorkspace);
         this.migrationStopIndicator = migrationStopIndicator;
         this.chameleonConfig = chameleonConfig.getConfigFile();

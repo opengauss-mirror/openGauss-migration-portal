@@ -5,7 +5,7 @@
 package org.opengauss.migration.verify.mysql;
 
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.MysqlVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 
 /**
@@ -21,8 +21,7 @@ public class MysqlReversePermissionVerifyChain extends MysqlFullPermissionVerify
     };
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void doVerify(MysqlVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         verifyPermission(PERMISSION_COLUMN, verifyDto, chainResult);

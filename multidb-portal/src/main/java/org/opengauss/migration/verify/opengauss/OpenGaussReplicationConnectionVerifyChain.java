@@ -7,8 +7,9 @@ package org.opengauss.migration.verify.opengauss;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.PGProperty;
+import org.opengauss.domain.database.connect.info.OpenGaussDatabaseConnectInfo;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 
 import java.sql.Connection;
@@ -27,8 +28,7 @@ public class OpenGaussReplicationConnectionVerifyChain extends AbstractOpenGauss
     private static final String VERIFY_NAME = "OpenGauss Connect User Create Replication Connection Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void verify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         doVerify(verifyDto);
@@ -36,18 +36,19 @@ public class OpenGaussReplicationConnectionVerifyChain extends AbstractOpenGauss
         transfer(verifyDto, verifyResult);
     }
 
-    private void doVerify(VerifyDto verifyDto) {
-        String openGaussIp = verifyDto.getTargetIp();
-        String openGaussDatabaseName = verifyDto.getTargetDatabase();
+    private void doVerify(AbstractVerifyDto verifyDto) {
+        OpenGaussDatabaseConnectInfo connectInfo = verifyDto.getMigrationConfigDto().getOpenGaussConnectInfo();
+        String openGaussIp = connectInfo.getIp();
+        String openGaussDatabaseName = connectInfo.getDatabaseName();
 
         Properties properties = new Properties();
-        PGProperty.USER.set(properties, verifyDto.getTargetUsername());
-        PGProperty.PASSWORD.set(properties, verifyDto.getTargetPassword());
+        PGProperty.USER.set(properties, connectInfo.getUsername());
+        PGProperty.PASSWORD.set(properties, connectInfo.getPassword());
         PGProperty.ASSUME_MIN_SERVER_VERSION.set(properties, "9.4");
         PGProperty.REPLICATION.set(properties, "database");
         PGProperty.PREFER_QUERY_MODE.set(properties, "simple");
 
-        int port = Integer.parseInt(verifyDto.getTargetPort());
+        int port = Integer.parseInt(connectInfo.getPort());
         int haPort = port + 1;
         String url = String.format(Locale.ROOT, "jdbc:opengauss://%s:%d/%s", openGaussIp, port, openGaussDatabaseName);
         try (Connection connection = DriverManager.getConnection(url, properties)) {

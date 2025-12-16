@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.opengauss;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.OpenGaussUtils;
 
@@ -23,14 +23,14 @@ public class OpenGaussReversePermissionVerifyChain extends OpenGaussFullPermissi
     private static final String VERIFY_NAME = "OpenGauss Connect User Reverse Migration Permission Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void verify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         try {
             if (!isSystemAdmin(verifyDto)) {
-                boolean isReplicationRole = OpenGaussUtils.isReplicationRole(verifyDto.getTargetUsername(),
-                        verifyDto.getTargetConnection());
+                boolean isReplicationRole = OpenGaussUtils.isReplicationRole(
+                        verifyDto.getMigrationConfigDto().getOpenGaussConnectInfo().getUsername(),
+                        verifyDto.getOpengaussConnection());
                 if (!isReplicationRole) {
                     chainResult.setSuccess(false);
                     chainResult.setDetail("The user does not have the replication role");

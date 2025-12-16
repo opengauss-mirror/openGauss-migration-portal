@@ -5,6 +5,10 @@
 package org.opengauss.migration.verify;
 
 import org.opengauss.enums.MigrationPhase;
+import org.opengauss.migration.verify.elasticsearch.ElasticsearchConnectVerifyChain;
+import org.opengauss.migration.verify.elasticsearch.ElasticsearchVersionVerifyChain;
+import org.opengauss.migration.verify.milvus.MilvusConnectVerifyChain;
+import org.opengauss.migration.verify.milvus.MilvusVersionVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlAuthPluginVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlBinLogVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlConnectVerifyChain;
@@ -21,6 +25,8 @@ import org.opengauss.migration.verify.opengauss.OpenGaussReplicationConnectionVe
 import org.opengauss.migration.verify.opengauss.OpenGaussReplicationNumberVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussReversePermissionVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussSqlCompatibilityVerifyChain;
+import org.opengauss.migration.verify.opengauss.OpenGaussSysadminPermissionVerifyChain;
+import org.opengauss.migration.verify.opengauss.OpenGaussVersionVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussWalLevelVerifyChain;
 import org.opengauss.migration.verify.pgsql.PgsqlConnectVerifyChain;
 import org.opengauss.migration.verify.pgsql.PgsqlReplicationConnectionVerifyChain;
@@ -144,6 +150,40 @@ public class VerifyChainBuilder {
                 .addVerifyChain(new OpenGaussWalLevelVerifyChain())
                 .addVerifyChain(new OpenGaussReplicationConnectionVerifyChain())
                 .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain());
+        return builder.build();
+    }
+
+    /**
+     * Get Milvus migration verify chain
+     *
+     * @return verify chain
+     */
+    public static AbstractVerifyChain getMilvusMigrationVerifyChain() {
+        VerifyChainBuilder builder = new VerifyChainBuilder();
+        builder.addVerifyChain(new MilvusConnectVerifyChain())
+                .addVerifyChain(new OpenGaussConnectVerifyChain())
+                .addVerifyChain(new MilvusVersionVerifyChain())
+                .addVerifyChain(new OpenGaussSqlCompatibilityVerifyChain())
+                .addVerifyChain(new OpenGaussSysadminPermissionVerifyChain())
+                // The actual minimum required version is 7.0.0-RC1, but for ease of string comparison, 7.0.0 is used.
+                .addVerifyChain(new OpenGaussVersionVerifyChain("7.0.0"));
+        return builder.build();
+    }
+
+    /**
+     * Get Elasticsearch migration verify chain
+     *
+     * @return verify chain
+     */
+    public static AbstractVerifyChain getElasticsearchMigrationVerifyChain() {
+        VerifyChainBuilder builder = new VerifyChainBuilder();
+        builder.addVerifyChain(new ElasticsearchConnectVerifyChain())
+                .addVerifyChain(new OpenGaussConnectVerifyChain())
+                .addVerifyChain(new ElasticsearchVersionVerifyChain())
+                .addVerifyChain(new OpenGaussSqlCompatibilityVerifyChain())
+                .addVerifyChain(new OpenGaussSysadminPermissionVerifyChain())
+                // The actual minimum required version is 7.0.0-RC1, but for ease of string comparison, 7.0.0 is used.
+                .addVerifyChain(new OpenGaussVersionVerifyChain("7.0.0"));
         return builder.build();
     }
 

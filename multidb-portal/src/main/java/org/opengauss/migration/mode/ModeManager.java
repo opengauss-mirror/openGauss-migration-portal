@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.MigrationModeConstants;
 import org.opengauss.enums.MigrationPhase;
 import org.opengauss.exceptions.MigrationModeException;
-import org.opengauss.config.ApplicationConfig;
+import org.opengauss.config.Portal;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.PropertiesUtils;
 import org.opengauss.utils.StringUtils;
@@ -40,7 +40,7 @@ public class ModeManager {
     private final String modeJsonPath;
 
     public ModeManager() {
-        modeJsonPath = String.format("%s/%s", ApplicationConfig.getInstance().getPortalDataDirPath(),
+        modeJsonPath = String.format("%s/%s", Portal.getInstance().getPortalDataDirPath(),
                 MigrationModeConstants.CUSTOM_MODE_STORAGE_FILE_NAME);
     }
 
@@ -179,7 +179,7 @@ public class ModeManager {
      */
     public void template() {
         try {
-            String targetFilePath = String.format("%s/%s", ApplicationConfig.getInstance().getPortalTmpDirPath(),
+            String targetFilePath = String.format("%s/%s", Portal.getInstance().getPortalTmpDirPath(),
                     MigrationModeConstants.DEFINE_MODE_TEMPLATE_NAME);
             FileUtils.exportResource(MigrationModeConstants.DEFINE_MODE_TEMPLATE_RESOURCES_PATH, targetFilePath);
             LOGGER.info("Template file exported successfully");

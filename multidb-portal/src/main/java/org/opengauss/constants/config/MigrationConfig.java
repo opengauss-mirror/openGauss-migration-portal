@@ -26,6 +26,11 @@ public class MigrationConfig {
     public static final String IS_ADJUST_KERNEL_PARAM = "is.adjust.kernel.param";
 
     /**
+     * Number of Milvus and Elasticsearch migration concurrent threads. Default value is 4.
+     */
+    public static final String MIGRATION_CONCURRENT_THREADS = "migration.concurrent.threads";
+
+    /**
      * MySQL server IP address
      */
     public static final String MYSQL_DATABASE_IP = "mysql.database.ip";
@@ -86,6 +91,56 @@ public class MigrationConfig {
     public static final String PGSQL_DATABASE_SCHEMAS = "pgsql.database.schemas";
 
     /**
+     * Milvus server IP address
+     */
+    public static final String MILVUS_IP = "milvus.ip";
+
+    /**
+     * Milvus server port
+     */
+    public static final String MILVUS_PORT = "milvus.port";
+
+    /**
+     * Milvus database name
+     */
+    public static final String MILVUS_DATABASE = "milvus.database";
+
+    /**
+     * Milvus collections to be migrated
+     */
+    public static final String MILVUS_COLLECTIONS = "milvus.collections";
+
+    /**
+     * Milvus server user name
+     */
+    public static final String MILVUS_USERNAME = "milvus.username";
+
+    /**
+     * Milvus server user password
+     */
+    public static final String MILVUS_PASSWORD = "milvus.password";
+
+    /**
+     * Elasticsearch host
+     */
+    public static final String ELASTICSEARCH_HOST = "elasticsearch.host";
+
+    /**
+     * Elasticsearch indexes to be migrated
+     */
+    public static final String ELASTICSEARCH_INDEXES = "elasticsearch.indexes";
+
+    /**
+     * Elasticsearch server username
+     */
+    public static final String ELASTICSEARCH_USERNAME = "elasticsearch.username";
+
+    /**
+     * Elasticsearch server user password
+     */
+    public static final String ELASTICSEARCH_PASSWORD = "elasticsearch.password";
+
+    /**
      * OpenGauss server IP address
      */
     public static final String OPENGAUSS_DATABASE_IP = "opengauss.database.ip";
@@ -129,6 +184,11 @@ public class MigrationConfig {
      * Schema mappings
      */
     public static final String SCHEMA_MAPPINGS = "schema.mappings";
+
+    /**
+     * Table mappings
+     */
+    public static final String TABLE_MAPPINGS = "table.mappings";
 
     /**
      * Full migration process JVM configuration

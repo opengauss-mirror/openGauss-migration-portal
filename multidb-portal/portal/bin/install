@@ -11,25 +11,33 @@ Migration Tool Installation Script
 
 Usage:
   Basic Usage:
-    $0 tools                      Install all migration tools
-    $0 chameleon                  Install MySQL full migration tool
-    $0 full_replicate             Install PostgreSQL full migration tool
-    $0 debezium                   Install incremental and reverse migration tool
-    $0 data_checker               Install data check migration tool
-    $0 kafka                      Install confluent
-    $0 dependencies               Install chameleon dependencies
-    $0 check                      Check all migration tools install status
-    $0 -h|--help                  Show this help message
+    $0 tools                           Install all migration tools
+    $0 chameleon                       Install MySQL full migration tool
+    $0 full_replicate                  Install PostgreSQL full migration tool
+    $0 milvus_migration_tool           Install Milvus full migration tool
+    $0 elasticsearch_migration_tool    Install Elasticsearch full migration tool
+    $0 debezium                        Install incremental and reverse migration tool
+    $0 data_checker                    Install data check migration tool
+    $0 kafka                           Install confluent
+    $0 dependencies                    Install chameleon dependencies
+    $0 check                           Check all migration tools install status
+    $0 -h|--help                       Show this help message
 
   Force Install:
     $0 dependencies -f|--force    Force install tools dependencies
 
 Tips:
   1. Force install tools dependencies, the rpm packages may not match the system architecture of the server. Please confirm the system architecture of the current portal installation package before selecting.
-  2. Requires Java 11 or later to be installed.
+  2. Requires Java 17 or later to be installed.
 EOF
     exit 1
 }
+
+# Check if the script is run as root
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Error: This script must not be run as root. Please switch to a regular user and try again." >&2
+    exit 1
+fi
 
 # Check if the first argument is provided
 if [ $# -eq 0 ]; then
@@ -57,14 +65,14 @@ check_java_version() {
         version_num=$(echo "$java_version" | cut -d. -f1)
     fi
 
-    if [ "$version_num" -lt 11 ]; then
-        echo "Error: Java 11 or later is required (found Java $java_version)"
+    if [ "$version_num" -lt 17 ]; then
+        echo "Error: Java 17 or later is required (found Java $java_version)"
         return 1
     fi
     return 0
 }
 
-# Verify Java is available and version >= 11
+# Verify Java is available and version >= 17
 if ! check_java_version; then
     exit 1
 fi
@@ -74,7 +82,7 @@ shift
 
 # Validate component
 case "$COMPONENT" in
-    tools|chameleon|full_replicate|debezium|data_checker|kafka|dependencies|check)
+    tools|chameleon|full_replicate|milvus_migration_tool|elasticsearch_migration_tool|debezium|data_checker|kafka|dependencies|check)
         ;;
     *)
         echo "Error: Invalid component name '$COMPONENT'"

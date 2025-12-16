@@ -7,7 +7,7 @@ package org.opengauss.migration.verify.opengauss;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.migration.verify.constants.VerifyConstants;
-import org.opengauss.migration.verify.model.VerifyDto;
+import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.VerifyResult;
 import org.opengauss.utils.OpenGaussUtils;
 
@@ -23,14 +23,13 @@ public class OpenGaussWalLevelVerifyChain extends AbstractOpenGaussVerifyChain {
     private static final String VERIFY_NAME = "OpenGauss GUC Parameter wal_level Verify";
 
     @Override
-    public void verify(VerifyDto verifyDto, VerifyResult verifyResult) {
-        verifyDto.checkConnection();
+    public void verify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         chainResult.setName(VERIFY_NAME);
 
         try {
             String param = "wal_level";
             String expectValue = "logical";
-            String actualValue = OpenGaussUtils.getVariableValue(param, verifyDto.getTargetConnection());
+            String actualValue = OpenGaussUtils.getVariableValue(param, verifyDto.getOpengaussConnection());
             if (!expectValue.equals(actualValue)) {
                 chainResult.setSuccess(false);
                 chainResult.setDetail(String.format(VerifyConstants.VERIFY_FAILED_RESULT_MODEL, param, expectValue,

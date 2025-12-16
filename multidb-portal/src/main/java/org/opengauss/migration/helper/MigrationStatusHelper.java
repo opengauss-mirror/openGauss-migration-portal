@@ -51,6 +51,28 @@ public class MigrationStatusHelper {
     }
 
     /**
+     * generate full migration success table status file path
+     *
+     * @param taskWorkspace task workspace
+     * @return String file path
+     */
+    public static String generateFullSuccessTableStatusFilePath(TaskWorkspace taskWorkspace) {
+        String statusFullDirPath = taskWorkspace.getStatusFullDirPath();
+        return String.format("%s/%s", statusFullDirPath, MigrationStatusConstants.FULL_SUCCESS_TABLE_STATUS_FILE_NAME);
+    }
+
+    /**
+     * generate full migration failed table status file path
+     *
+     * @param taskWorkspace task workspace
+     * @return String file path
+     */
+    public static String generateFullFailedTableStatusFilePath(TaskWorkspace taskWorkspace) {
+        String statusFullDirPath = taskWorkspace.getStatusFullDirPath();
+        return String.format("%s/%s", statusFullDirPath, MigrationStatusConstants.FULL_FAILED_TABLE_STATUS_FILE_NAME);
+    }
+
+    /**
      * generate full migration trigger status file path
      *
      * @param taskWorkspace task workspace

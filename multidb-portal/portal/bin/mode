@@ -26,13 +26,19 @@ Usage:
     $0 delete old_mode
 
 Tips:
-  1. Requires Java 11 or later to be installed.
+  1. Requires Java 17 or later to be installed.
   2. Mode file should be a valid properties configuration.
   3. For 'add' and 'update' operations, the file path must be specified.
   4. For 'delete' operation, the mode name must be specified.
 EOF
     exit 1
 }
+
+# Check if the script is run as root
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Error: This script must not be run as root. Please switch to a regular user and try again." >&2
+    exit 1
+fi
 
 # Check if the first argument is provided
 if [ $# -eq 0 ]; then
@@ -60,14 +66,14 @@ check_java_version() {
         version_num=$(echo "$java_version" | cut -d. -f1)
     fi
 
-    if [ "$version_num" -lt 11 ]; then
-        echo "Error: Java 11 or later is required (found Java $java_version)"
+    if [ "$version_num" -lt 17 ]; then
+        echo "Error: Java 17 or later is required (found Java $java_version)"
         return 1
     fi
     return 0
 }
 
-# Verify Java is available and version >= 11
+# Verify Java is available and version >= 17
 if ! check_java_version; then
     exit 1
 fi
