@@ -91,7 +91,7 @@ public class ElasticsearchMigrationJobConfig extends AbstractMigrationJobConfig 
 
     private void changeFullConfig() {
         fullConfigBundle.getConfigFile().getConfigMap().putAll(
-                ElasticsearchMigrationConfigHelper.elasticsearchFullMigrationConfig(migrationConfigDto));
+                ElasticsearchMigrationConfigHelper.elasticsearchFullMigrationConfig(migrationConfigDto, taskWorkspace));
     }
 
     private SingleConfigBundle getFullConfigBundle(TaskWorkspace taskWorkspace) {

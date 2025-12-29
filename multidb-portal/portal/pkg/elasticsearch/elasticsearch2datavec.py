@@ -1,11 +1,13 @@
 import psycopg2
+import csv
 import json
 import re
 import requests
 import configparser
 import os
 import sys
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Tuple, Optional, Union
+from datetime import datetime
 
 # Elasticsearch 配置信息
 es_url = None # Elasticsearch 服务器地址
@@ -20,6 +22,10 @@ db_user = None
 db_password = None
 db_table = None
 
+csv_file_path = None
+cleanup_temp_files = True
+batch_query_size = 10000
+
 RESERVED_KEYWORDS = {
     "select", "insert", "update", "delete", "drop", "table", "from", "where", "group",
     "by", "having", "order", "limit", "join", "inner", "left", "right", "full", "union",
@@ -29,16 +35,45 @@ RESERVED_KEYWORDS = {
     "index", "unique", "varchar", "text", "int", "bigint", "smallint", "boolean", "timestamp"
 }
 
+def is_valid_linux_path(path) -> bool:
+    """Is valid Linux path"""
+    if not path or not isinstance(path, str):
+        return False
+
+    path_str = str(path)
+
+    if not path_str.strip():
+        return False
+
+    if '\x00' in path_str:
+        return False
+
+    if len(path_str) > 4096:
+        return False
+
+    if '\x00' in path_str:
+        return False
+
+    components = path_str.split('/')
+    for component in components:
+        if not component:
+            continue
+        if '/' in component or '\x00' in component:
+            return False
+        if component in ('.', '..'):
+            continue
+        if len(component) > 255:
+            return False
+    return True
+
 def read_config(config_file='config.ini'):
-    global es_url, es_index, db_host, db_port, db_name, db_user, db_password, db_table
+    """Read config file"""
+    global es_url, es_index, db_host, db_port, db_name, db_user, db_password, db_table, csv_file_path, cleanup_temp_files, batch_query_size
     config = configparser.ConfigParser()
 
-    # 检查文件是否存在
     if not os.path.exists(config_file):
-        # raise FileNotFoundError(f"Config {config_file} 不存在")
         raise FileNotFoundError(f"Config file {config_file} not found")
 
-    # 读取配置文件
     config.read(config_file, encoding='utf-8')
 
     es_url = config.get('Elasticsearch', 'host')
@@ -61,6 +96,17 @@ def read_config(config_file='config.ini'):
         except configparser.NoOptionError as e:
             db_table = es_index
 
+    batch_query_size = config.getint('Migration', 'batch_query_size', fallback=batch_query_size)
+    cleanup_temp_files = config.getboolean('Migration', 'cleanup_temp_files', fallback=True)
+    output_folder = config.get("Output", "folder", fallback='output')
+    os.makedirs(output_folder, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_file_path = os.path.join(output_folder, f"{es_index}_{timestamp}.csv")
+
+    if not is_valid_linux_path(es_index):
+        print("Error: Output.folder path is invalid")
+        sys.exit(1)
+
     is_enable_stdin_password = os.getenv("enable.env.password", "").lower()
     if is_enable_stdin_password == "true":
         opengauss_password = os.getenv("openGauss.password", "").strip()
@@ -69,13 +115,13 @@ def read_config(config_file='config.ini'):
             sys.exit(1)
         db_password = opengauss_password
 
-# 从 Elasticsearch 获取数据
 def fetch_data_from_es():
+    """Fetch doc model from Elasticsearch"""
     query = {
         "query": {
             "match_all": {}
         },
-        "_source": True  # 获取所有字段
+        "_source": True
     }
     response = requests.get(f'{es_url}/{es_index}/_search', json=query)
     if response.status_code == 200:
@@ -83,120 +129,129 @@ def fetch_data_from_es():
     else:
         raise Exception(f"Failed to fetch data from Elasticsearch: {response.status_code}, {response.text}")
 
-
-# 获取索引映射信息
-def fetch_mapping(es_url, es_index):
+def fetch_mapping():
+    """Fetch index mapping from Elasticsearch"""
     response = requests.get(f'{es_url}/{es_index}/_mapping')
     if response.status_code == 200:
         return response.json()
     else:
         raise Exception(f"Failed to fetch mapping: {response.status_code}, {response.text}")
 
-
-def get_field_type(es_url: str, es_index: str, field_name: str) -> str:
-    """ 获取 Elasticsearch 字段的类型 """
-    mappings = fetch_mapping(es_url, es_index)
-    print(f"Field name: {field_name}")
-    print(f"map: {mappings}")
-    # 获取 properties 字段
-    properties = mappings.get(es_index, {}).get('mappings', {}).get('properties', {})
-    # 遍历并查找字段的类型
-    field_type = 'text'  # 默认类型为 'text'
-    if field_name in properties:
-        field_type = properties[field_name].get('type', 'text')
-    elif 'fields' in properties.get(field_name, {}):
-        # 如果字段有子字段（比如 keyword），获取 'keyword' 类型
-        field_type = properties[field_name]['fields'].get('keyword', {}).get('type', 'text')
-    return field_type
-
 def convert_dict_to_jsonb(value):
-    # 如果 value 是字典类型，递归调用该函数处理其中的每个元素
+    """Convert dict to jsonb"""
     if isinstance(value, dict):
-        return json.dumps({k: convert_dict_to_jsonb(v) for k, v in value.items()})
-    # 如果 value 是列表类型，递归处理其中的每个元素
+        return json.dumps({k: convert_dict_to_jsonb(v) for k, v in value.items()},
+                          ensure_ascii=False)
     elif isinstance(value, list):
-        return json.dumps([convert_dict_to_jsonb(v) for v in value])
-    # 如果是其他类型（如字符串、数字），直接返回该值
+        return json.dumps([convert_dict_to_jsonb(v) for v in value],
+                          ensure_ascii=False)
     else:
         return value
 
-# 映射 Elasticsearch 数据类型到 openGauss 类型
-def map_to_opengauss_type(es_type: str, dim: Optional[int] = None) -> str:
+def map_to_opengauss_type(es_type, dim: Optional[int] = None) -> str:
     """Map Elasticsearch types to openGauss types"""
     if isinstance(es_type, (dict, list)):  # 如果 es_type 是字典类型，则需要特殊处理
         return 'JSONB'
     type_map = {
-        "long": "BIGINT",  # 大整数
-        "integer": "INTEGER",  # 整数
-        "short": "SMALLINT",  # 小整数
-        "byte": "SMALLINT",  # 小字节
-        "float": "REAL",  # 浮点数
-        "double": "DOUBLE PRECISION",  # 双精度浮点数
-        "boolean": "BOOLEAN",  # 布尔值
-        "keyword": "VARCHAR",  # 关键字（字符串类型）
-        "text": "TEXT",  # 长文本
-        "date": "TIMESTAMP",  # 日期类型
-        "binary": "BYTEA",  # 二进制数据
-        "geo_point": "POINT",  # 地理坐标（经纬度）
-        "geo_shape": "GEOMETRY",  # 复杂地理形状
-        "nested": "JSONB",  # 嵌套对象
-        "object": "JSONB",  # 对象
-        "ip": "INET",  # IP 地址
-        "scaled_float": "REAL",  # 扩展浮动类型（带缩放的浮动）
-        "float_vector": f"VECTOR({dim})" if dim else "VECTOR",  # 浮动向量类型
-        "dense_vector": f"VECTOR({dim})" if dim else "VECTOR",  # 稠密向量类型
-        "binary_vector": f"BIT({dim})" if dim else "BIT",  # 二进制向量类型
-        "half_float": "REAL",  # 半精度浮动
-        "unsigned_long": "BIGINT",  # 无符号长整数
-        "date_nanos": "TIMESTAMP",  # 高精度日期时间
-        "alias": "TEXT",  # 别名（通常是字段的别名）
+        "long": "BIGINT",
+        "integer": "INTEGER",
+        "short": "SMALLINT",
+        "byte": "SMALLINT",
+        "float": "REAL",
+        "double": "DOUBLE PRECISION",
+        "boolean": "BOOLEAN",
+        "keyword": "VARCHAR",
+        "text": "TEXT",
+        "date": "TIMESTAMP",
+        "binary": "BYTEA",
+        "geo_point": "POINT",
+        "geo_shape": "GEOMETRY",
+        "nested": "JSONB",
+        "object": "JSONB",
+        "ip": "INET",
+        "scaled_float": "REAL",
+        "float_vector": f"VECTOR({dim})" if dim else "VECTOR",
+        "dense_vector": f"VECTOR({dim})" if dim else "VECTOR",
+        "binary_vector": f"BIT({dim})" if dim else "BIT",
+        "half_float": "REAL",
+        "unsigned_long": "BIGINT",
+        "date_nanos": "TIMESTAMP",
+        "alias": "TEXT",
     }
 
-    # 如果 es_type 在映射表中，直接返回映射后的类型
     if es_type in type_map:
         print(f"es_type:{es_type} ----- og_type: {type_map[es_type]}")
         return type_map[es_type]
     else:
         print(f"Warning: Unsupported Elasticsearch type '{es_type}', defaulting to 'TEXT'")
-        return 'TEXT'  # 默认使用 TEXT 类型
+        return 'TEXT'
 
-
-# 函数：将非法字符替换为下划线
-def sanitize_name(field_name: str) -> str:
-    """处理字段名，确保不会与保留字冲突，且将非字母数字字符替换为下划线"""
-    # 将所有非字母数字字符替换为下划线
+def sanitize_name(field_name) -> str:
+    """Standardize field name and avoid conflicts with reserved keywords"""
     sanitized_name = re.sub(r'[^a-zA-Z0-9_]', '_', field_name)
 
-    # 如果是保留字，则加双引号
     if sanitized_name.lower() in RESERVED_KEYWORDS:
         return f'"{sanitized_name}"'
 
     return sanitized_name
 
+def get_table_fields() -> List[Tuple[str, str]]:
+    """Get openGauss table fields"""
+    mapping_data = fetch_mapping()
+    if not mapping_data:
+        print(f"WARN: Cannot found mapping data for '{es_index}'")
+        return []
 
-# 创建 openGauss 表
-def create_table_in_opengauss(es_url, es_index, table_name):
-    columns_definition = ['id VARCHAR PRIMARY KEY']  # 增加 id 主键字段
-    seen_fields = set()  # 用于记录已经处理过的字段名
+    mapping_properties = mapping_data.get(es_index, {}).get('mappings', {}).get('properties', {})
+    if not mapping_properties:
+        print(f"WARN: Cannot found mapping data for '{es_index}'")
+        return []
 
-    # 获取 properties 字段
-    properties = fetch_mapping(es_url, es_index).get(es_index, {}).get('mappings', {}).get('properties', {})
-
-    # 遍历每个字段
-    for field, field_info in properties.items():
-        # 如果该字段已经处理过，跳过
-        if field in seen_fields:
+    field_dict = {}
+    seen_fields = set()
+    for field_name, field_info in mapping_properties.items():
+        if field_name in seen_fields:
             continue
-        # 获取字段的类型
-        es_type = field_info.get('type', 'text')
-        dim = field_info.get('dims', 0) if isinstance(field_info, dict) else 0
+
+        es_type = 'text'
+        dim = 0
+        if isinstance(field_info, dict):
+            es_type = field_info.get('type', 'text')
+            dim = field_info.get('dims', 0)
         field_type = map_to_opengauss_type(es_type, dim)
-        sanitized_field_name = sanitize_name(field)
-        seen_fields.add(field)
-        columns_definition.append(f"{sanitized_field_name} {field_type}")
-    # 生成表创建 SQL
+        sanitized_name = sanitize_name(field_name)
+        field_dict[sanitized_name] = field_type
+        seen_fields.add(field_name)
+
+    doc_id = "doc_id"
+    while doc_id in field_dict:
+        doc_id += "_"
+
+    table_fields = [(doc_id, "VARCHAR PRIMARY KEY")]
+    es_data = fetch_data_from_es()
+    if es_data:
+        source_fields = es_data[0].get('_source', {}).keys()
+        doc_fields = [sanitize_name(col) for col in source_fields]
+        for doc_field in doc_fields:
+            if doc_field in field_dict:
+                field_type = field_dict[doc_field]
+                table_fields.append((doc_field, field_type))
+    else:
+        for doc_field in field_dict:
+            table_fields.append((doc_field, field_dict[doc_field]))
+
+    print(f"Index fields: {[name for name, _ in table_fields]}")
+    return table_fields
+
+def create_table_in_opengauss(index_fields) -> None:
+    """Create table in openGauss"""
+    columns_definition = []
+    for field_name, field_type in index_fields:
+        columns_definition.append(f"{field_name} {field_type}")
+
     columns_str = ", ".join(columns_definition)
-    create_table_sql = f"DROP TABLE IF EXISTS {sanitize_name(table_name)}; CREATE TABLE {sanitize_name(table_name)} ({columns_str});"
+    create_table_sql = (f"DROP TABLE IF EXISTS {sanitize_name(db_table)}; "
+                        f"CREATE TABLE {sanitize_name(db_table)} ({columns_str});")
     try:
         # 建立数据库连接并执行创建表 SQL
         connection = psycopg2.connect(
@@ -209,67 +264,192 @@ def create_table_in_opengauss(es_url, es_index, table_name):
         cursor = connection.cursor()
         cursor.execute(create_table_sql)
         connection.commit()
-        print(f"Table {sanitize_name(table_name)} created successfully.")
+        print(f"Table {sanitize_name(db_table)} created successfully.")
     finally:
         if connection:
             cursor.close()
             connection.close()
 
-# 将数据插入到 openGauss 表中
-def insert_data_to_opengauss(table_name, es_source, es_id):
+def generate_chunk_filename(chunk_id) -> str:
+    """Generate CSV chunk filename"""
+    base_name, _ = os.path.splitext(csv_file_path)
+    return f"{base_name}_part{chunk_id}.csv"
+
+def write_to_csv_file(chunk_file, fields, values, chunk_size: int = 1000) -> None:
+    """Write chunk to csv file"""
+    if not values:
+        return
+
     try:
-        # 建立数据库连接
-        connection = psycopg2.connect(
-            host=db_host,
-            port=db_port,
-            dbname=db_name,
-            user=db_user,
-            password=db_password,
-            client_encoding='utf8'
+        with open(chunk_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(fields)
+
+            total_rows = len(values)
+            for start_idx in range(0, total_rows, chunk_size):
+                end_idx = min(start_idx + chunk_size, total_rows)
+                writer.writerows(values[start_idx:end_idx])
+
+    except (IOError, csv.Error) as e:
+        print(f"Failed to write CSV file {chunk_file}: {e}")
+        raise
+
+def build_search_query(batch_size, search_after) -> Dict[str, Any]:
+    """Build Elasticsearch search query body"""
+    query = {
+        "query": {
+            "match_all": {}
+        },
+        "_source": True,
+        "size": batch_size,
+        "sort": [
+            {"_id": "asc"}
+        ]
+    }
+
+    if search_after:
+        query["search_after"] = search_after
+
+    return query
+
+def execute_es_query(query) -> List[Dict]:
+    """Execute Elasticsearch query"""
+    try:
+        url = f'{es_url.rstrip("/")}/{es_index}/_search'
+        response = requests.post(
+            url,
+            json=query,
+            headers={'Content-Type': 'application/json'},
+            timeout=60
         )
-        cursor = connection.cursor()
+        response.raise_for_status()
 
-        # 动态生成插入 SQL 语句
-        sanitized_columns = ['id'] + [sanitize_name(col) for col in es_source.keys()]  # 清理列名
-        values = [es_id]
+        data = response.json()
+        return data.get('hits', {}).get('hits', [])
 
-        # 处理每一列的数据类型，必要时进行转换
-        for column in es_source:
-            value = es_source[column]
+    except requests.exceptions.Timeout as e:
+        print(f"Query timed out: {e}")
+        raise
+    except requests.exceptions.RequestException as e:
+        print(f"RequestException: {e}")
+        raise
+    except (KeyError, ValueError) as e:
+        print(f"Failed to parse response from Elasticsearch: {e}")
+        raise
+
+def parse_elasticsearch_hits(hits) -> List[List[Any]]:
+    """Parse Elasticsearch hits to table rows"""
+    if not hits:
+        return []
+
+    rows = []
+    for hit in hits:
+        es_id = hit.get('_id', '')
+        source_data = hit.get('_source', {})
+
+        row_values = [es_id]
+        for column, value in source_data.items():
             if isinstance(value, (dict, list)):
-                # 如果是字典类型，转换为 JSONB
                 value = convert_dict_to_jsonb(value)
-            values.append(value)
+            row_values.append(value)
 
-        columns_str = ', '.join(sanitized_columns)
-        values_str = ', '.join(['%s'] * len(values))
+        rows.append(row_values)
 
-        insert_sql = f"INSERT INTO {sanitize_name(table_name)} ({columns_str}) VALUES ({values_str})"
-        cursor.execute(insert_sql, values)
+    return rows
 
-        # 提交事务
-        connection.commit()
+def import_to_opengauss(file_paths, fields) -> None:
+    """Import CSV data to openGauss"""
+    conn = psycopg2.connect(
+        host=db_host,
+        port=db_port,
+        dbname=db_name,
+        user=db_user,
+        password=db_password,
+        client_encoding='utf8'
+    )
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(f"TRUNCATE TABLE {db_table};")
+        conn.commit()
+
+        total_rows = 0
+        for i, csv_file in enumerate(file_paths, 1):
+            with open(csv_file, 'rb') as f:
+                copy_sql = f"""
+                    COPY {db_table} ({', '.join(fields)})
+                    FROM STDIN WITH (FORMAT CSV, HEADER, NULL 'NULL', ENCODING 'UTF8');
+                    """
+                cursor.copy_expert(copy_sql, f)
+                conn.commit()
+
+                rows_imported = cursor.rowcount
+                total_rows += rows_imported
+                print(f"Imported {rows_imported} rows from {csv_file}")
+
+        print(f"Total imported: {total_rows} rows")
+    except Exception as e:
+        conn.rollback()
+        print(f"Import failed: {e}")
+        raise
     finally:
-        if connection:
-            cursor.close()
-            connection.close()
+        cursor.close()
 
-# 主函数
+def migration(index_fields):
+    """Migration Elasticsearch index docs to openGauss table"""
+    file_paths = []
+    fields = [key for key, _ in index_fields]
+    search_after = None
+    batch_size = batch_query_size
+    total_records = 0
+
+    print("Start to export data...")
+    while True:
+        query = build_search_query(batch_size, search_after)
+        hits = execute_es_query(query)
+        if not hits:
+            break
+
+        rows = parse_elasticsearch_hits(hits)
+        batch_len = len(rows)
+        total_records += batch_len
+
+        chunk_id = len(file_paths) + 1
+        chunk_file = generate_chunk_filename(chunk_id)
+        file_paths.append(chunk_file)
+
+        write_to_csv_file(chunk_file, fields, rows)
+        print(f"Created chunk {chunk_id}, chunk size: {batch_len} rows")
+
+        last_hit = hits[-1]
+        search_after = last_hit['sort'] if 'sort' in last_hit else [last_hit['_id']]
+
+
+        if len(hits) < batch_size:
+            break
+
+    print("Finish exporting data, total records: ", total_records)
+
+    import_to_opengauss(file_paths, fields)
+
+    if cleanup_temp_files:
+        for f in file_paths:
+            try:
+                os.remove(f)
+            except Exception as e:
+                print(f"Failed to delete {f}: {e}")
+
+    print(f"Migration completed.")
+
 def main():
     try:
         read_config()
-        es_data = fetch_data_from_es()
-
-        create_table_in_opengauss(es_url, es_index, db_table)
-        for record in es_data:
-            es_source = record['_source']  # 获取 Elasticsearch 文档中的数据
-            es_id = record['_id']
-            insert_data_to_opengauss(db_table, es_source, es_id)
+        index_fields = get_table_fields()
+        create_table_in_opengauss(index_fields)
+        migration(index_fields)
         print(f"Successfully inserted data into table {db_table}.")
-
     except Exception as e:
         print(f"Migration failed: {e}")
-
 
 if __name__ == "__main__":
     main()

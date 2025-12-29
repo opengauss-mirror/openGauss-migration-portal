@@ -115,6 +115,7 @@ public abstract class ElasticsearchMigrationToolTask extends ToolTask {
      */
     protected void afterMigration() {
         shutdownExecutorService();
+        cleanTmpFiles();
     }
 
     private void awaitMigrationCompletion() {
@@ -162,6 +163,15 @@ public abstract class ElasticsearchMigrationToolTask extends ToolTask {
         } catch (InterruptedException e) {
             LOGGER.warn("Migration executor service shutdown interrupted");
             executorService.shutdownNow();
+        }
+    }
+
+    private void cleanTmpFiles() {
+        String tmpDirPath = taskWorkspace.getTmpDirPath();
+        try {
+            FileUtils.cleanDirectory(tmpDirPath);
+        } catch (IOException e) {
+            LOGGER.warn("Clean tmp files failed, error: {}", e.getMessage());
         }
     }
 

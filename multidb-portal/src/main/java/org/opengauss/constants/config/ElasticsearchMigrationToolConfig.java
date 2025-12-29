@@ -61,6 +61,16 @@ public class ElasticsearchMigrationToolConfig {
     public static final String TABLE_OPENGAUSS_TABLE_NAME = "Table.opengauss_table_name";
 
     /**
+     * Output folder path
+     */
+    public static final String OUTPUT_FOLDER = "Output.folder";
+
+    /**
+     * Whether to clean up temporary files after migration
+     */
+    public static final String MIGRATION_CLEANUP_TEMP_FILES = "Migration.cleanup_temp_files";
+
+    /**
      * Enable env password
      */
     public static final String ENABLE_ENV_PASSWORD = "enable.env.password";
