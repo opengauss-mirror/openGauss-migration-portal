@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.config.ElasticsearchMigrationToolConfig;
 import org.opengauss.constants.config.MigrationConfig;
 import org.opengauss.domain.migration.config.ElasticsearchMigrationConfigDto;
+import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.exceptions.ConfigException;
 import org.opengauss.utils.StringUtils;
 
@@ -33,9 +34,11 @@ public class ElasticsearchMigrationConfigHelper {
      * Get elasticsearch full migration config
      *
      * @param dto elasticsearch migration config dto
+     * @param workspace task workspace
      * @return elasticsearch full migration config
      */
-    public static Map<String, String> elasticsearchFullMigrationConfig(ElasticsearchMigrationConfigDto dto) {
+    public static Map<String, String> elasticsearchFullMigrationConfig(
+            ElasticsearchMigrationConfigDto dto, TaskWorkspace workspace) {
         HashMap<String, String> changeParams = new HashMap<>();
         changeParams.put(ElasticsearchMigrationToolConfig.ELASTICSEARCH_HOST, dto.getElasticsearchHost());
         if (!dto.isElasticsearchAnonymousAccess()) {
@@ -47,6 +50,8 @@ public class ElasticsearchMigrationConfigHelper {
         changeParams.put(ElasticsearchMigrationToolConfig.OPENGAUSS_DATABASE, dto.getOpengaussDatabaseName());
         changeParams.put(ElasticsearchMigrationToolConfig.OPENGAUSS_USERNAME, dto.getOpengaussDatabaseUsername());
 
+        changeParams.put(ElasticsearchMigrationToolConfig.OUTPUT_FOLDER, workspace.getTmpDirPath());
+        changeParams.put(ElasticsearchMigrationToolConfig.MIGRATION_CLEANUP_TEMP_FILES, "true");
         return changeParams;
     }
 
