@@ -124,6 +124,10 @@ def fetch_data_from_es():
         "_source": True
     }
     response = requests.get(f'{es_url}/{es_index}/_search', json=query)
+
+    if response.json().get('error'):
+        print(f"Fetch index data failed: {response.json()}")
+
     if response.status_code == 200:
         return response.json()['hits']['hits']
     else:
@@ -132,6 +136,10 @@ def fetch_data_from_es():
 def fetch_mapping():
     """Fetch index mapping from Elasticsearch"""
     response = requests.get(f'{es_url}/{es_index}/_mapping')
+
+    if response.json().get('error'):
+        print(f"Fetch index mapping failed: {response.json()}")
+
     if response.status_code == 200:
         return response.json()
     else:
@@ -322,11 +330,13 @@ def execute_es_query(query) -> List[Dict]:
             headers={'Content-Type': 'application/json'},
             timeout=60
         )
-        response.raise_for_status()
 
         data = response.json()
-        return data.get('hits', {}).get('hits', [])
+        if data.get('error'):
+            print(f"Query index failed: {data}")
 
+        response.raise_for_status()
+        return data.get('hits', {}).get('hits', [])
     except requests.exceptions.Timeout as e:
         print(f"Query timed out: {e}")
         raise
