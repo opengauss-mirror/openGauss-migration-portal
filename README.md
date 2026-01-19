@@ -150,7 +150,7 @@ sh gs_rep_portal.sh help &
 | 反向迁移                           | confluent、debezium-connector-opengauss |
 | 数据校验（包括全量校验和增量校验） | confluent、datacheck                    |
 
-各工具推荐版本：
+各工具版本：
 
 | 工具                          | 版本       |
 |-----------------------------|----------|
@@ -160,56 +160,11 @@ sh gs_rep_portal.sh help &
 | replicate-mysql2openGauss   | 7.0.0rc3 |
 | replicate-openGauss2mysql   | 7.0.0rc3 |
 
-在/ops/portal/config目录的toolspath.properties文件中修改工具安装路径，其中文件夹要以/结尾：
+使用以下指令可以安装所有迁移工具：
 
-| 参数名称                     | 参数说明                                                     |
-| ---------------------------- | ------------------------------------------------------------ |
-| chameleon.venv.path          | 变色龙虚拟环境所在路径                                       |
-| chameleon.path               | 变色龙工作目录                                               |
-| chameleon.pkg.url            | 变色龙的安装包下载链接                                       |
-| chameleon.pkg.path           | 变色龙的安装包所在路径                                       |
-| chameleon.pkg.name           | 变色龙的安装包名                                             |
-| debezium.path                | debezium+confluent所在路径（默认confluent、connector都安装在该路径下） |
-| confluent.path               | confluent所在路径                                            |
-| connector.path               | connector所在路径                                            |
-| connector.mysql.path         | mysql connector所在路径                                      |
-| connector.opengauss.path     | opengauss connector所在路径                                  |
-| confluent.pkg.url            | confluent安装包下载链接                                      |
-| connector.mysql.pkg.url      | mysql connector安装包下载链接                                |
-| connector.opengauss.pkg.url  | opengauss connector安装包下载链接                            |
-| debezium.pkg.path            | debezium+confluent安装包所在路径                             |
-| confluent.pkg.name           | confluent安装包名                                            |
-| connector.mysql.pkg.name     | mysql connector安装包名                                      |
-| connector.opengauss.pkg.name | opengauss connector安装包名                                  |
-| datacheck.pkg.url            | datacheck安装包下载链接                                      |
-| datacheck.install.path       | datacheck安装路径                                            |
-| datacheck.path               | datacheck所在路径                                            |
-| datacheck.pkg.path           | datacheck安装包所在路径                                      |
-| datacheck.pkg.name           | datacheck安装包名                                            |
-| datacheck.extract.jar.name   | datacheck抽取jar包名                                         |
-| datacheck.check.jar.name     | datacheck校验jar包名                                         |
-
-工具的安装支持离线安装和在线安装：
-
-- 在线安装：将会从指定链接下载安装包到安装包指定位置，并从指定位置获取安装包解压并进行安装。
-- 离线安装：从指定位置获取安装包解压并进行安装。
-
-如果输入命令时不指定安装方式，那么portal会根据/ops/portal/config目录的migrationConfig.properties文件中参数决定安装方式：
-
-| 参数名称                                              | 参数说明                                              |
-| ----------------------------------------------------- | ----------------------------------------------------- |
-| default.install.mysql.full.migration.tools.way        | 全量迁移工具默认安装方式：offline为离线，online为在线 |
-| default.install.mysql.incremental.migration.tools.way | 增量迁移工具默认安装方式：offline为离线，online为在线 |
-| default.install.mysql.datacheck.tools.way             | 数据校验工具默认安装方式：offline为离线，online为在线 |
-| default.install.mysql.reverse.migration.tools.way     | 反向迁移工具默认安装方式：offline为离线，online为在线 |
-
-使用以下指令可以安装对应的迁移工具，举例：
-
-   ```
-sh gs_rep_portal.sh install_mysql_all_migration_tools 1 &
-   ```
-
-在命令行运行这条命令可以安装所有迁移功能用到的迁移工具。
+```sh
+sh gs_rep_portal.sh install_mysql_all_migration_tools 1
+```
 
 #### 准备动作
 
@@ -222,24 +177,6 @@ sh gs_rep_portal.sh stop_kafka a
 启动准备动作时的命令：
 
 sh gs_rep_portal.sh start_kafka a
-
-### 安装指令
-
-| 指令名称                                          | 指令说明                                          |
-| ------------------------------------------------- | ------------------------------------------------- |
-| install_mysql_full_migration_tools_online         | 在线安装mysql全量迁移工具                         |
-| install_mysql_full_migration_tools_offline        | 离线安装mysql全量迁移工具                         |
-| install_mysql_full_migration_tools                | 安装mysql全量迁移工具（安装方式由配置文件指定）   |
-| install_mysql_incremental_migration_tools_online  | 在线安装mysql增量迁移工具                         |
-| install_mysql_incremental_migration_tools_offline | 离线安装mysql增量迁移工具                         |
-| install_mysql_incremental_migration_tools         | 安装mysql增量迁移工具（安装方式由配置文件指定）   |
-| install_mysql_reverse_migration_tools_online      | 在线安装mysql反向迁移工具                         |
-| install_mysql_reverse_migration_tools_offline     | 离线安装mysql反向迁移工具                         |
-| install_mysql_reverse_migration_tools             | 安装mysql反向迁移工具（安装方式由配置文件指定）   |
-| install_mysql_datacheck_tools_online              | 在线安装mysql数据校验工具                         |
-| install_mysql_datacheck_tools_offline             | 离线安装mysql数据校验工具                         |
-| install_mysql_datacheck_tools                     | 安装mysql数据校验工具（安装方式由配置文件指定）   |
-| install_mysql_all_migration_tools                 | 安装mysql迁移工具（各工具安装方式由配置文件指定） |
 
 #### 离线安装特性说明
 
