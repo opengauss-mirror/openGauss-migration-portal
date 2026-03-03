@@ -56,7 +56,7 @@ public interface Parameter {
     /**
      * The constant PORTAL_NAME.
      */
-    String PORTAL_NAME = "portalControl-7.0.0rc3-exec.jar";
+    String PORTAL_NAME = "portalControl-7.0.0-RC3-exec.jar";
 
     /**
      * The constant INSTALL_ALL_MIGRATION_TOOLS.
@@ -102,6 +102,11 @@ public interface Parameter {
      * The constant TOOLS_VERSION.
      */
     String TOOL_VERSION = "tools.version";
+
+    /**
+     * The constant TOOL_CHAMELEON_VERSION chameleon.version.
+     */
+    String TOOL_CHAMELEON_VERSION = "chameleon.version";
 
     /**
      * The constant TOOLS_VERSION.

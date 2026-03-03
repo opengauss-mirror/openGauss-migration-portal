@@ -44,11 +44,11 @@ portal/
 		chameleon/
 			chameleon-7.0.0rc3-py3-none-any.whl
 		datacheck/
-			openGauss-DataCheck-7.0.0rc3.tar.gz
+			openGauss-DataCheck-7.0.0-RC3.tar.gz
 		debezium/
 			confluent-community-5.5.1-2.12.zip
-			openGauss-IncReplicateMysql2OpenGauss-7.0.0rc3.tar.gz
-			openGauss-IncReplicateOpenGauss2Mysql-7.0.0rc3.tar.gz
+			openGauss-IncReplicateMysql2OpenGauss-7.0.0-RC3.tar.gz
+			openGauss-IncReplicateOpenGauss2Mysql-7.0.0-RC3.tar.gz
 	tmp/
 	tools/
 		chameleon/
@@ -59,7 +59,7 @@ portal/
 				debezium-connector-mysql/
 				debezium-connector-opengauss/
 	portal.portId.lock
-	portalControl-7.0.0rc3-exec.jar
+	portalControl-7.0.0-RC3-exec.jar
 	gs_datacheck.sh
 	gs_mysync.sh
 	gs_rep_portal.sh
@@ -79,7 +79,7 @@ portal的安装目录默认为/ops/portal，可根据实际需要更换。
 git clone https://gitee.com/opengauss/openGauss-migration-portal.git
 ```
 
-2.使用maven命令编译源代码获得portalControl-7.0.0rc3-exec.jar，并将jar包放在/ops/portal下。
+2.使用maven命令编译源代码获得portalControl-7.0.0-RC3-exec.jar，并将jar包放在/ops/portal下。
 
 ```
 mvn clean package -Dmaven.test.skip=true
@@ -97,24 +97,24 @@ maven版本：3.8.1以上
 
 | 系统名称           | 系统架构 | 下载链接                                                                                                                 |
 |:---------------| -------- |----------------------------------------------------------------------------------------------------------------------|
-| centos7        | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0rc3-x86_64.tar.gz         |
-| openEuler20.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0rc3-x86_64.tar.gz  |
-| openEuler20.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0rc3-aarch64.tar.gz |
-| openEuler22.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0rc3-x86_64.tar.gz  |
-| openEuler22.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0rc3-aarch64.tar.gz |
-| openEuler24.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0rc3-x86_64.tar.gz  |
-| openEuler24.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0rc3-aarch64.tar.gz |
+| centos7        | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-RC3-x86_64.tar.gz        |
+| openEuler20.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0-RC3-x86_64.tar.gz  |
+| openEuler20.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0-RC3-aarch64.tar.gz |
+| openEuler22.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0-RC3-x86_64.tar.gz  |
+| openEuler22.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0-RC3-aarch64.tar.gz |
+| openEuler24.03 | x86_64   | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0-RC3-x86_64.tar.gz  |
+| openEuler24.03 | aarch64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0-RC3-aarch64.tar.gz |
 
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0rc3-x86_64.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-RC3-x86_64.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
 
    ```
-tar -zxvf PortalControl-7.0.0rc3-x86_64.tar.gz
+tar -zxvf PortalControl-7.0.0-RC3-x86_64.tar.gz
    ```
 
 ## 启动方式
@@ -156,9 +156,9 @@ sh gs_rep_portal.sh help &
 |-----------------------------|----------|
 | chameleon                   | 7.0.0rc3 |
 | confluent                   | 5.5.1    |
-| datacheck                   | 7.0.0rc3 |
-| replicate-mysql2openGauss   | 7.0.0rc3 |
-| replicate-openGauss2mysql   | 7.0.0rc3 |
+| datacheck                   | 7.0.0-RC3 |
+| replicate-mysql2openGauss   | 7.0.0-RC3 |
+| replicate-openGauss2mysql   | 7.0.0-RC3 |
 
 使用以下指令可以安装所有迁移工具：
 
@@ -426,13 +426,13 @@ sh gs_rep_portal.sh uninstall_mysql_all_migration_tools 1 &
 1.下载gs_rep_portal安装包
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0rc3-x86_64.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-RC3-x86_64.tar.gz
    ```
 
 2.解压gs_rep_portal安装包
 
    ```
-tar -zxvf PortalControl-7.0.0rc3-x86_64.tar.gz
+tar -zxvf PortalControl-7.0.0-RC3-x86_64.tar.gz
    ```
 
 3.在/ops/portal/config目录的toolspath.properties文件中修改安装路径，然后启动命令安装
