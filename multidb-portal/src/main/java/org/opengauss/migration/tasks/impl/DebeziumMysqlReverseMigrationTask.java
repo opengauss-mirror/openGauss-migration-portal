@@ -94,6 +94,7 @@ public class DebeziumMysqlReverseMigrationTask extends DebeziumTask implements R
         cleanHistoryFiles();
 
         try (Connection connection = JdbcUtils.getOpengaussConnection(migrationConfigDto.getOpenGaussConnectInfo())) {
+            OpenGaussUtils.openDolphinSqlModeAnsiQuotes(connection);
             if (!(connection instanceof PgConnection)) {
                 throw new IllegalArgumentException("Connection is not an instance of PgConnection");
             }
@@ -147,6 +148,7 @@ public class DebeziumMysqlReverseMigrationTask extends DebeziumTask implements R
     public void afterTask() {
         cleanTopics();
         try (Connection connection = JdbcUtils.getOpengaussConnection(migrationConfigDto.getOpenGaussConnectInfo())) {
+            OpenGaussUtils.openDolphinSqlModeAnsiQuotes(connection);
             if (!(connection instanceof PgConnection)) {
                 throw new IllegalArgumentException("Connection is not an instance of PgConnection");
             }

@@ -15,8 +15,13 @@
 
 package org.opengauss.portalcontroller.task;
 
+import static org.opengauss.portalcontroller.PortalControl.errorMsg;
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
+
 import com.alibaba.fastjson.JSON;
+
 import lombok.Getter;
+
 import org.apache.commons.io.FileUtils;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
@@ -27,8 +32,8 @@ import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
 import org.opengauss.portalcontroller.constant.LogParseConstants;
 import org.opengauss.portalcontroller.constant.Method;
-import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.constant.Mysql;
+import org.opengauss.portalcontroller.constant.Status;
 import org.opengauss.portalcontroller.entity.model.DebeziumProgressFileMonitor;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
@@ -77,9 +82,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-
-import static org.opengauss.portalcontroller.PortalControl.errorMsg;
-import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
 /**
  * Plan.
@@ -903,8 +905,8 @@ public final class Plan {
                 && PortalControl.toolsMigrationParametersTable.get(Check.DROP_LOGICAL_SLOT).equals("true")) {
             try (PgConnection conn = JdbcUtils.getPgConnection()) {
                 List<String> schemaTables = JdbcUtils.getMigrationSchemaTables(conn);
-                JdbcUtils.changeAllTable(conn, schemaTables);
                 JdbcUtils.dropLogicalReplicationSlot(conn);
+                JdbcUtils.changeAllTable(conn, schemaTables, false);
             } catch (SQLException e) {
                 LOGGER.error("{}Failed to connect to openGauss", ErrorCode.SQL_EXCEPTION, e);
             }

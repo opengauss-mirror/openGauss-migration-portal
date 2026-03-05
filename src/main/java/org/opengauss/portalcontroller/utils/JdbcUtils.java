@@ -158,11 +158,29 @@ public class JdbcUtils {
         try {
             conn = (PgConnection) DriverManager.getConnection(
                     getOpengaussJdbcUrl(), hashtable.get(Opengauss.USER), hashtable.get(Opengauss.PASSWORD));
+            openDolphinSqlModeAnsiQuotes(conn);
         } catch (SQLException e) {
             LOGGER.error("{}Failed to get openGauss connection. Please check the connect info and openGauss status",
                     ErrorCode.SQL_EXCEPTION, e);
         }
         return conn;
+    }
+
+    private static void openDolphinSqlModeAnsiQuotes(PgConnection connection) {
+        String showDolphinSqlMode = "show dolphin.sql_mode;";
+        String setDolphinSqlModeModel = "set dolphin.sql_mode = '%s';";
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(showDolphinSqlMode)) {
+            if (rs.next()) {
+                String currentValue = rs.getString("dolphin.sql_mode");
+                if (!currentValue.contains("ansi_quotes")) {
+                    statement.executeUpdate(String.format(setDolphinSqlModeModel, currentValue + ",ansi_quotes"));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("{}Failed to open dolphin.sql_mode ansi_quotes. Please check the connect info and openGauss "
+                            + "status", ErrorCode.SQL_EXCEPTION, e);
+        }
     }
 
     /**
@@ -299,17 +317,20 @@ public class JdbcUtils {
      *
      * @param connection connection
      * @param schemaTables table list
+     * @param isFull is full
      */
-    public static void changeAllTable(PgConnection connection, List<String> schemaTables) {
+    public static void changeAllTable(PgConnection connection, List<String> schemaTables, boolean isFull) {
+        String sqlModel = isFull
+                ? "ALTER table \"%s\" replica identity full;"
+                : "ALTER table \"%s\" replica identity default;";
         if (connection != null) {
             try (Statement alterTableStatement = connection.createStatement()) {
                 for (String tableName : schemaTables) {
-                    String alterTableSql = String.format("ALTER table \"%s\" replica identity full;", tableName);
-                    alterTableStatement.execute(alterTableSql);
+                    alterTableStatement.execute(String.format(sqlModel, tableName));
                 }
-                LOGGER.info("Alter all table replica identity full finished.");
+                LOGGER.info("Alter all table replica identity {} finished.", isFull ? "full" : "default");
             } catch (SQLException e) {
-                LOGGER.error("Failed to alter openGauss table replica identity to full", e);
+                LOGGER.error("Failed to alter openGauss table replica identity to {}", isFull ? "full" : "default", e);
             }
         }
     }

@@ -103,6 +103,16 @@ public class SqlConstants {
     public static final String OPENGAUSS_ACCESS_PERMISSIONS = "select datacl from pg_database where datname = ?;";
 
     /**
+     * Show dolphin.sql_mode, support openGauss
+     */
+    public static final String OPENGAUSS_SHOW_DOLPHIN_SQL_MODE = "show dolphin.sql_mode;";
+
+    /**
+     * Set dolphin.sql_mode, support openGauss
+     */
+    public static final String OPENGAUSS_SET_DOLPHIN_SQL_MODE_MODEL = "set dolphin.sql_mode = '%s';";
+
+    /**
      * Select user auth plugin, support MySQL
      */
     public static final String MYSQL_SELECT_USER_AUTH_PLUGIN = "SELECT USER,PLUGIN FROM mysql.user WHERE USER = ?;";
