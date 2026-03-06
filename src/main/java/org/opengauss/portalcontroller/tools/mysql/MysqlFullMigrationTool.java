@@ -151,7 +151,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             }
             Hashtable<String, String> hashtable = PortalControl.toolsConfigParametersTable;
             String chameleonInstallPath = hashtable.get(Chameleon.INSTALL_PATH);
-            String chameleonVersion = "chameleon-" + hashtable.get(Parameter.TOOL_VERSION);
+            String chameleonVersion = "chameleon-" + hashtable.get(Parameter.TOOL_CHAMELEON_VERSION);
             String chameleonInstallLogPath = PathUtils.combainPath(true, PortalControl.portalControlPath
                     + "tools", "chameleon", chameleonVersion, "install_chameleon.log");
             FileUtils.createFile(chameleonInstallPath, false);
