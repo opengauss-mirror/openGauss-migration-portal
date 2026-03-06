@@ -19,6 +19,7 @@ import org.opengauss.migration.verify.mysql.MysqlLowerCaseVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlReversePermissionVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussConnectVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussEnableSlotLogVerifyChain;
+import org.opengauss.migration.verify.opengauss.OpenGaussEnableSubscriptionVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussFullPermissionVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussIncrementalPermissionVerifyChain;
 import org.opengauss.migration.verify.opengauss.OpenGaussReplicationConnectionVerifyChain;
@@ -80,7 +81,8 @@ public class VerifyChainBuilder {
                     .addVerifyChain(new OpenGaussWalLevelVerifyChain())
                     .addVerifyChain(new OpenGaussReplicationConnectionVerifyChain())
                     .addVerifyChain(new OpenGaussReplicationNumberVerifyChain())
-                    .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain());
+                    .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain())
+                    .addVerifyChain(new OpenGaussEnableSubscriptionVerifyChain());
         }
         return builder.build();
     }
@@ -98,7 +100,8 @@ public class VerifyChainBuilder {
                 .addVerifyChain(new OpenGaussReversePermissionVerifyChain())
                 .addVerifyChain(new OpenGaussWalLevelVerifyChain())
                 .addVerifyChain(new OpenGaussReplicationConnectionVerifyChain())
-                .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain());
+                .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain())
+                .addVerifyChain(new OpenGaussEnableSubscriptionVerifyChain());
         return builder.build();
     }
 
@@ -131,7 +134,8 @@ public class VerifyChainBuilder {
                     .addVerifyChain(new OpenGaussWalLevelVerifyChain())
                     .addVerifyChain(new OpenGaussReplicationConnectionVerifyChain())
                     .addVerifyChain(new OpenGaussReplicationNumberVerifyChain())
-                    .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain());
+                    .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain())
+                    .addVerifyChain(new OpenGaussEnableSubscriptionVerifyChain());
         }
         return builder.build();
     }
@@ -149,7 +153,8 @@ public class VerifyChainBuilder {
                 .addVerifyChain(new OpenGaussReversePermissionVerifyChain())
                 .addVerifyChain(new OpenGaussWalLevelVerifyChain())
                 .addVerifyChain(new OpenGaussReplicationConnectionVerifyChain())
-                .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain());
+                .addVerifyChain(new OpenGaussEnableSlotLogVerifyChain())
+                .addVerifyChain(new OpenGaussEnableSubscriptionVerifyChain());
         return builder.build();
     }
 

@@ -56,6 +56,7 @@ public class VerifyChainBuilder {
             .addChain(new EnableSlotLogVerifyChain())
             .addChain(new ReplicationConnectVerifyChain())
             .addChain(new GtidSetVerifyChain())
+            .addChain(new EnableSubscriptionVerifyChain())
             .build();
     }
 
@@ -89,6 +90,7 @@ public class VerifyChainBuilder {
             .addChain(new ReplicationNumberVerifyChain())
             .addChain(new EnableSlotLogVerifyChain())
             .addChain(new ReplicationConnectVerifyChain())
+            .addChain(new EnableSubscriptionVerifyChain())
             .build();
     }
 
