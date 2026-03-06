@@ -12,6 +12,7 @@ import org.opengauss.domain.database.connect.info.OpenGaussDatabaseConnectInfo;
 import org.opengauss.exceptions.ConfigException;
 import org.opengauss.utils.ConsoleReader;
 import org.opengauss.utils.JdbcUtils;
+import org.opengauss.utils.OpenGaussUtils;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -179,7 +180,9 @@ public class MysqlMigrationConfigDto extends AbstractMigrationConfigDto {
 
     @Override
     public Connection getOpenGaussConnection() throws SQLException {
-        return JdbcUtils.getOpengaussConnection(getOpenGaussConnectInfo());
+        Connection connection = JdbcUtils.getOpengaussConnection(getOpenGaussConnectInfo());
+        OpenGaussUtils.openDolphinSqlModeAnsiQuotes(connection);
+        return connection;
     }
 
     @Override

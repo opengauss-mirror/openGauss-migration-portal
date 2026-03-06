@@ -13,6 +13,10 @@
 
 package org.opengauss.portalcontroller.tools.mysql;
 
+import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
+import static org.opengauss.portalcontroller.constant.Debezium.Connector.LOG_PATTERN_PATH;
+
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.jdbc.PgConnection;
 import org.opengauss.portalcontroller.PortalControl;
@@ -25,11 +29,11 @@ import org.opengauss.portalcontroller.constant.MigrationParameters;
 import org.opengauss.portalcontroller.constant.Mysql;
 import org.opengauss.portalcontroller.constant.Offset;
 import org.opengauss.portalcontroller.constant.Opengauss;
+import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.constant.Parameter;
-import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.listener.LogFileListener;
 import org.opengauss.portalcontroller.software.Confluent;
@@ -64,10 +68,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
-import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
-import static org.opengauss.portalcontroller.constant.Debezium.Connector.LOG_PATTERN_PATH;
 
 /**
  * IncrementalMigrationTool
@@ -566,7 +566,7 @@ public class IncrementalMigrationTool extends ParamsConfig implements Tool {
             }
             try (PgConnection conn = JdbcUtils.getPgConnection()) {
                 List<String> schemaTables = JdbcUtils.getMigrationSchemaTables(conn);
-                JdbcUtils.changeAllTable(conn, schemaTables);
+                JdbcUtils.changeAllTable(conn, schemaTables, true);
                 JdbcUtils.createLogicalReplicationSlot(conn);
                 JdbcUtils.createPublication(conn, schemaTables);
             } catch (SQLException e) {

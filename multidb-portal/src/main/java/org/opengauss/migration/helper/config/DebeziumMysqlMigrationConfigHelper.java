@@ -272,6 +272,7 @@ public class DebeziumMysqlMigrationConfigHelper {
         changeParams.put(DebeziumOpenGaussSourceConfig.SLOT_DROP_ON_STOP, false);
 
         try (Connection connection = JdbcUtils.getOpengaussConnection(dto.getOpenGaussConnectInfo())) {
+            OpenGaussUtils.openDolphinSqlModeAnsiQuotes(connection);
             if (!OpenGaussUtils.isSystemAdmin(dto.getOpengaussDatabaseUsername(), connection)) {
                 changeParams.put(DebeziumOpenGaussSourceConfig.PUBLICATION_AUTO_CREATE_MODE, "filtered");
             }
@@ -523,6 +524,7 @@ public class DebeziumMysqlMigrationConfigHelper {
         String oGGtidSql = "select t_binlog_name,i_binlog_position,t_gtid_set from sch_chameleon.t_replica_batch;";
 
         try (Connection opengaussConnection = JdbcUtils.getOpengaussConnection(dto.getOpenGaussConnectInfo())) {
+            OpenGaussUtils.openDolphinSqlModeAnsiQuotes(opengaussConnection);
             if (!OpenGaussUtils.isSchemaExists(snapshotSchema, opengaussConnection)) {
                 return;
             }

@@ -277,4 +277,23 @@ public class OpenGaussUtils {
             throws SQLException {
         PgsqlUtils.alterTableReplicaIdentityDefault(schema, table, connection);
     }
+
+    /**
+     * Open dolphin.sql_mode ansi_quotes.
+     *
+     * @param connection the openGauss connection
+     * @throws SQLException if a database access error occurs
+     */
+    public static void openDolphinSqlModeAnsiQuotes(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(SqlConstants.OPENGAUSS_SHOW_DOLPHIN_SQL_MODE)) {
+            if (rs.next()) {
+                String currentValue = rs.getString("dolphin.sql_mode");
+                if (!currentValue.contains("ansi_quotes")) {
+                    statement.executeUpdate(String.format(
+                            SqlConstants.OPENGAUSS_SET_DOLPHIN_SQL_MODE_MODEL, currentValue + ",ansi_quotes"));
+                }
+            }
+        }
+    }
 }
