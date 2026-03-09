@@ -38,6 +38,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +51,7 @@ import java.util.stream.Collectors;
  */
 public class JdbcUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcUtils.class);
+    private static final Pattern GS_VERSION_PATTERN = Pattern.compile("\\(openGauss\\s(\\d+\\.\\d+\\.\\d+[^\\s]*)");
 
     /**
      * Gets mysql connection.
@@ -279,6 +282,29 @@ public class JdbcUtils {
             }
         }
         return flag;
+    }
+
+    /**
+     * Get the openGauss version
+     *
+     * @param connection connection
+     * @return openGauss version
+     * @throws SQLException if a database access error occurs
+     */
+    public static String getOpenGaussVersionNumber(Connection connection) throws SQLException {
+        String sql = "select version();";
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
+            if (resultSet.next()) {
+                String rsString = resultSet.getString("version");
+                Matcher matcher = GS_VERSION_PATTERN.matcher(rsString);
+                if (matcher.find()) {
+                    return matcher.group(1);
+                }
+                throw new SQLException("Not match openGauss version number in version string: " + rsString);
+            }
+        }
+        throw new SQLException("Not found openGauss version by sql: " + sql);
     }
 
     /**
