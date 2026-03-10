@@ -55,13 +55,13 @@ mutidb_portal 是一款基于Java开发的openGauss数据迁移门户工具，�
 
 | 系统名称       | 架构    | 下载链接                                                     |
 | :------------- | ------- | ------------------------------------------------------------ |
-| CentOS7        | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/openGauss-portal-7.0.0rc3-CentOS7-x86_64.tar.gz |
-| openEuler20.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/openGauss-portal-7.0.0rc3-openEuler20.03-x86_64.tar.gz |
-| openEuler20.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/openGauss-portal-7.0.0rc3-openEuler20.03-aarch64.tar.gz |
-| openEuler22.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/openGauss-portal-7.0.0rc3-openEuler22.03-x86_64.tar.gz |
-| openEuler22.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/openGauss-portal-7.0.0rc3-openEuler22.03-aarch64.tar.gz |
-| openEuler24.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/openGauss-portal-7.0.0rc3-openEuler24.03-x86_64.tar.gz |
-| openEuler24.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/openGauss-portal-7.0.0rc3-openEuler24.03-aarch64.tar.gz |
+| CentOS7        | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/openGauss-portal-7.0.0-RC3-CentOS7-x86_64.tar.gz |
+| openEuler20.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/openGauss-portal-7.0.0-RC3-openEuler20.03-x86_64.tar.gz |
+| openEuler20.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/openGauss-portal-7.0.0-RC3-openEuler20.03-aarch64.tar.gz |
+| openEuler22.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/openGauss-portal-7.0.0-RC3-openEuler22.03-x86_64.tar.gz |
+| openEuler22.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/openGauss-portal-7.0.0-RC3-openEuler22.03-aarch64.tar.gz |
+| openEuler24.03 | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/openGauss-portal-7.0.0-RC3-openEuler24.03-x86_64.tar.gz |
+| openEuler24.03 | aarch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/openGauss-portal-7.0.0-RC3-openEuler24.03-aarch64.tar.gz |
 
 ## 2.2 安装步骤
 
@@ -72,7 +72,7 @@ mutidb_portal 是一款基于Java开发的openGauss数据迁移门户工具，�
 下载匹配自身系统架构的安装包，参考命令如下
 
 ```sh
-wget https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/openGauss-portal-7.0.0rc3-CentOS7-x86_64.tar.gz
+wget https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/openGauss-portal-7.0.0-RC3-CentOS7-x86_64.tar.gz
 ```
 
 （2）解压安装包
@@ -80,7 +80,7 @@ wget https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/ope
 完成安装包下载后，参考如下命令解压安装包
 
 ```sh
-tar -zxvf openGauss-portal-7.0.0rc3-CentOS7-x86_64.tar.gz
+tar -zxvf openGauss-portal-7.0.0-RC3-CentOS7-x86_64.tar.gz
 ```
 
 （3）查看目录结构
@@ -96,7 +96,7 @@ cd portal && ls -l
 ```sh
 bin                                 # 工具操作命令储存目录，其中包含的命令可逐个执行，以学习各命令提示的用法
 config                              # 工具配置文件目录
-openGauss-portal-7.0.0rc3.jar       # 工具核心jar文件
+openGauss-portal-7.0.0-RC3.jar       # 工具核心jar文件
 pkg                                 # 迁移组件储存目录
 template                            # 迁移模版文件储存目录
 ```
