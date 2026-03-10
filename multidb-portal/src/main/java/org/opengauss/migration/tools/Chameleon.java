@@ -36,22 +36,25 @@ public class Chameleon extends Tool {
 
     private Chameleon() {
         Portal portal = Portal.getInstance();
-        String portalVersion = PortalConstants.PORTAL_VERSION;
+        this.chameleonVersion = translateChameleonVersion();
 
         this.pkgDirPath = String.format("%s/%s", portal.getPortalPkgDirPath(),
                 ChameleonConstants.INSTALL_PKG_DIR_NAME);
-        this.pkgName = String.format(ChameleonConstants.INSTALL_PKG_NAME_MODEL, portalVersion,
+        this.pkgName = String.format(ChameleonConstants.INSTALL_PKG_NAME_MODEL, chameleonVersion,
                 portal.getSystemArch());
         this.installDirPath = String.format("%s/%s", portal.getPortalToolsDirPath(),
                 ChameleonConstants.INSTALL_DIR_NAME);
 
-        String chameleonDirName = String.format(ChameleonConstants.CHAMELEON_DIR_HOME_NAME_MODEL, portalVersion);
+        String chameleonDirName = String.format(ChameleonConstants.CHAMELEON_DIR_HOME_NAME_MODEL, chameleonVersion);
         this.chameleonHomeDirPath = String.format("%s/%s", installDirPath, chameleonDirName);
         this.pgChameleonDirPath = ChameleonConstants.PG_CHAMELEON_DIR_PATH.replace("~",
                 System.getProperty("user.home"));
         this.chameleonPath = String.format("%s/%s", chameleonHomeDirPath,
                 ChameleonConstants.CHAMELEON_FILE_RELATIVE_PATH);
-        this.chameleonVersion = portalVersion;
+    }
+
+    private String translateChameleonVersion() {
+        return PortalConstants.PORTAL_VERSION.toLowerCase().replaceAll("-", "");
     }
 
     /**
