@@ -14,6 +14,7 @@
 package org.opengauss.portalcontroller.utils;
 
 import lombok.extern.slf4j.Slf4j;
+
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Command;
@@ -32,10 +33,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 /**
  * FileUtils
@@ -172,6 +175,25 @@ public class FileUtils {
             }
         } else {
             log.info("File " + path + " already exists.");
+        }
+    }
+
+    /**
+     * Delete directory.
+     *
+     * @param dirPath the dir path
+     * @throws IOException the io exception
+     */
+    public static void deleteDirectory(String dirPath) throws IOException {
+        Path pathObject = Path.of(dirPath);
+        if (Files.exists(pathObject)) {
+            try (Stream<Path> walk = Files.walk(pathObject)) {
+                List<Path> paths = walk.sorted(Comparator.reverseOrder()).toList();
+                for (Path path : paths) {
+                    path = path.toAbsolutePath();
+                    Files.delete(path);
+                }
+            }
         }
     }
 
