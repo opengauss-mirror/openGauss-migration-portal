@@ -18,11 +18,14 @@ import org.opengauss.portalcontroller.command.CommandReceiver;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.tools.common.MqTool;
 import org.opengauss.portalcontroller.utils.CommandUtils;
+import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InstallMigrationUtils;
 import org.opengauss.portalcontroller.utils.KafkaUtils;
 import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * The type Install command receiver.
@@ -42,7 +45,19 @@ public class InstallCommandReceiver extends CommandReceiver {
         ProcessUtils.sleepThread(1000, "unzip package");
         if (!CommandUtils.containString(order, Command.FULL)) {
             KafkaUtils.prepareConfluent();
-            MqTool.getInstance().start(PortalControl.workspaceId);
+            if (MqTool.getInstance().start(PortalControl.workspaceId)) {
+                deleteInstallWorkspace();
+            }
         }
+    }
+
+    private void deleteInstallWorkspace() {
+        try {
+            FileUtils.deleteDirectory(PortalControl.portalWorkSpacePath);
+        } catch (IOException e) {
+            LOGGER.warn("Delete install workspace: {} failed, reason: {}",
+                    PortalControl.portalWorkSpacePath, e.getMessage());
+        }
+        LOGGER.info("Delete install workspace successfully.");
     }
 }
