@@ -13,8 +13,14 @@
 
 package org.opengauss.portalcontroller.tools.mysql;
 
+import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
+import static org.opengauss.portalcontroller.PortalControl.workspaceId;
+import static org.opengauss.portalcontroller.status.ChangeStatusTools.getdataCheckTableStatus;
+
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
+import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.constant.Check;
 import org.opengauss.portalcontroller.constant.Command;
 import org.opengauss.portalcontroller.constant.Debezium;
@@ -25,8 +31,8 @@ import org.opengauss.portalcontroller.constant.Opengauss;
 import org.opengauss.portalcontroller.constant.Parameter;
 import org.opengauss.portalcontroller.constant.StartPort;
 import org.opengauss.portalcontroller.constant.Status;
-import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.entity.MigrationConfluentInstanceConfig;
+import org.opengauss.portalcontroller.enums.ToolsConfigEnum;
 import org.opengauss.portalcontroller.exception.PortalException;
 import org.opengauss.portalcontroller.logmonitor.DataCheckLogFileCheck;
 import org.opengauss.portalcontroller.software.Confluent;
@@ -49,11 +55,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-
-import static org.opengauss.portalcontroller.PortalControl.toolsConfigParametersTable;
-import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
-import static org.opengauss.portalcontroller.PortalControl.workspaceId;
-import static org.opengauss.portalcontroller.status.ChangeStatusTools.getdataCheckTableStatus;
 
 /**
  * FullDatacheckTool
@@ -256,7 +257,8 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
             fileCheck.checkFullDataCheckStop();
             if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CHECK)) == -1
                     && DataCheckLogFileCheck.isDataCheckFinish()) {
-                if (PortalControl.status != Status.ERROR) {
+                waitSinkSourceProcessExit();
+                if (PortalControl.status != Status.ERROR && !Plan.stopPlan) {
                     LOGGER.info("Full migration datacheck is finished.");
                     PortalControl.status = Status.FULL_MIGRATION_CHECK_FINISHED;
                     fileCheck.stopListener();
@@ -268,6 +270,35 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
             ProcessUtils.sleepThread(LogParseConstants.PERIOD_WATCH_LOG, "running full migration datacheck");
         }
         return true;
+    }
+
+    private void waitSinkSourceProcessExit() {
+        while (!Plan.stopPlan) {
+            if (ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CHECK_SOURCE)) == -1
+                    && ProcessUtils.getCommandPid(Task.getTaskProcessMap().get(Method.Run.CHECK_SINK)) == -1) {
+                LOGGER.info("Data check sink and source process exit");
+                return;
+            }
+
+            LOGGER.info("Waiting data check sink and source process exit...");
+            ProcessUtils.sleepThread(1000, "waiting data check sink and source process exit");
+        }
+        stopSinkSourceProcess();
+    }
+
+    private void stopSinkSourceProcess() {
+        int processStopTime = 5000;
+        try {
+            String checkSourceProcessName = Task.getTaskProcessMap().get(Method.Run.CHECK_SOURCE);
+            String checkSinkProcessName = Task.getTaskProcessMap().get(Method.Run.CHECK_SINK);
+            ProcessUtils.killProcessByCommandSnippet(checkSourceProcessName, processStopTime, true);
+            ProcessUtils.killProcessByCommandSnippet(checkSinkProcessName, processStopTime, true);
+            LOGGER.info("Stop data check sink and source process success.");
+        } catch (PortalException e) {
+            e.setRequestInformation("Stop data check sink and source process failed.");
+            LOGGER.error("{}Stop data check sink and source process failed.", ErrorCode.COMMAND_EXECUTION_FAILED, e);
+            PortalControl.shutDownPortal(e.toString());
+        }
     }
 
     /**
