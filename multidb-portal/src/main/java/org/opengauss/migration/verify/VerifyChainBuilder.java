@@ -12,6 +12,7 @@ import org.opengauss.migration.verify.milvus.MilvusVersionVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlAuthPluginVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlBinLogVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlConnectVerifyChain;
+import org.opengauss.migration.verify.mysql.MysqlDatabaseEncodingVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlFullPermissionVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlGtidSetVerifyChain;
 import org.opengauss.migration.verify.mysql.MysqlIncrementalPermissionVerifyChain;
@@ -60,7 +61,8 @@ public class VerifyChainBuilder {
         builder.addVerifyChain(new MysqlConnectVerifyChain())
                 .addVerifyChain(new OpenGaussConnectVerifyChain())
                 .addVerifyChain(new MysqlLowerCaseVerifyChain())
-                .addVerifyChain(new OpenGaussSqlCompatibilityVerifyChain());
+                .addVerifyChain(new OpenGaussSqlCompatibilityVerifyChain())
+                .addVerifyChain(new MysqlDatabaseEncodingVerifyChain());
 
         if (migrationPhaseList.contains(MigrationPhase.FULL_MIGRATION)) {
             builder.addVerifyChain(new MysqlFullPermissionVerifyChain())

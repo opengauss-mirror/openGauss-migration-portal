@@ -7,7 +7,10 @@ package org.opengauss.migration.verify;
 import org.opengauss.migration.verify.model.AbstractVerifyDto;
 import org.opengauss.migration.verify.model.ChainResult;
 import org.opengauss.migration.verify.model.VerifyResult;
+import org.opengauss.utils.OpenGaussUtils;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +59,22 @@ public abstract class AbstractVerifyChain {
      */
     protected final void addCurrentChainResult(VerifyResult verifyResult) {
         verifyResult.addChainResult(this.chainResult);
+    }
+
+    /**
+     * Check if openGauss version is later than 7.0.0-RC3
+     *
+     * @param connection openGauss connection
+     * @return true if openGauss version is later than 7.0.0-RC3, false otherwise
+     * @throws SQLException if failed to get openGauss version
+     */
+    protected boolean isOpenGaussLaterThan700RC3(Connection connection) throws SQLException {
+        if (connection == null) {
+            throw new SQLException("Connection is null");
+        }
+        String versionNumber = OpenGaussUtils.getOpenGaussVersion(connection);
+        return versionNumber.compareTo("7.0.0") >= 0 && !versionNumber.equals("7.0.0-RC1")
+                && !versionNumber.equals("7.0.0-RC2");
     }
 
     /**

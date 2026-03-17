@@ -16,8 +16,10 @@
 package org.opengauss.portalcontroller.verify;
 
 import org.opengauss.jdbc.PgConnection;
+import org.opengauss.portalcontroller.utils.JdbcUtils;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -54,5 +56,33 @@ public abstract class AbstractPreMigrationVerifyChain {
         if (next != null) {
             next.verify(resultMap, mysqlConnection, pgConnection);
         }
+    }
+
+    /**
+     * Check openGauss version later than 7.0.0-RC3
+     *
+     * @param pgConnection openGauss connect
+     * @return true if openGauss version later than 7.0.0-RC3
+     * @throws SQLException SQL Exception
+     */
+    protected boolean isOpenGaussLaterThan700RC3(PgConnection pgConnection) throws SQLException {
+        if (pgConnection == null) {
+            throw new SQLException("Connection is null");
+        }
+        String versionNumber = JdbcUtils.getOpenGaussVersionNumber(pgConnection);
+        return versionNumber.compareTo("7.0.0") >= 0 && !versionNumber.equals("7.0.0-RC1")
+                && !versionNumber.equals("7.0.0-RC2");
+    }
+
+    /**
+     * Set verify result to resultMap
+     *
+     * @param resultMap result map
+     * @param isPassedVerify true if verify passed
+     */
+    protected void setVerifyResult(Map<String, Object> resultMap, boolean isPassedVerify) {
+        resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
+                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString())
+                        | (isPassedVerify ? Constants.KEY_FLAG_TRUE : Constants.KEY_FLAG_FALSE));
     }
 }

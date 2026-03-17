@@ -33,7 +33,7 @@ public class OpenGaussEnableSubscriptionVerifyChain extends AbstractOpenGaussVer
     private void doVerify(AbstractVerifyDto verifyDto, VerifyResult verifyResult) {
         Connection connection = verifyDto.getOpengaussConnection();
         try {
-            if (!hasEnableSubscription(connection)) {
+            if (!isOpenGaussLaterThan700RC3(connection)) {
                 return;
             }
 
@@ -52,11 +52,5 @@ public class OpenGaussEnableSubscriptionVerifyChain extends AbstractOpenGaussVer
             chainResult.setDetail(errorMsg);
         }
         addCurrentChainResult(verifyResult);
-    }
-
-    private boolean hasEnableSubscription(Connection connection) throws SQLException {
-        String versionNumber = OpenGaussUtils.getOpenGaussVersion(connection);
-        return versionNumber.compareTo("7.0.0") >= 0 && !versionNumber.equals("7.0.0-RC1")
-                && !versionNumber.equals("7.0.0-RC2");
     }
 }

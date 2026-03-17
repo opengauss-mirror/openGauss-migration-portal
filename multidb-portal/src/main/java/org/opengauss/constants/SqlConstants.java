@@ -132,6 +132,11 @@ public class SqlConstants {
      */
     public static final String MYSQL_SHOW_MASTER_STATUS = "SHOW MASTER STATUS;";
 
+    /**
+     * Select database character set, support MySQL
+     */
+    public static final String MYSQL_SELECT_DATABASE_CHARACTER_SET = "SELECT @@character_set_database;";
+
     private SqlConstants() {
     }
 }
