@@ -57,6 +57,7 @@ public class VerifyChainBuilder {
             .addChain(new ReplicationConnectVerifyChain())
             .addChain(new GtidSetVerifyChain())
             .addChain(new EnableSubscriptionVerifyChain())
+            .addChain(new DatabaseEncodingVerifyChain())
             .build();
     }
 
@@ -72,6 +73,7 @@ public class VerifyChainBuilder {
             .addChain(new LowerParameterVerifyChain())
             .addChain(new BdatabaseVerifyChain())
             .addChain(new DatabaseEncryptionVerifyChain())
+            .addChain(new DatabaseEncodingVerifyChain())
             .build();
     }
 
@@ -91,6 +93,7 @@ public class VerifyChainBuilder {
             .addChain(new EnableSlotLogVerifyChain())
             .addChain(new ReplicationConnectVerifyChain())
             .addChain(new EnableSubscriptionVerifyChain())
+            .addChain(new DatabaseEncodingVerifyChain())
             .build();
     }
 

@@ -98,9 +98,10 @@ public class OpenGaussUtils {
                 if (matcher.find()) {
                     return matcher.group(1);
                 }
+                throw new SQLException("Not match openGauss version number in version string: " + rsString);
             }
         }
-        throw new SQLException("Not found OpenGauss version");
+        throw new SQLException("Not found openGauss version by sql: " + SqlConstants.SELECT_VERSION);
     }
 
     /**

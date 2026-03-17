@@ -78,4 +78,22 @@ public class MysqlUtils {
         }
         throw new SQLException("Failed to execute SQL to get Executed_Gtid_Set");
     }
+
+    /**
+     * Show the database character set
+     *
+     * @param connection connection
+     * @return database character set
+     * @throws SQLException if a database access error occurs
+     */
+    public static String showDatabaseCharacterSet(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(SqlConstants.MYSQL_SELECT_DATABASE_CHARACTER_SET)) {
+            if (resultSet.next()) {
+                return resultSet.getString(1);
+            }
+            throw new SQLException("Not found MySQL database encoding by sql: "
+                    + SqlConstants.MYSQL_SELECT_DATABASE_CHARACTER_SET);
+        }
+    }
 }

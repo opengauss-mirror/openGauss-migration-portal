@@ -39,7 +39,7 @@ public class EnableSubscriptionVerifyChain extends AbstractPreMigrationVerifyCha
         }
 
         try {
-            if (!hasEnableSubscription(pgConnection)) {
+            if (!isOpenGaussLaterThan700RC3(pgConnection)) {
                 return;
             }
         } catch (SQLException e) {
@@ -69,18 +69,6 @@ public class EnableSubscriptionVerifyChain extends AbstractPreMigrationVerifyCha
             LOGGER.error("Failed to get enable_subscription value", e);
         }
         setVerifyResult(resultMap, isOn);
-    }
-
-    private void setVerifyResult(Map<String, Object> resultMap, boolean isOn) {
-        resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString())
-                        | (isOn ? Constants.KEY_FLAG_TRUE : Constants.KEY_FLAG_FALSE));
-    }
-
-    private boolean hasEnableSubscription(PgConnection pgConnection) throws SQLException {
-        String versionNumber = JdbcUtils.getOpenGaussVersionNumber(pgConnection);
-        return versionNumber.compareTo("7.0.0") >= 0 && !versionNumber.equals("7.0.0-RC1")
-                && !versionNumber.equals("7.0.0-RC2");
     }
 
     private String getEnableSubscriptionValue(PgConnection pgConnection) throws SQLException {
