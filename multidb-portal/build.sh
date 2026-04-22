@@ -112,7 +112,7 @@ build_dirs() {
     echo "Start to build the directories"
     cd portal
     chmod +x ./bin/*
-    cp ../target/openGauss-portal-*.jar ./
+    cp ../portal-main/target/openGauss-portal-*.jar ./
 
     mkdir -p pkg/chameleon pkg/confluent pkg/datachecker pkg/debezium pkg/full_replicate
     mkdir -p template/config/chameleon template/config/datachecker template/config/debezium template/config/full_replicate template/config/milvus template/config/elasticsearch
