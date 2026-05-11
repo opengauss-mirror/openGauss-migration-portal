@@ -105,6 +105,8 @@ public final class Plan {
     @Getter
     private static final List<RunningTaskThread> hasStoppedThreadList = new ArrayList<>();
 
+    private static boolean isDropSchema = true;
+
     static {
         PROGRESS_FILE_MONITOR_MAP.put(Method.Run.CONNECT_SOURCE, new DebeziumProgressFileMonitor(
                 "incremental source process", Status.INCREMENTAL_FOLDER, "forward-source-process", 0L, 0));
@@ -601,7 +603,11 @@ public final class Plan {
                     }
                 }
             }
-            stopPlan();
+            if (PortalControl.status == Status.ERROR) {
+                stopPlan(true);
+            } else {
+                stopPlan(false);
+            }
         } else {
             LOGGER.error("There is a plan running. Please stop current plan or wait.");
         }
@@ -660,9 +666,14 @@ public final class Plan {
 
     /**
      * Stop plan
+     *
+     * @param isFailed migration failed
      */
-    public void stopPlan() {
+    public void stopPlan(boolean isFailed) {
         try {
+            if (isFailed) {
+                isDropSchema = false;
+            }
             PortalControl.threadStatusController.fullMigrationAndDatacheckProgressReport();
             ChangeStatusTools.writePortalStatus();
             Plan.stopPlan = true;
@@ -899,7 +910,7 @@ public final class Plan {
     public static void clean() {
         if (PortalControl.taskList.contains(Command.Start.Mysql.FULL)) {
             MysqlFullMigrationTool checkTaskMysqlFullMigration = new MysqlFullMigrationTool();
-            checkTaskMysqlFullMigration.cleanData(workspaceId);
+            checkTaskMysqlFullMigration.cleanData(workspaceId, isDropSchema);
         }
         if (PortalControl.taskList.contains(Command.Start.Mysql.REVERSE)
                 && PortalControl.toolsMigrationParametersTable.get(Check.DROP_LOGICAL_SLOT).equals("true")) {
