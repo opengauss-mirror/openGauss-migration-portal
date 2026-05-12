@@ -93,6 +93,16 @@ public interface Chameleon {
              * The constant TABLES.
              */
             String TABLES = "sources.mysql.limit_tables";
+
+            /**
+             * is restart
+             */
+            String RESTART = "sources.mysql.is_reset_progress_info";
+
+            /**
+             * progress tables path
+             */
+            String PROGRESS_TABLES = "sources.mysql.progress_tables";
         }
 
         /**

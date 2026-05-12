@@ -34,7 +34,7 @@ public class ThreadExceptionHandler implements Thread.UncaughtExceptionHandler {
                         .build(), e);
 
         PortalControl.shutDownPortal(e.getMessage());
-        Plan.getInstance(PortalControl.workspaceId).stopPlan();
+        Plan.getInstance(PortalControl.workspaceId).stopPlan(true);
         PortalControl.threadStatusController.setExit(true);
         PortalControl.threadGetOrder.exit = true;
         AlertLogCollectionManager.stopCollection();

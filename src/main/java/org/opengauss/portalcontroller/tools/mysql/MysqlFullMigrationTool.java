@@ -91,6 +91,10 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             configMap.put(Chameleon.Parameters.Opengauss.NAME, opengaussDatabaseName);
             configMap.put(Chameleon.Parameters.Mysql.MAPPING + "." + mysqlDatabaseName,
                     toolsMigrationParametersTable.get(Opengauss.DATABASE_SCHEMA));
+            String isRestart = toolsMigrationParametersTable.get("is_restart");
+            configMap.put(Chameleon.Parameters.Mysql.RESTART, Boolean.parseBoolean(isRestart));
+            String progressTables = toolsMigrationParametersTable.get("progress_tables");
+            configMap.put(Chameleon.Parameters.Mysql.PROGRESS_TABLES, progressTables);
             setTables();
         } else {
             LOGGER.error("Invalid parameters.");
@@ -339,9 +343,12 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                 PortalControl.toolsConfigPath);
         Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
         chameleonParameterTable.put("--config", "default_" + workspaceId);
-        useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonParameterTable, new ArrayList<>());
-        useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.CREATE, chameleonParameterTable,
-                new ArrayList<>());
+        boolean isRestart = Boolean.parseBoolean(String.valueOf(configMap.get(Chameleon.Parameters.Mysql.RESTART)));
+        if (isRestart) {
+            useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonParameterTable, new ArrayList<>());
+            useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.CREATE, chameleonParameterTable,
+                    new ArrayList<>());
+        }
         chameleonParameterTable.put("--source", "mysql");
         useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.ADD, chameleonParameterTable, new ArrayList<>());
         startChameleonReplicaOrder(chameleonVenv, Chameleon.Order.INIT, chameleonParameterTable,
@@ -444,14 +451,16 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
      *
      * @param workspaceId the workspace id
      */
-    public void cleanData(String workspaceId) {
+    public void cleanData(String workspaceId, boolean isDropSchema) {
         String chameleonVenv = PropertitesUtils.getSinglePropertiesParameter(Chameleon.VENV_PATH,
                 PortalControl.toolsConfigPath);
         String inputOrderPath = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
         Hashtable<String, String> chameleonDropParameterTable = new Hashtable<>();
         chameleonDropParameterTable.put("--config", "default_" + workspaceId);
-        useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonDropParameterTable,
-                new ArrayList<>());
+        if (isDropSchema) {
+            useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonDropParameterTable,
+                    new ArrayList<>());
+        }
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         ArrayList<String> fileList = new ArrayList<>();
         String chameleonOrderStr = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_";
@@ -550,14 +559,16 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
      * Run detach.
      */
     public void runDetach() {
-        String chameleonVenv = PropertitesUtils.getSinglePropertiesParameter(Chameleon.VENV_PATH,
-                PortalControl.toolsConfigPath);
-        Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
-        chameleonParameterTable.put("--config", "default_" + Plan.workspaceId);
-        chameleonParameterTable.put("--source", "mysql");
-        ArrayList<String> outputList = new ArrayList<>();
-        outputList.add("YES");
-        useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DETACH, chameleonParameterTable, outputList);
+        if (PortalControl.status != Status.ERROR) {
+            String chameleonVenv = PropertitesUtils.getSinglePropertiesParameter(Chameleon.VENV_PATH,
+                    PortalControl.toolsConfigPath);
+            Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
+            chameleonParameterTable.put("--config", "default_" + Plan.workspaceId);
+            chameleonParameterTable.put("--source", "mysql");
+            ArrayList<String> outputList = new ArrayList<>();
+            outputList.add("YES");
+            useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DETACH, chameleonParameterTable, outputList);
+        }
         shouldDetachReplica = false;
     }
 
