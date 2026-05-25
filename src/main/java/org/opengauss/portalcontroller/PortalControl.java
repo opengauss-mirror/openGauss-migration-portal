@@ -15,6 +15,8 @@
 
 package org.opengauss.portalcontroller;
 
+import static org.opengauss.portalcontroller.utils.ParamsUtils.initMigrationParamsFromProps;
+
 import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
 import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.command.ConcreteCommand;
@@ -65,8 +67,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-
-import static org.opengauss.portalcontroller.utils.ParamsUtils.initMigrationParamsFromProps;
 
 /**
  * Portal control.
@@ -321,6 +321,14 @@ public class PortalControl {
         plan3.add("start mysql incremental migration");
         plan3.add("start mysql reverse migration");
         planList.put("plan3", plan3);
+        List<String> plan4 = new ArrayList<>();
+        plan4.add("start mysql full migration");
+        planList.put("plan4", plan4);
+        List<String> plan5 = new ArrayList<>();
+        plan5.add("start mysql full migration");
+        plan5.add("start mysql incremental migration");
+        plan5.add("start mysql reverse migration");
+        planList.put("plan5", plan5);
     }
 
     /**
@@ -534,6 +542,8 @@ public class PortalControl {
         validOrderList.add(Command.Start.Plan.PLAN1);
         validOrderList.add(Command.Start.Plan.PLAN2);
         validOrderList.add(Command.Start.Plan.PLAN3);
+        validOrderList.add(Command.Start.Plan.PLAN4);
+        validOrderList.add(Command.Start.Plan.PLAN5);
         validOrderList.add(Command.Start.Plan.CURRENT);
         validOrderList.add(Command.Start.KAFKA);
         validOrderList.add(Command.HELP);

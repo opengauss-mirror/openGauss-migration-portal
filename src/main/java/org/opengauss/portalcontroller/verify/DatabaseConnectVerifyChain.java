@@ -38,8 +38,13 @@ public class DatabaseConnectVerifyChain extends AbstractPreMigrationVerifyChain 
         databaseMap.put(Constants.KEY_MYSQL, mysqlResult);
         int pgResult = (pgConnection != null) ? Constants.KEY_FLAG_TRUE : Constants.KEY_FLAG_FALSE;
         databaseMap.put(Constants.KEY_OPENGAUSS, pgResult);
-        resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
-                Integer.parseInt(resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG).toString()) | mysqlResult | pgResult);
+        Object verifyResult = resultMap.get(Constants.KEY_VERIFY_RESULT_FLAG);
+        if (verifyResult != null) {
+            resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG,
+                    Integer.parseInt(verifyResult.toString()) | mysqlResult | pgResult);
+        } else {
+            resultMap.put(Constants.KEY_VERIFY_RESULT_FLAG, mysqlResult | pgResult);
+        }
         super.transfer(resultMap, mysqlConnection, pgConnection);
     }
 }
