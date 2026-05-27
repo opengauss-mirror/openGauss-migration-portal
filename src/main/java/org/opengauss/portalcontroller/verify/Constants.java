@@ -35,6 +35,16 @@ public class Constants {
     public static final String MIGRATION_MODE_OFFLINE = "1";
 
     /**
+     * online without data check
+     */
+    public static final String MIGRATION_MODE_ONLINE_WITHOUT_DATA_CHECK = "4";
+
+    /**
+     * offline without data check
+     */
+    public static final String MIGRATION_MODE_OFFLINE_WITHOUT_DATA_CHECK = "3";
+
+    /**
      * check result file name
      */
     public static final String CHECK_RESULT_FILE = "checkResult.json";

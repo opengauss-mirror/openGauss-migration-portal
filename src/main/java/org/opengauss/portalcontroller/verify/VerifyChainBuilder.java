@@ -78,6 +78,22 @@ public class VerifyChainBuilder {
     }
 
     /**
+     * construct offline without data check
+     *
+     * @return AbstractPreMigrationVerifyChain
+     */
+    public static AbstractPreMigrationVerifyChain getOfflineWithoutDataCheckVerifyChain() {
+        return getChainBuilder()
+                .addChain(new DatabaseConnectVerifyChain())
+                .addChain(new FullPermissionVerifyChain())
+                .addChain(new LowerParameterVerifyChain())
+                .addChain(new BdatabaseVerifyChain())
+                .addChain(new DatabaseEncryptionVerifyChain())
+                .addChain(new DatabaseEncodingVerifyChain())
+                .build();
+    }
+
+    /**
      * construct reverse
      *
      * @return AbstractPreMigrationVerifyChain

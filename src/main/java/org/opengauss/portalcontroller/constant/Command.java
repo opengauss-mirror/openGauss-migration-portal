@@ -257,6 +257,16 @@ public interface Command {
             String PLAN3 = "start plan3";
 
             /**
+             * The constant PLAN4.
+             */
+            String PLAN4 = "start plan4";
+
+            /**
+             * The constant PLAN5.
+             */
+            String PLAN5 = "start plan5";
+
+            /**
              * The constant CURRENT.
              */
             String CURRENT = "start current plan";

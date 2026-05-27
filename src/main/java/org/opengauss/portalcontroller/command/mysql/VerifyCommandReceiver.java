@@ -56,12 +56,14 @@ public class VerifyCommandReceiver extends CommandReceiver {
         try {
             mysqlConnection = JdbcUtils.getMysqlConnection();
             pgConnection = JdbcUtils.getPgConnection();
-            LOGGER.info("migration_mode is {}", System.getProperty("migration_mode"));
+            String migrationMode = System.getProperty("migration_mode", Constants.MIGRATION_MODE_ONLINE);
+            LOGGER.info("migration_mode is {}", migrationMode);
             if (Command.Verify.VERIFY_PRE_MIGRATION.equals(order)) {
-                // 2->online,1->offline
-                if (Constants.MIGRATION_MODE_OFFLINE.equals(
-                        System.getProperty("migration_mode", Constants.MIGRATION_MODE_ONLINE))) {
+                if (Constants.MIGRATION_MODE_OFFLINE.equals(migrationMode)) {
                     VerifyChainBuilder.getOfflineVerifyChain().verify(resultMap, mysqlConnection, pgConnection);
+                } else if (Constants.MIGRATION_MODE_OFFLINE_WITHOUT_DATA_CHECK.equals(migrationMode)) {
+                    VerifyChainBuilder.getOfflineWithoutDataCheckVerifyChain()
+                            .verify(resultMap, mysqlConnection, pgConnection);
                 } else {
                     VerifyChainBuilder.getOnlineVerifyChain().verify(resultMap, mysqlConnection, pgConnection);
                 }

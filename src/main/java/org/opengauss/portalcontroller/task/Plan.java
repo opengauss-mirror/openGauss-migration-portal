@@ -711,10 +711,14 @@ public final class Plan {
      * @return the boolean
      */
     public static boolean checkRunningThreads() {
-        boolean isAlive = isKafkaAlive();
-        if (!isAlive) {
-            handleKafkaError();
-            return false;
+        String startOrder = PortalControl.commandLineParameterStringMap.get(Command.Parameters.ORDER);
+        boolean isAlive = true;
+        if (!startOrder.replaceAll("_", " ").trim().equals(Command.Start.Plan.PLAN4)) {
+            isAlive = isKafkaAlive();
+            if (!isAlive) {
+                handleKafkaError();
+                return false;
+            }
         }
         List<RunningTaskThread> missThreadList = new LinkedList<>();
         for (RunningTaskThread thread : runningTaskThreadsList) {
