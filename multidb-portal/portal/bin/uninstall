@@ -5,38 +5,46 @@
 
 set -euo pipefail
 
+PROJECT_DIR=""
+INSTALL_DIR=""
+REMOVE_PACKAGE=false
+
 usage() {
     cat <<EOF
 Migration Tool Uninstallation Script
 
 Usage:
-  Basic Usage:
-    $0 tools                      Uninstall migration tools
+  Uninstall sub-components:
+    $0 tools                      Uninstall migration tools only
+
+  Uninstall entire Portal:
+    $0 [--remove-package]         Uninstall entire Portal
+
+  Uninstall help:
     $0 -h|--help                  Show this help message
 
+Options for entire Portal uninstall:
+  --remove-package                Remove the installation package (openGauss-portal-*.tar.gz) after uninstallation
+
+Examples:
+  $0                              Uninstall entire Portal
+  $0 tools                        Uninstall migration tools only
+  $0 --remove-package             Uninstall entire Portal and remove the installation package
+
 Tips:
-  1. Requires Java 17 or later to be installed.
+  1. For migration tools uninstall: Requires Java 17 or later to be installed.
+  2. For entire Portal uninstall: No Java dependency required.
 EOF
     exit 1
 }
 
-# Check if the script is run as root
-if [ "$(id -u)" -eq 0 ]; then
-    echo "Error: This script must not be run as root. Please switch to a regular user and try again." >&2
-    exit 1
-fi
+check_is_run_as_root() {
+    if [ "$(id -u)" -eq 0 ]; then
+        echo "Error: This script must not be run as root for migration tools uninstallation. Please switch to a regular user and try again." >&2
+        exit 1
+    fi
+}
 
-# Check if the first argument is provided
-if [ $# -eq 0 ]; then
-    usage
-fi
-
-# Check for help argument
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    usage
-fi
-
-# Function to check Java version
 check_java_version() {
     local java_version
     local version_num
@@ -59,46 +67,166 @@ check_java_version() {
     return 0
 }
 
-# Verify Java is available and version >= 17
-if ! check_java_version; then
-    exit 1
-fi
+clear_chameleon_tmp() {
+    echo "Clearing chameleon temporary files..."
 
-COMPONENT="$1"
-shift
+    local chameleon_dir
+    chameleon_dir=$(find "$PROJECT_DIR/tools/chameleon" -maxdepth 1 -type d -name "chameleon-*" 2>/dev/null | head -n1 || true)
+    if [[ -z "$chameleon_dir" ]]; then
+        echo "Warning: No chameleon directory found in $PROJECT_DIR/tools/chameleon"
+        return 0
+    fi
 
-# Validate component - only "tools" is supported for uninstall
-case "$COMPONENT" in
-    tools)
-        ;;
-    *)
-        echo "Error: Invalid component name '$COMPONENT'. Only 'tools' can be uninstalled."
-        usage
-        ;;
-esac
+    cd "$chameleon_dir" || {
+        echo "Warning: Failed to change to chameleon directory: $chameleon_dir"
+        return 1
+    }
 
-# Build Java command arguments
-ARGS=("--uninstall" "$COMPONENT")
-
-if [ $# -gt 0 ]; then
-    echo "Error: Unknown parameter '$1'"
-    usage
-fi
-
-# Change to project root
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
-PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
-cd "$PROJECT_ROOT" || {
-    echo "Error: Failed to change to project directory"
-    exit 1
+    local clear_script="clear_env_var.sh"
+    if [ -f "$clear_script" ]; then
+        bash "$clear_script" || {
+            echo "Warning: Failed to execute $clear_script in $chameleon_dir"
+            return 1
+        }
+    else
+        echo "Warning: $clear_script not found in $chameleon_dir"
+    fi
 }
 
-# Find the JAR file
-JAVA_PROGRAM=$(ls openGauss-portal-*.jar 2> /dev/null | head -n 1)
-if [[ -z "$JAVA_PROGRAM" ]]; then
-    echo "Error: No openGauss-portal-*.jar file found in $PROJECT_ROOT"
-    exit 1
-fi
+kill_portal_relevant_processes() {
+    echo "Killing portal relevant processes..."
 
-# Execute Java program
-exec java -Dfile.encoding=UTF-8 -jar "$JAVA_PROGRAM" "${ARGS[@]}"
+    local pids
+    pids=$(ps ux | grep "$PROJECT_DIR" | grep -v "$0" | awk '{print $2}')
+
+    if [[ -n "$pids" ]]; then
+        kill -9 $pids 2> /dev/null || true
+    else
+        echo "No portal relevant processes found"
+    fi
+}
+
+remove_install_dir() {
+    echo "Removing install directory and logs..."
+
+    if [[ -z "$INSTALL_DIR" ]] || [[ -z "$PROJECT_DIR" ]]; then
+        echo "Error: INSTALL_DIR or PROJECT_DIR is not set"
+        exit 1
+    fi
+
+    cd "$INSTALL_DIR" || {
+        echo "Warning: Failed to change to INSTALL_DIR: $INSTALL_DIR, skip removing install directory and logs"
+        return 1
+    }
+
+    if [[ -d "$PROJECT_DIR" ]]; then
+        rm -rf "$PROJECT_DIR"
+    fi
+
+    local datakit_install_log="datakit_install_portal.log"
+    if [[ -f "$datakit_install_log" ]]; then
+        rm -f $datakit_install_log
+    fi
+}
+
+remove_install_package() {
+    echo "Removing install package..."
+
+    cd "$INSTALL_DIR" || {
+        echo "Warning: Failed to change to INSTALL_DIR: $INSTALL_DIR, skip removing install package"
+        return 1
+    }
+
+    local package_pattern="openGauss-portal-*.tar.gz"
+    rm -rf $package_pattern
+}
+
+uninstall_portal() {
+    echo "Starting Portal uninstallation..."
+
+    SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+    PROJECT_DIR=$(dirname "$SCRIPT_DIR")
+    INSTALL_DIR=$(dirname "$PROJECT_DIR")
+    echo "Project directory: $PROJECT_DIR"
+    echo "Install directory: $INSTALL_DIR"
+
+    if [[ ! -d "$PROJECT_DIR" ]]; then
+        echo "Error: Project directory does not exist: $PROJECT_DIR"
+        exit 1
+    fi
+
+    read -p "Are you sure you want to uninstall the entire Portal? This will remove all files in $PROJECT_DIR [y/n]: " -r confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Uninstallation cancelled"
+        exit 0
+    fi
+
+    clear_chameleon_tmp || true
+    kill_portal_relevant_processes
+    remove_install_dir
+    if [[ $REMOVE_PACKAGE == true ]]; then
+        remove_install_package
+    fi
+
+    echo "Portal uninstallation completed successfully!"
+}
+
+uninstall_migration_tools() {
+    check_is_run_as_root
+
+    if ! check_java_version; then
+        exit 1
+    fi
+
+    # Build Java command arguments
+    ARGS=("--uninstall" "tools")
+
+    # Change to project root
+    SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+    PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+    cd "$PROJECT_ROOT" || {
+        echo "Error: Failed to change to project directory"
+        exit 1
+    }
+
+    # Find the JAR file
+    JAVA_PROGRAM=$(ls openGauss-portal-*.jar 2> /dev/null | head -n 1)
+    if [[ -z "$JAVA_PROGRAM" ]]; then
+        echo "Error: No openGauss-portal-*.jar file found in $PROJECT_ROOT"
+        exit 1
+    fi
+
+    # Execute Java program
+    exec java -Dfile.encoding=UTF-8 -jar "$JAVA_PROGRAM" "${ARGS[@]}"
+}
+
+main() {
+    if [ $# -gt 1 ]; then
+        echo "Error: Only empty or one argument is allowed"
+        usage
+    fi
+
+    if [ $# -eq 0 ]; then
+        uninstall_portal
+        exit 0
+    fi
+
+    case "$1" in
+        tools)
+            uninstall_migration_tools
+            ;;
+        --remove-package)
+            REMOVE_PACKAGE=true
+            uninstall_portal
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            echo "Error: Invalid argument '$1'"
+            usage
+            ;;
+    esac
+}
+
+main "$@"
