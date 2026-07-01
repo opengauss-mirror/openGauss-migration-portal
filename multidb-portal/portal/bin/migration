@@ -147,7 +147,10 @@ if [[ -z "$JAVA_PROGRAM" ]]; then
 fi
 
 # Set workspace directory
-WORKSPACE_DIR="$PROJECT_ROOT/workspace/task_$TASK_ID"
+WORKSPACE_DIR="$PROJECT_ROOT"
+if [[ "$OPERATION" == "start" ]]; then
+    WORKSPACE_DIR="$PROJECT_ROOT/workspace/task_$TASK_ID"
+fi
 
 # Execute Java program in the workspace directory
 (cd "$WORKSPACE_DIR" && exec java -Dfile.encoding=UTF-8 -jar "$PROJECT_ROOT/$JAVA_PROGRAM" "${ARGS[@]}")
