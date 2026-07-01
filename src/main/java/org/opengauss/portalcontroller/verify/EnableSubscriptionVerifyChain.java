@@ -39,7 +39,7 @@ public class EnableSubscriptionVerifyChain extends AbstractPreMigrationVerifyCha
         }
 
         try {
-            if (!isOpenGaussLaterThan700RC3(pgConnection)) {
+            if (!isEnableSubscriptionSupported(pgConnection)) {
                 return;
             }
         } catch (SQLException e) {
@@ -74,5 +74,11 @@ public class EnableSubscriptionVerifyChain extends AbstractPreMigrationVerifyCha
     private String getEnableSubscriptionValue(PgConnection pgConnection) throws SQLException {
         String selectSql = String.format(Constants.SHOW_OPENGAUSS_GUC_PARAM, ENABLE_SUBSCRIPTION);
         return JdbcUtils.selectStringValue(pgConnection, selectSql, ENABLE_SUBSCRIPTION);
+    }
+
+    private boolean isEnableSubscriptionSupported(PgConnection pgConnection) throws SQLException {
+        String versionNumber = JdbcUtils.getOpenGaussVersionNumber(pgConnection);
+        return versionNumber.compareTo("6.0.5") >= 0 && !versionNumber.equals("7.0.0-RC1")
+                && !versionNumber.equals("7.0.0-RC2");
     }
 }
