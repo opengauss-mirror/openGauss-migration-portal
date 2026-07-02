@@ -54,6 +54,11 @@ public class TaskConstants {
      */
     public static final String HEARTBEAT_FILE = "migration.heartbeat";
 
+    /**
+     * migration config file name
+     */
+    public static final String MIGRATION_CONFIG_FILE_NAME = "migration.properties";
+
     private TaskConstants() {
     }
 }

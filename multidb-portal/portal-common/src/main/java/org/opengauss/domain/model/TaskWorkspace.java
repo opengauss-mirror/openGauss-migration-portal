@@ -47,6 +47,7 @@ public class TaskWorkspace {
 
     private final String quarkusPortFilePath;
     private final String sourceDbTypeFilePath;
+    private final String migrationConfigFilePath;
 
     public TaskWorkspace(String taskId) {
         String portalWorkspaceDirPath = Portal.getInstance().getPortalWorkspaceDirPath();
@@ -78,6 +79,7 @@ public class TaskWorkspace {
 
         sourceDbTypeFilePath = String.format("%s/%s", configDirPath, TaskConstants.SOURCE_DB_TYPE_CONFIG_FILE_NAME);
         quarkusPortFilePath = String.format("%s/%s", configDirPath, TaskConstants.QUARKUS_PORT_FILE_NAME);
+        migrationConfigFilePath = String.format("%s/%s", configDirPath, TaskConstants.MIGRATION_CONFIG_FILE_NAME);
     }
 
     /**

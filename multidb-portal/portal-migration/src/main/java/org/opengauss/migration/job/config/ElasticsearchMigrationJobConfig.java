@@ -5,11 +5,12 @@
 package org.opengauss.migration.job.config;
 
 import lombok.Getter;
-import org.opengauss.migration.domain.config.ElasticsearchMigrationConfig;
-import org.opengauss.migration.domain.model.ConfigFile;
+
 import org.opengauss.domain.model.TaskWorkspace;
-import org.opengauss.migration.domain.dto.SingleConfigBundle;
 import org.opengauss.enums.MigrationPhase;
+import org.opengauss.migration.domain.config.ElasticsearchMigrationConfig;
+import org.opengauss.migration.domain.dto.SingleConfigBundle;
+import org.opengauss.migration.domain.model.ConfigFile;
 import org.opengauss.migration.enums.TemplateConfigType;
 import org.opengauss.migration.helper.config.ElasticsearchMigrationConfigHelper;
 
@@ -29,8 +30,7 @@ public class ElasticsearchMigrationJobConfig extends AbstractMigrationJobConfig 
     private Map<String, String> tableMappings;
 
     public ElasticsearchMigrationJobConfig(TaskWorkspace taskWorkspace) {
-        super(taskWorkspace, new ConfigFile("migration.properties", taskWorkspace.getConfigDirPath(),
-                taskWorkspace, TemplateConfigType.ELASTICSEARCH_MIGRATION_CONFIG));
+        super(taskWorkspace, TemplateConfigType.ELASTICSEARCH_MIGRATION_CONFIG);
 
         this.fullConfigBundle = getFullConfigBundle(taskWorkspace);
     }

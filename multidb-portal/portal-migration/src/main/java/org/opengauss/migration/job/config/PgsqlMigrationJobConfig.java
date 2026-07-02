@@ -5,11 +5,12 @@
 package org.opengauss.migration.job.config;
 
 import lombok.Getter;
-import org.opengauss.migration.domain.config.PgsqlMigrationConfig;
-import org.opengauss.migration.domain.model.ConfigFile;
+
 import org.opengauss.domain.model.TaskWorkspace;
+import org.opengauss.migration.domain.config.PgsqlMigrationConfig;
 import org.opengauss.migration.domain.dto.DebeziumConfigBundle;
 import org.opengauss.migration.domain.dto.FullReplicateConfigBundle;
+import org.opengauss.migration.domain.model.ConfigFile;
 import org.opengauss.migration.enums.DebeziumProcessType;
 import org.opengauss.migration.enums.TemplateConfigType;
 import org.opengauss.migration.helper.config.DebeziumPgsqlMigrationConfigHelper;
@@ -32,8 +33,7 @@ public class PgsqlMigrationJobConfig extends AbstractMigrationJobConfig {
     private volatile PgsqlMigrationConfig migrationConfigDto;
 
     public PgsqlMigrationJobConfig(TaskWorkspace taskWorkspace) {
-        super(taskWorkspace, new ConfigFile("migration.properties", taskWorkspace.getConfigDirPath(),
-                taskWorkspace, TemplateConfigType.PGSQL_MIGRATION_CONFIG));
+        super(taskWorkspace, TemplateConfigType.PGSQL_MIGRATION_CONFIG);
 
         this.fullConfigBundle = getFullConfigBundle(taskWorkspace);
         this.incrementalConfigBundle = getIncrementalConfigBundle(taskWorkspace);
