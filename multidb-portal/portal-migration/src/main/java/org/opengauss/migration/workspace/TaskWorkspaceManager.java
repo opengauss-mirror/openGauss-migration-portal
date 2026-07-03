@@ -95,6 +95,8 @@ public class TaskWorkspaceManager {
             taskWorkspace.create();
             prepareConfigFiles(taskWorkspace, databaseType);
             LOGGER.info("Create a migration task successfully");
+            LOGGER.info("Please configure the migration task in '{}' config file",
+                    taskWorkspace.getMigrationConfigFilePath());
         } catch (ConfigException | IllegalArgumentException e) {
             LOGGER.error("Failed to create a migration task", e);
             taskWorkspace.delete();

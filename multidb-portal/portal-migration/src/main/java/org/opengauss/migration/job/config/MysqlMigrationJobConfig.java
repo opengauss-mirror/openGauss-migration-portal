@@ -5,12 +5,13 @@
 package org.opengauss.migration.job.config;
 
 import lombok.Getter;
-import org.opengauss.migration.domain.config.MysqlMigrationConfig;
-import org.opengauss.migration.domain.model.ConfigFile;
+
 import org.opengauss.domain.model.TaskWorkspace;
+import org.opengauss.migration.domain.config.MysqlMigrationConfig;
 import org.opengauss.migration.domain.dto.DataCheckerConfigBundle;
 import org.opengauss.migration.domain.dto.DebeziumConfigBundle;
 import org.opengauss.migration.domain.dto.SingleConfigBundle;
+import org.opengauss.migration.domain.model.ConfigFile;
 import org.opengauss.migration.enums.DebeziumProcessType;
 import org.opengauss.migration.enums.TemplateConfigType;
 import org.opengauss.migration.helper.config.ChameleonMysqlMigrationConfigHelper;
@@ -38,8 +39,7 @@ public class MysqlMigrationJobConfig extends AbstractMigrationJobConfig {
     private volatile MysqlMigrationConfig migrationConfigDto;
 
     public MysqlMigrationJobConfig(TaskWorkspace taskWorkspace) {
-        super(taskWorkspace, new ConfigFile("migration.properties", taskWorkspace.getConfigDirPath(),
-                taskWorkspace, TemplateConfigType.MYSQL_MIGRATION_CONFIG));
+        super(taskWorkspace, TemplateConfigType.MYSQL_MIGRATION_CONFIG);
 
         this.fullConfigBundle = getFullConfigBundle(taskWorkspace);
         this.fullDataCheckConfigBundle = getFullDataCheckConfigBundle(taskWorkspace);

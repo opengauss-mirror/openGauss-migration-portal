@@ -5,11 +5,14 @@
 package org.opengauss.migration.job.config;
 
 import lombok.Getter;
+
+import org.opengauss.constants.TaskConstants;
 import org.opengauss.migration.constants.config.MigrationConfig;
 import org.opengauss.migration.domain.model.ConfigFile;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.MigrationPhase;
 import org.opengauss.domain.model.MigrationMode;
+import org.opengauss.migration.enums.TemplateConfigType;
 import org.opengauss.migration.mode.ModeManager;
 
 import java.util.List;
@@ -38,9 +41,10 @@ public abstract class AbstractMigrationJobConfig {
     private volatile Boolean hasIncrementalDataCheck;
     private volatile Boolean hasReverseMigration;
 
-    AbstractMigrationJobConfig(TaskWorkspace taskWorkspace, ConfigFile migrationConfigFile) {
+    AbstractMigrationJobConfig(TaskWorkspace taskWorkspace, TemplateConfigType templateConfigType) {
         this.taskWorkspace = taskWorkspace;
-        this.migrationConfigFile = migrationConfigFile;
+        this.migrationConfigFile = new ConfigFile(TaskConstants.MIGRATION_CONFIG_FILE_NAME,
+                taskWorkspace.getConfigDirPath(), taskWorkspace, templateConfigType);
     }
 
     /**
