@@ -6,6 +6,7 @@ package org.opengauss.command;
 
 import org.apache.commons.cli.CommandLine;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -47,10 +48,16 @@ public class CommandFactory {
     }
 
     private static InstallCommand generateInstallCommand(CommandLine cmd) {
-        if (cmd.hasOption("force")) {
-            return new InstallCommand(cmd.getOptionValue("install"), true);
+        String[] installArgs = cmd.getOptionValues("install");
+        if (installArgs == null || installArgs.length == 0) {
+            throw new IllegalArgumentException("Command install requires at least one argument");
         }
-        return new InstallCommand(cmd.getOptionValue("install"), false);
+
+        if (cmd.hasOption("force")) {
+            return new InstallCommand(Arrays.stream(installArgs).toList(), true);
+        } else {
+            return new InstallCommand(Arrays.stream(installArgs).toList(), false);
+        }
     }
 
     private static UninstallCommand generateUninstallCommand(CommandLine cmd) {

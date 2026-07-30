@@ -8,6 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.command.receiver.InstallCommandReceiver;
 
+import java.util.List;
+
 /**
  * install command
  *
@@ -16,60 +18,61 @@ import org.opengauss.command.receiver.InstallCommandReceiver;
 public class InstallCommand implements Command {
     private static final Logger LOGGER = LogManager.getLogger(InstallCommand.class);
 
-    private final String component;
+    private final List<String> args;
     private final boolean isForce;
 
-    InstallCommand(String component, boolean isForce) {
-        this.component = component;
+    InstallCommand(List<String> components, boolean isForce) {
+        this.args = components;
         this.isForce = isForce;
     }
 
     @Override
     public void execute() {
         InstallCommandReceiver commandReceiver = new InstallCommandReceiver();
-        switch (component) {
-            case "dependencies":
-                LOGGER.info("Start command to install dependencies");
-                commandReceiver.dependencies(isForce);
-                break;
-            case "tools":
-                LOGGER.info("Start command to install migration tools");
-                commandReceiver.migrationTools();
-                break;
-            case "chameleon":
-                LOGGER.info("Start command to install chameleon");
-                commandReceiver.chameleon();
-                break;
-            case "full_replicate":
-                LOGGER.info("Start command to install full_replicate");
-                commandReceiver.fullReplicate();
-                break;
-            case "milvus_migration_tool":
-                LOGGER.info("Start command to install milvus_migration_tool");
-                commandReceiver.milvusMigrationTool();
-                break;
-            case "elasticsearch_migration_tool":
-                LOGGER.info("Start command to install elasticsearch_migration_tool");
-                commandReceiver.elasticsearchMigrationTool();
-                break;
-            case "data_checker":
-                LOGGER.info("Start command to install data-checker");
-                commandReceiver.dataChecker();
-                break;
-            case "debezium":
-                LOGGER.info("Start command to install debezium");
-                commandReceiver.debezium();
-                break;
-            case "kafka":
-                LOGGER.info("Start command to install kafka");
-                commandReceiver.kafka();
-                break;
-            case "check":
-                LOGGER.info("Start command to check installation");
-                commandReceiver.check();
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported component: " + component + " for install");
+        if (args.contains("dependencies")) {
+            LOGGER.info("Start command to install dependencies");
+            commandReceiver.dependencies(isForce);
+            return;
         }
+        if (args.contains("tools")) {
+            LOGGER.info("Start command to install migration tools");
+            commandReceiver.migrationTools();
+            return;
+        }
+        if (args.contains("check")) {
+            LOGGER.info("Start command to check installation");
+            commandReceiver.check();
+            return;
+        }
+
+        if (args.contains("chameleon")) {
+            LOGGER.info("Start command to install chameleon");
+            commandReceiver.chameleon();
+        }
+        if (args.contains("full_replicate")) {
+            LOGGER.info("Start command to install full_replicate");
+            commandReceiver.fullReplicate();
+        }
+        if (args.contains("milvus_migration_tool")) {
+            LOGGER.info("Start command to install milvus_migration_tool");
+            commandReceiver.milvusMigrationTool();
+        }
+        if (args.contains("elasticsearch_migration_tool")) {
+            LOGGER.info("Start command to install elasticsearch_migration_tool");
+            commandReceiver.elasticsearchMigrationTool();
+        }
+        if (args.contains("data_checker")) {
+            LOGGER.info("Start command to install data-checker");
+            commandReceiver.dataChecker();
+        }
+        if (args.contains("debezium")) {
+            LOGGER.info("Start command to install debezium");
+            commandReceiver.debezium();
+        }
+        if (args.contains("kafka")) {
+            LOGGER.info("Start command to install kafka");
+            commandReceiver.kafka();
+        }
+        LOGGER.info("Install command execute done");
     }
 }

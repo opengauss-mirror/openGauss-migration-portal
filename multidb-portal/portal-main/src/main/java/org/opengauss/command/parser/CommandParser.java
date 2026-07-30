@@ -52,8 +52,8 @@ public class CommandParser {
                 .longOpt("install")
                 .desc("install component [tools|chameleon|og_datasync|milvus_migration_tool|"
                         + "elasticsearch_migration_tool|debezium|data_checker|kafka|dependencies|check] <--force>")
-                .hasArg()
-                .argName("component")
+                .numberOfArgs(Option.UNLIMITED_VALUES)
+                .argName("component> <args...")
                 .build();
 
         options.addOption(install);
