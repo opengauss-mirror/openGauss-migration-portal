@@ -39,7 +39,6 @@ import org.opengauss.portalcontroller.task.WorkspacePath;
 import org.opengauss.portalcontroller.thread.ThreadGetOrder;
 import org.opengauss.portalcontroller.thread.ThreadStatusController;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
-import org.opengauss.portalcontroller.utils.EncryptionUtils;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InputReader;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
@@ -49,7 +48,6 @@ import org.opengauss.portalcontroller.utils.ProcessUtils;
 import org.opengauss.portalcontroller.utils.PropertitesUtils;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -173,11 +171,6 @@ public class PortalControl {
     public static String workspaceId = "1";
 
     /**
-     * The constant AES secretKey
-     */
-    public static final String ASE_SECRET_KEY = "yykczOWf3hoHsOn6ADZcQKpAlck0ZRK12T9N3sf0WB4=";
-
-    /**
      * The entry point of application.
      *
      * @param args the input arguments
@@ -223,8 +216,6 @@ public class PortalControl {
             String opengaussPwd = readPasswordFromConsole("Please input your openGauss user password:");
             System.setProperty(Command.Parameters.OPENGAUSS_PWD, opengaussPwd);
             InputReader.close();
-        } else {
-            decryptPassword();
         }
     }
 
@@ -243,35 +234,6 @@ public class PortalControl {
             throw new IllegalArgumentException("Password cannot be empty.");
         }
         return result;
-    }
-
-    /**
-     * Decrpt password from java -D (AES)
-     */
-    private static void decryptPassword() {
-        String mysqlCipherPwd = System.getProperty(Command.Parameters.MYSQL_PWD);
-        String opengaussCipherPwd = System.getProperty(Command.Parameters.OPENGAUSS_PWD);
-        if (StringUtils.isEmpty(mysqlCipherPwd) || StringUtils.isEmpty(opengaussCipherPwd)) {
-            return;
-        }
-        String mysqlPwd = decryptUsingAES(mysqlCipherPwd);
-        System.setProperty(Command.Parameters.MYSQL_PWD, mysqlPwd);
-        String opengaussPwd = decryptUsingAES(opengaussCipherPwd);
-        System.setProperty(Command.Parameters.OPENGAUSS_PWD, opengaussPwd);
-    }
-
-    /**
-     * Decrypt using AES
-     *
-     * @param password the password
-     * @return String
-     */
-    public static String decryptUsingAES(String password) {
-        try {
-            return EncryptionUtils.decrypt(password, ASE_SECRET_KEY);
-        } catch (Exception e) {
-            return password;
-        }
     }
 
     /**
