@@ -8,3 +8,5 @@
 /*.iml
 /target/*
 /**/target/*
+.pre-commit-venv/
+.mypy_cache/
