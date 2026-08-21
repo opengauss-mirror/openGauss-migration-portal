@@ -58,6 +58,7 @@ public class MigrationCommandReceiver implements CommandReceiver {
         if (workspaceManager.checkTaskIdExists(taskId)) {
             MigrationContext.initialize(taskWorkspace);
             setQuarkusPort(taskWorkspace);
+            setQuarkusVertxCacheDir(taskWorkspace);
             Main.startQuarkus();
         } else {
             LOGGER.error("Task {} does not exist", taskId);
@@ -301,5 +302,9 @@ public class MigrationCommandReceiver implements CommandReceiver {
         } catch (IOException e) {
             throw new PortalException("Failed to write quarkus port to file", e);
         }
+    }
+
+    private void setQuarkusVertxCacheDir(TaskWorkspace taskWorkspace) {
+        System.setProperty("vertx.cacheDirBase", taskWorkspace.getTmpDirPath());
     }
 }
