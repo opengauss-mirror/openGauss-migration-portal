@@ -5,6 +5,7 @@
 package org.opengauss.migration.progress;
 
 import com.alibaba.fastjson2.JSON;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.tool.FullReplicateConstants;
@@ -19,6 +20,7 @@ import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.StringUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -102,9 +104,8 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
         }
 
         List<FullEntry> tableList = statusEntry.getTable();
-        if (isEntryIntegrity(tableList)) {
-            writeObjectEntryList(tableList, MigrationStatusHelper.generateFullTableStatusFilePath(taskWorkspace));
-        }
+        tableList = filterIntegrityEntry(tableList);
+        writeObjectEntryList(tableList, MigrationStatusHelper.generateFullTableStatusFilePath(taskWorkspace));
     }
 
     private void readViewProgress(String jsonPath) {
@@ -114,9 +115,8 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
         }
 
         List<FullEntry> viewList = entryOptional.get().getView();
-        if (isEntryIntegrity(viewList)) {
-            writeObjectEntryList(viewList, MigrationStatusHelper.generateFullViewStatusFilePath(taskWorkspace));
-        }
+        viewList = filterIntegrityEntry(viewList);
+        writeObjectEntryList(viewList, MigrationStatusHelper.generateFullViewStatusFilePath(taskWorkspace));
     }
 
     private void readFuncProgress(String jsonPath) {
@@ -126,9 +126,8 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
         }
 
         List<FullEntry> funcList = entryOptional.get().getFunction();
-        if (isEntryIntegrity(funcList)) {
-            writeObjectEntryList(funcList, MigrationStatusHelper.generateFullFuncStatusFilePath(taskWorkspace));
-        }
+        funcList = filterIntegrityEntry(funcList);
+        writeObjectEntryList(funcList, MigrationStatusHelper.generateFullFuncStatusFilePath(taskWorkspace));
     }
 
     private void readTriggerProgress(String jsonPath) {
@@ -138,9 +137,8 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
         }
 
         List<FullEntry> triggerList = entryOptional.get().getTrigger();
-        if (isEntryIntegrity(triggerList)) {
-            writeObjectEntryList(triggerList, MigrationStatusHelper.generateFullTriggerStatusFilePath(taskWorkspace));
-        }
+        triggerList = filterIntegrityEntry(triggerList);
+        writeObjectEntryList(triggerList, MigrationStatusHelper.generateFullTriggerStatusFilePath(taskWorkspace));
     }
 
     private void readProcProgress(String jsonPath) {
@@ -150,25 +148,30 @@ public class PgsqlProgressMonitor extends ProgressMonitor {
         }
 
         List<FullEntry> procList = entryOptional.get().getProcedure();
-        if (isEntryIntegrity(procList)) {
-            writeObjectEntryList(procList, MigrationStatusHelper.generateFullProcStatusFilePath(taskWorkspace));
-        }
+        procList = filterIntegrityEntry(procList);
+        writeObjectEntryList(procList, MigrationStatusHelper.generateFullProcStatusFilePath(taskWorkspace));
     }
 
-    private boolean isEntryIntegrity(List<FullEntry> entryList) {
+    private List<FullEntry> filterIntegrityEntry(List<FullEntry> entryList) {
         if (entryList == null || entryList.isEmpty()) {
-            return true;
+            return entryList;
         }
 
+        boolean isIntegrity = true;
+        List<FullEntry> integrityEntryList = new ArrayList<>();
         for (FullEntry entry : entryList) {
-            if (entry.getStatus() == 0) {
-                return false;
+            if (entry.getStatus() == 0
+                    || StringUtils.isNullOrBlank(entry.getName())
+                    || StringUtils.isNullOrBlank(entry.getSchema())) {
+                isIntegrity = false;
+                continue;
             }
-
-            if (StringUtils.isNullOrBlank(entry.getName())) {
-                return false;
-            }
+            integrityEntryList.add(entry);
         }
-        return true;
+
+        if (!isIntegrity) {
+            LOGGER.warn("PostgreSQL full migration progress file contains not integrity progress entry");
+        }
+        return integrityEntryList;
     }
 }
