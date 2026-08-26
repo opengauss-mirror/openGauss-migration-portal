@@ -42,13 +42,13 @@ portal/
 		portal.log 
 	pkg/           
 		chameleon/
-			chameleon-7.0.0rc3-py3-none-any.whl
+			chameleon-7.0.0-py3-none-any.whl
 		datacheck/
-			openGauss-DataCheck-7.0.0-RC3.tar.gz
+			openGauss-DataCheck-7.0.0.tar.gz
 		debezium/
 			confluent-community-5.5.1-2.12.zip
-			openGauss-IncReplicateMysql2OpenGauss-7.0.0-RC3.tar.gz
-			openGauss-IncReplicateOpenGauss2Mysql-7.0.0-RC3.tar.gz
+			openGauss-IncReplicateMysql2OpenGauss-7.0.0.tar.gz
+			openGauss-IncReplicateOpenGauss2Mysql-7.0.0.tar.gz
 	tmp/
 	tools/
 		chameleon/
@@ -59,7 +59,7 @@ portal/
 				debezium-connector-mysql/
 				debezium-connector-opengauss/
 	portal.portId.lock
-	portalControl-7.0.0-RC3-exec.jar
+	portalControl-7.0.0-exec.jar
 	gs_datacheck.sh
 	gs_mysync.sh
 	gs_rep_portal.sh
@@ -79,7 +79,7 @@ The default portal installation directory is `/ops/portal`. You can change it as
 git clone https://gitee.com/opengauss/openGauss-migration-portal.git
 ```
 
-2. Run the Maven command to compile the source code and obtain the `portalControl-7.0.0-RC3-exec.jar` file. Then, place the JAR file in the `/ops/portal` directory.
+2. Run the Maven command to compile the source code and obtain the `portalControl-7.0.0-exec.jar` file. Then, place the JAR file in the `/ops/portal` directory.
 
 ```
 mvn clean package -Dmaven.test.skip=true
@@ -97,24 +97,24 @@ The download links for each system version and architecture are as follows.
 
 | System Name          | System Architecture| Download Link                                                                                                                |
 |:---------------| -------- |----------------------------------------------------------------------------------------------------------------------|
-| CentOS 7       | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-RC3-x86_64.tar.gz        |
-| openEuler 20.03| x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0-RC3-x86_64.tar.gz  |
-| openEuler 20.03| AArch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0-RC3-aarch64.tar.gz |
-| openEuler 22.03| x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0-RC3-x86_64.tar.gz  |
-| openEuler 22.03| AArch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0-RC3-aarch64.tar.gz |
-| openEuler 24.03| x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0-RC3-x86_64.tar.gz  |
-| openEuler 24.03| AArch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0-RC3-aarch64.tar.gz |
+| CentOS 7       | x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-x86_64.tar.gz        |
+| openEuler 20.03| x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0-x86_64.tar.gz  |
+| openEuler 20.03| AArch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler20.03/PortalControl-7.0.0-aarch64.tar.gz |
+| openEuler 22.03| x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0-x86_64.tar.gz  |
+| openEuler 22.03| AArch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler22.03/PortalControl-7.0.0-aarch64.tar.gz |
+| openEuler 24.03| x86_64  | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0-x86_64.tar.gz  |
+| openEuler 24.03| AArch64 | https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/openEuler24.03/PortalControl-7.0.0-aarch64.tar.gz |
 
 1. Download the `gs_rep_portal` installation package.
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-RC3-x86_64.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-x86_64.tar.gz
    ```
 
 2. Decompress the `gs_rep_portal` installation package.
 
    ```
-tar -zxvf PortalControl-7.0.0-RC3-x86_64.tar.gz
+tar -zxvf PortalControl-7.0.0-x86_64.tar.gz
    ```
 
 ## Startup Method
@@ -154,11 +154,11 @@ The following table lists the version requirements.
 
 | Tool                         | Version      |
 |-----------------------------|----------|
-| Chameleon                  | 7.0.0rc3 |
+| Chameleon                  | 7.0.0 |
 | confluent                   | 5.5.1    |
-| datacheck                  | 7.0.0-RC3 |
-| replicate-mysql2openGauss   | 7.0.0-RC3 |
-| replicate-openGauss2mysql   | 7.0.0-RC3 |
+| datacheck                  | 7.0.0 |
+| replicate-mysql2openGauss   | 7.0.0 |
+| replicate-openGauss2mysql   | 7.0.0 |
 
 Run the following command to install all migration tools:
 
@@ -426,13 +426,13 @@ Run the following commands in the CLI to uninstall migration tools.
 1. Download the `gs_rep_portal` installation package.
 
    ```
-wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-RC3-x86_64.tar.gz
+wget -c https://opengauss.obs.cn-south-1.myhuaweicloud.com/latest/tools/centos7/PortalControl-7.0.0-x86_64.tar.gz
    ```
 
 2. Decompress the `gs_rep_portal` installation package.
 
    ```
-tar -zxvf PortalControl-7.0.0-RC3-x86_64.tar.gz
+tar -zxvf PortalControl-7.0.0-x86_64.tar.gz
    ```
 
 3. Change the installation path in the `toolspath.properties` file in the `/ops/portal/config` directory and run the following command to start the installation.
