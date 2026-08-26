@@ -56,7 +56,7 @@ public interface Parameter {
     /**
      * The constant PORTAL_NAME.
      */
-    String PORTAL_NAME = "portalControl-7.0.0-RC3-exec.jar";
+    String PORTAL_NAME = "portalControl-7.0.0-exec.jar";
 
     /**
      * The constant INSTALL_ALL_MIGRATION_TOOLS.

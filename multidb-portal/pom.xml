@@ -15,7 +15,7 @@
     </modules>
 
     <properties>
-        <portal.version>7.0.0-RC3</portal.version>
+        <portal.version>7.0.0</portal.version>
         <quarkus.version>3.30.1</quarkus.version>
         <lombok.version>1.18.38</lombok.version>
         <snakeyaml.version>2.4</snakeyaml.version>
