@@ -25,7 +25,7 @@ public class Total {
     /**
      * 所有表的总记录数，预估值
      */
-    private int record;
+    private long record;
     /**
      * 所有表的数据总量，预估值
      */
