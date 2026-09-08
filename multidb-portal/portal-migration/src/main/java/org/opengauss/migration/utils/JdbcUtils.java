@@ -27,7 +27,7 @@ public class JdbcUtils {
      */
     public static Connection getMysqlConnection(DatabaseConnectInfo databaseConnectInfo)
             throws ClassNotFoundException, SQLException {
-        String url = String.format("jdbc:mysql://%s:%s/%s?useSSL=false&characterEncoding=utf8",
+        String url = String.format("jdbc:mysql://%s:%s/%s?characterEncoding=utf8",
                 databaseConnectInfo.getIp(), databaseConnectInfo.getPort(), databaseConnectInfo.getDatabaseName());
 
         Class.forName("com.mysql.cj.jdbc.Driver");
@@ -49,7 +49,7 @@ public class JdbcUtils {
     public static Connection getMysqlConnection(
             String mysqlIp, String mysqlPort, String databaseName, String username, String password)
             throws ClassNotFoundException, SQLException {
-        String url = String.format("jdbc:mysql://%s:%s/%s?useSSL=false&characterEncoding=utf8",
+        String url = String.format("jdbc:mysql://%s:%s/%s?characterEncoding=utf8",
                 mysqlIp, mysqlPort, databaseName);
         Class.forName("com.mysql.cj.jdbc.Driver");
         return DriverManager.getConnection(url, username, password);

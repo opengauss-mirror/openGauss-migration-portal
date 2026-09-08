@@ -39,7 +39,7 @@ public class DataCheckerMysqlMigrationConfigHelper {
         String mysqlDatabaseIp = dto.getMysqlDatabaseIp();
         String mysqlDatabasePort = dto.getMysqlDatabasePort();
         String mysqlDatabaseName = dto.getMysqlDatabaseName();
-        String mysqlDatabaseUrl = String.format("jdbc:mysql://%s:%s/%s?useSSL=false&useUnicode=true"
+        String mysqlDatabaseUrl = String.format("jdbc:mysql://%s:%s/%s?useUnicode=true"
                         + "&characterEncoding=utf-8&serverTimezone=UTC&allowPublicKeyRetrieval=true",
                 mysqlDatabaseIp, mysqlDatabasePort, mysqlDatabaseName);
         changeParams.put(DataCheckerSourceConfig.DATABASE_URL, mysqlDatabaseUrl);
@@ -74,7 +74,7 @@ public class DataCheckerMysqlMigrationConfigHelper {
         String opengaussDatabasePort = dto.getOpengaussDatabasePort();
         String opengaussDatabaseName = dto.getOpengaussDatabaseName();
         String opengaussDatabaseUrl = String.format(
-                "jdbc:opengauss://%s:%s/%s?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC",
+                "jdbc:opengauss://%s:%s/%s?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC",
                 opengaussDatabaseIp, opengaussDatabasePort, opengaussDatabaseName);
         changeParams.put(DataCheckerSinkConfig.DATABASE_URL, opengaussDatabaseUrl);
         changeParams.put(DataCheckerSinkConfig.DATABASE_USERNAME, dto.getOpengaussDatabaseUsername());

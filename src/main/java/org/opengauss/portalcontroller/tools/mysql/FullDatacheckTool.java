@@ -129,8 +129,8 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
         String mysqlDatabasePort = toolsMigrationParametersTable.get(Mysql.DATABASE_PORT);
         String mysqlDatabaseHost = toolsMigrationParametersTable.get(Mysql.DATABASE_HOST);
         String mysqlDatacheckUrl =
-                "jdbc:mysql://" + mysqlDatabaseHost + ":" + mysqlDatabasePort + "/" + mysqlDatabaseName + "?useSSL"
-                        + "=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC&allowPublicKeyRetrieval"
+                "jdbc:mysql://" + mysqlDatabaseHost + ":" + mysqlDatabasePort + "/" + mysqlDatabaseName + "?"
+                        + "useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC&allowPublicKeyRetrieval"
                         + "=true";
         checkSourceParams.put(Check.Parameters.URL, mysqlDatacheckUrl);
         String mysqlUserName = toolsMigrationParametersTable.get(Mysql.USER);
@@ -147,7 +147,7 @@ public class FullDatacheckTool extends ParamsConfig implements Tool {
         String opengaussDatabasePort = toolsMigrationParametersTable.get(Opengauss.DATABASE_PORT);
         String opengaussDatabaseName = toolsMigrationParametersTable.get(Opengauss.DATABASE_NAME);
         String opengaussDatacheckUrl = "jdbc:opengauss://" + opengaussDatabaseHost + ":" + opengaussDatabasePort
-                + "/" + opengaussDatabaseName + "?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone"
+                + "/" + opengaussDatabaseName + "?useUnicode=true&characterEncoding=utf-8&serverTimezone"
                 + "=UTC";
         checkSinkParams.put("spring.extract.debezium-enable", false);
         checkSinkParams.put(Check.Parameters.URL, opengaussDatacheckUrl);
