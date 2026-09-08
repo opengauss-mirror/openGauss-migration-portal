@@ -16,7 +16,7 @@ public class FullTotalInfo {
     /**
      * all tables total record number, estimated value
      */
-    private int record;
+    private long record;
 
     /**
      * all tables total data size, estimated value
