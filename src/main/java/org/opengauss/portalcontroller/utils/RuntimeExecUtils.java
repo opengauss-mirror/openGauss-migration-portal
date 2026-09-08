@@ -302,7 +302,7 @@ public class RuntimeExecUtils {
             } else if (file.exists()) {
                 LOGGER.error("Directory " + path + packageName + " already exists.Please rename the directory.");
             } else {
-                String command = "wget -c -P " + path + " " + url + " --no-check-certificate";
+                String command = "wget -c -P " + path + " " + url;
                 executeOrder(command, 600000, PortalControl.portalErrorPath);
                 LOGGER.info("Download file " + url + " to " + path + " finished.");
             }
