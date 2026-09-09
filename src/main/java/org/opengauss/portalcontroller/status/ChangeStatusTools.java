@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.constant.Chameleon;
 import org.opengauss.portalcontroller.constant.Check;
@@ -31,6 +32,7 @@ import org.opengauss.portalcontroller.entity.RecordVo;
 import org.opengauss.portalcontroller.entity.Total;
 import org.opengauss.portalcontroller.task.Plan;
 import org.opengauss.portalcontroller.thread.ThreadStatusController;
+import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.JdbcUtils;
 import org.opengauss.portalcontroller.utils.LogViewUtils;
@@ -50,7 +52,11 @@ import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,8 +77,8 @@ public class ChangeStatusTools {
      * @return the chameleon table status
      */
     public static ArrayList<TableStatus> getChameleonTableStatus() {
-        String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-        String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
+        String venvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
+        String path = venvPath + MysqlFullMigrationTool.getOrderStatusFileName(Plan.workspaceId, Chameleon.Order.INIT);
         return getChameleonTableStatus(path);
     }
 
@@ -135,9 +141,10 @@ public class ChangeStatusTools {
      */
     public static ArrayList<ObjectStatus> getChameleonObjectStatus(String name, String order) {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-        String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_" + order + ".json";
+        String path = chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(Plan.workspaceId, order);
         if (!new File(path).exists()) {
-            path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
+            path = chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                    Plan.workspaceId, Chameleon.Order.INIT);
         }
         ArrayList<ObjectStatus> objectStatusList = new ArrayList<>();
         String chameleonStr = LogViewUtils.getFullLogNoSeparator(path);
@@ -203,12 +210,16 @@ public class ChangeStatusTools {
 
 
     private static void parseChameleonStatus(String chameleonVenvPath, RecordVo recordVo) throws IOException {
-        String fileName = chameleonVenvPath + "data_default_" + Plan.workspaceId;
-        Path tablePath = Path.of(fileName + "_init_replica.json");
-        Path viewPath = Path.of(fileName + "_start_view_replica.json");
-        Path funcPath = Path.of(fileName + "_start_func_replica.json");
-        Path triggerPath = Path.of(fileName + "_start_trigger_replica.json");
-        Path procPath = Path.of(fileName + "_start_proc_replica.json");
+        Path tablePath = Path.of(chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.INIT));
+        Path viewPath = Path.of(chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.START_VIEW));
+        Path funcPath = Path.of(chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.START_FUNC));
+        Path triggerPath = Path.of(chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.START_TRIGGER));
+        Path procPath = Path.of(chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.START_PROC));
 
         if (!Files.exists(tablePath) && !Files.exists(viewPath) && !Files.exists(funcPath)
                 && !Files.exists(triggerPath) && !Files.exists(procPath)) {
@@ -534,8 +545,9 @@ public class ChangeStatusTools {
      */
     public static Object getChameleonTotalStatus() {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-        String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
-        String tableChameleonStatus = LogViewUtils.getFullLogNoSeparator(path);
+        String initPath = chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.INIT);
+        String tableChameleonStatus = LogViewUtils.getFullLogNoSeparator(initPath);
         if (!("".equals(tableChameleonStatus))) {
             JSONObject root = parseJsonStr(tableChameleonStatus);
             if (root == null) {

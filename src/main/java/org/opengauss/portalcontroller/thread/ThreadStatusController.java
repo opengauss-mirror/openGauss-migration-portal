@@ -153,8 +153,9 @@ public class ThreadStatusController extends Thread {
      */
     public void fullMigrationAndDatacheckProgressReport() {
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
-        String path = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_init_replica.json";
-        if (new File(path).exists()) {
+        String initPath = chameleonVenvPath + MysqlFullMigrationTool.getOrderStatusFileName(
+                Plan.workspaceId, Chameleon.Order.INIT);
+        if (new File(initPath).exists()) {
             mysqlFullMigrationTool.reportProgress(workspaceId);
             fullDatacheckTool.reportProgress(workspaceId);
         }

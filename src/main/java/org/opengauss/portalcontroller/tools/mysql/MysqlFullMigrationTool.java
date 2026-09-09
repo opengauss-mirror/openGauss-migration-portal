@@ -13,6 +13,8 @@
 
 package org.opengauss.portalcontroller.tools.mysql;
 
+import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
+
 import org.apache.logging.log4j.util.Strings;
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.AlertLogCollectionManager;
@@ -42,13 +44,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
-
-import static org.opengauss.portalcontroller.PortalControl.toolsMigrationParametersTable;
 
 /**
  * MysqlFullMigrationTool
@@ -67,6 +67,37 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
     public static boolean shouldDetachReplica = true;
 
     Map<String, Object> configMap = null;
+
+    /**
+     * Generate config file base name.
+     *
+     * @param workspaceId the workspace id
+     * @return the config file base name
+     */
+    public static String getConfigFileBaseName(String workspaceId) {
+        return "default_" + workspaceId + "_";
+    }
+
+    /**
+     * Generate config file full name.
+     *
+     * @param workspaceId the workspace id
+     * @return the config file full name
+     */
+    public static String getConfigFileFullName(String workspaceId) {
+        return getConfigFileBaseName(workspaceId) + ".yml";
+    }
+
+    /**
+     * Generate order status file name.
+     *
+     * @param workspaceId the workspace id
+     * @param chameleonOrder the chameleon order
+     * @return the order status file name
+     */
+    public static String getOrderStatusFileName(String workspaceId, String chameleonOrder) {
+        return String.format("data_%s_%s.json", getConfigFileBaseName(workspaceId), chameleonOrder);
+    }
 
     /**
      * Change full migration parameters.
@@ -274,7 +305,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         }
         try {
             String newFileName = PathUtils.combainPath(true, PortalControl.portalWorkSpacePath
-                    + "config", "chameleon", "default_" + workspaceId + ".yml");
+                    + "config", "chameleon", getConfigFileFullName(workspaceId));
             FileUtils.createFile(fileDirectory, false);
             RuntimeExecUtils.copyFile(newFileName, fileDirectory, true);
         } catch (PortalException e) {
@@ -342,7 +373,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         String chameleonVenv = PropertitesUtils.getSinglePropertiesParameter(Chameleon.VENV_PATH,
                 PortalControl.toolsConfigPath);
         Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
-        chameleonParameterTable.put("--config", "default_" + workspaceId);
+        chameleonParameterTable.put("--config", getConfigFileBaseName(workspaceId));
         boolean isRestart = Boolean.parseBoolean(String.valueOf(configMap.get(Chameleon.Parameters.Mysql.RESTART)));
         if (isRestart) {
             useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonParameterTable, new ArrayList<>());
@@ -420,7 +451,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         String chameleonVenv = PropertitesUtils.getSinglePropertiesParameter(Chameleon.VENV_PATH,
                 PortalControl.toolsConfigPath);
         Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
-        chameleonParameterTable.put("--config", "default_" + workspaceId);
+        chameleonParameterTable.put("--config", getConfigFileBaseName(workspaceId));
         chameleonParameterTable.put("--source", "mysql");
         checkStatus(Chameleon.Order.INIT);
         if (PortalControl.toolsMigrationParametersTable.get(MigrationParameters.SNAPSHOT_OBJECT).equals("yes")) {
@@ -456,16 +487,15 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
                 PortalControl.toolsConfigPath);
         String inputOrderPath = PortalControl.toolsConfigParametersTable.get(Parameter.INPUT_ORDER_PATH);
         Hashtable<String, String> chameleonDropParameterTable = new Hashtable<>();
-        chameleonDropParameterTable.put("--config", "default_" + workspaceId);
+        chameleonDropParameterTable.put("--config", getConfigFileBaseName(workspaceId));
         if (isDropSchema) {
             useChameleonReplicaOrder(chameleonVenv, Chameleon.Order.DROP, chameleonDropParameterTable,
                     new ArrayList<>());
         }
         String chameleonVenvPath = PortalControl.toolsConfigParametersTable.get(Chameleon.VENV_PATH);
         ArrayList<String> fileList = new ArrayList<>();
-        String chameleonOrderStr = chameleonVenvPath + "data_default_" + Plan.workspaceId + "_";
         for (String order : Chameleon.Order.ALL_ORDER_LIST) {
-            fileList.add(chameleonOrderStr + order + ".json");
+            fileList.add(chameleonVenvPath + getOrderStatusFileName(Plan.workspaceId, order));
         }
         fileList.add(inputOrderPath);
         try {
@@ -522,7 +552,8 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
         String logPath = PortalControl.toolsConfigParametersTable.get(Chameleon.LOG_PATH);
         while (!Plan.stopPlan || Chameleon.Order.FINAL_ORDER_LIST.contains(order)) {
             ProcessUtils.sleepThread(1000, "starting task");
-            String processString = "chameleon " + order + " --config default_" + Plan.workspaceId;
+            String chameleonFile = PortalControl.toolsConfigParametersTable.get(Chameleon.RUNNABLE_FILE_PATH);
+            String processString = chameleonFile + " " + order + " --config " + getConfigFileBaseName(Plan.workspaceId);
             LOGGER.info(order + " running");
             boolean processQuit = ProcessUtils.getCommandPid(processString) == -1;
             boolean finished = LogViewUtils.lastLine(logPath).contains(endFlag);
@@ -563,7 +594,7 @@ public class MysqlFullMigrationTool extends ParamsConfig implements Tool {
             String chameleonVenv = PropertitesUtils.getSinglePropertiesParameter(Chameleon.VENV_PATH,
                     PortalControl.toolsConfigPath);
             Hashtable<String, String> chameleonParameterTable = new Hashtable<>();
-            chameleonParameterTable.put("--config", "default_" + Plan.workspaceId);
+            chameleonParameterTable.put("--config", getConfigFileBaseName(Plan.workspaceId));
             chameleonParameterTable.put("--source", "mysql");
             ArrayList<String> outputList = new ArrayList<>();
             outputList.add("YES");

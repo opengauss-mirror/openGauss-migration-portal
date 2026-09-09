@@ -84,8 +84,8 @@ public class ChameleonHelper {
      * @return chameleon order status file path
      */
     public static String generateOrderStatusFilePath(TaskWorkspace taskWorkspace, String chameleonOrder) {
-        return String.format("%s/data_default_%s_%s.json", Chameleon.getInstance().getChameleonHomeDirPath(),
-                taskWorkspace.getId(), chameleonOrder);
+        return String.format("%s/data_%s_%s.json", Chameleon.getInstance().getChameleonHomeDirPath(),
+                generateFullMigrationConfigFileBaseName(taskWorkspace), chameleonOrder);
     }
 
     /**
@@ -95,8 +95,17 @@ public class ChameleonHelper {
      * @return chameleon full migration config file name
      */
     public static String generateFullMigrationConfigFileName(TaskWorkspace taskWorkspace) {
-        String fullConfigNameModel = "default_%s.yml";
-        return String.format(fullConfigNameModel, taskWorkspace.getId());
+        return generateFullMigrationConfigFileBaseName(taskWorkspace) + ".yml";
+    }
+
+    /**
+     * generate chameleon full migration config file base name
+     *
+     * @param taskWorkspace task workspace
+     * @return chameleon full migration config file base name
+     */
+    public static String generateFullMigrationConfigFileBaseName(TaskWorkspace taskWorkspace) {
+        return "default_" + taskWorkspace.getId() + "_";
     }
 
     /**
@@ -131,7 +140,7 @@ public class ChameleonHelper {
 
     private static HashMap<String, String> generateOrderParams(TaskWorkspace taskWorkspace, String chameleonOrder) {
         HashMap<String, String> orderParams = new HashMap<>();
-        orderParams.put("--config", "default_" + taskWorkspace.getId());
+        orderParams.put("--config", generateFullMigrationConfigFileBaseName(taskWorkspace));
         if (ChameleonConstants.ORDER_NEED_CONFIG_SOURCE_LIST.contains(chameleonOrder)) {
             orderParams.put("--source", "mysql");
         }
