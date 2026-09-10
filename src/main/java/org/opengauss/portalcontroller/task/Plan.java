@@ -695,7 +695,7 @@ public final class Plan {
      */
     public static void stopPlanThreads() {
         LOGGER.info("Stop plan.");
-        ProcessUtils.closeAllProcess("--config default_" + workspaceId + " --");
+        ProcessUtils.closeAllProcess("--config " + MysqlFullMigrationTool.getConfigFileBaseName(workspaceId) + " --");
         threadCheckProcess.exit = true;
         stopAllTasks();
         Plan.clean();

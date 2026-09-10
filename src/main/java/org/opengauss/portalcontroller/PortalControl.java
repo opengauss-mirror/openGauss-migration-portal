@@ -38,6 +38,7 @@ import org.opengauss.portalcontroller.task.Task;
 import org.opengauss.portalcontroller.task.WorkspacePath;
 import org.opengauss.portalcontroller.thread.ThreadGetOrder;
 import org.opengauss.portalcontroller.thread.ThreadStatusController;
+import org.opengauss.portalcontroller.tools.mysql.MysqlFullMigrationTool;
 import org.opengauss.portalcontroller.tools.mysql.ReverseMigrationTool;
 import org.opengauss.portalcontroller.utils.FileUtils;
 import org.opengauss.portalcontroller.utils.InputReader;
@@ -638,7 +639,7 @@ public class PortalControl {
             PathUtils.combainPath(true, venvPath + "venv", "bin", "chameleon"));
         toolsConfigParametersTable.put(Chameleon.CONFIG_PATH,
             PathUtils.combainPath(true, workspacePath.getWorkspaceConfigPath(), "chameleon",
-                "default_" + workspaceId + ".yml"));
+                    MysqlFullMigrationTool.getConfigFileFullName(workspaceId)));
         toolsConfigParametersTable.put(Chameleon.LOG_PATH,
             PathUtils.combainPath(true, workspacePath.getWorkspaceLogPath(), "full_migration.log"));
         toolsConfigParametersTable.put(Parameter.INPUT_ORDER_PATH,
