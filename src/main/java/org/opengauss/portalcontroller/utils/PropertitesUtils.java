@@ -13,6 +13,8 @@
 
 package org.opengauss.portalcontroller.utils;
 
+import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_DESC_PREFIX;
+
 import org.opengauss.portalcontroller.PortalControl;
 import org.opengauss.portalcontroller.alert.ErrorCode;
 import org.opengauss.portalcontroller.exception.PortalException;
@@ -30,16 +32,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-
-import static org.opengauss.portalcontroller.constant.ToolsParamsLog.NEW_DESC_PREFIX;
 
 /**
  * PropertitesUtils
@@ -84,7 +83,7 @@ public class PropertitesUtils {
             }
             bufWriter = new BufferedWriter(new FileWriter(path));
             for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
-                if (!"".equals(entry.getValue())) {
+                if (!"".equals(entry.getValue()) || !deleteKeys.contains(entry.getKey())) {
                     if (!"".equals(comments.get(entry.getKey()))) {
                         bufWriter.write(comments.get(entry.getKey()));
                         bufWriter.flush();
