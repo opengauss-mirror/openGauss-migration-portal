@@ -38,4 +38,16 @@ public class Total {
      * 迁移速率
      */
     private String speed;
+    /**
+     * Rows extracted from source per second, instantaneous value in a 2-second window
+     */
+    private long extractSpeed;
+    /**
+     * Rows written to CSV per second, instantaneous value in a 2-second window
+     */
+    private long csvSpeed;
+    /**
+     * Rows loaded into openGauss per second, instantaneous value in a 2-second window
+     */
+    private long loadSpeed;
 }

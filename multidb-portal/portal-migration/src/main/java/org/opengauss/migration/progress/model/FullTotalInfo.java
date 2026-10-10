@@ -32,4 +32,19 @@ public class FullTotalInfo {
      * migration speed, unit: MB/s
      */
     private String speed;
+
+    /**
+     * extract stage speed, unit: rows/s
+     */
+    private long extractSpeed;
+
+    /**
+     * csv write stage speed, unit: rows/s
+     */
+    private long csvSpeed;
+
+    /**
+     * load stage speed, unit: rows/s
+     */
+    private long loadSpeed;
 }
