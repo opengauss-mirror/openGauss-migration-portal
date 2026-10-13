@@ -4,6 +4,7 @@
 
 package org.opengauss;
 
+import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.annotations.QuarkusMain;
 
 import org.apache.commons.cli.CommandLine;
@@ -15,7 +16,6 @@ import org.opengauss.command.CommandFactory;
 import org.opengauss.command.HelpCommand;
 import org.opengauss.command.parser.CommandParser;
 import org.opengauss.handler.PortalExceptionHandler;
-import org.opengauss.manager.QuarkusManager;
 
 /**
  * Main class
@@ -46,7 +46,14 @@ public class Main {
      * Start quarkus
      */
     public static void startQuarkus() {
-        QuarkusManager.startQuarkus(args);
+        Quarkus.run(args);
+    }
+
+    /**
+     * Async exit quarkus
+     */
+    public static void asyncExitQuarkus() {
+        Quarkus.asyncExit();
     }
 
     private static Command parseCommand(String[] args) {
