@@ -140,7 +140,7 @@ if [ $# -gt 0 ]; then
 fi
 
 # Find the JAR file
-JAVA_PROGRAM=$(ls openGauss-portal-*.jar 2> /dev/null | head -n 1)
+JAVA_PROGRAM=$(ls openGauss-portal-*.jar 2> /dev/null || true | head -n 1)
 if [[ -z "$JAVA_PROGRAM" ]]; then
     echo "Error: No openGauss-portal-*.jar file found in $PROJECT_ROOT"
     exit 1
