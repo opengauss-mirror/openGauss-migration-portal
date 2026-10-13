@@ -7,7 +7,6 @@ package org.opengauss.migration.helper.tool;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONException;
 import com.alibaba.fastjson2.JSONReader;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.constants.tool.FullReplicateConstants;
@@ -27,7 +26,6 @@ import java.util.Optional;
  *
  * @since 2025/5/29
  */
-@Slf4j
 public class FullReplicateHelper {
     private static final Logger LOGGER = LogManager.getLogger(FullReplicateHelper.class);
 

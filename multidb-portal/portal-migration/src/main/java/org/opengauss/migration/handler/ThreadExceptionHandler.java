@@ -7,7 +7,6 @@ package org.opengauss.migration.handler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.opengauss.manager.QuarkusManager;
 import org.opengauss.migration.MigrationManager;
 
 /**
@@ -25,7 +24,11 @@ public class ThreadExceptionHandler implements Thread.UncaughtExceptionHandler {
         try {
             MigrationManager.getInstance().stopOnError();
         } finally {
-            QuarkusManager.stopQuarkus();
+            try {
+                MigrationManager.getInstance().fireExit();
+            } catch (Exception e) {
+                LOGGER.warn("Failed to fire migration exit", e);
+            }
         }
     }
 }

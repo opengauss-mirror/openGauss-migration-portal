@@ -5,6 +5,7 @@
 package org.opengauss.command.receiver;
 
 import com.opencsv.CSVWriter;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opengauss.Main;
@@ -13,14 +14,15 @@ import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DatabaseType;
 import org.opengauss.exceptions.PortalException;
 import org.opengauss.migration.MigrationContext;
+import org.opengauss.migration.MigrationManager;
 import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.status.StatusManager;
 import org.opengauss.migration.status.model.MilvusElasticsearchStatusEntry;
 import org.opengauss.migration.status.model.ObjectStatusEntry;
-import org.opengauss.migration.workspace.TaskWorkspaceManager;
-import org.opengauss.utils.FileUtils;
 import org.opengauss.migration.utils.PortUtils;
 import org.opengauss.migration.utils.ProcessUtils;
+import org.opengauss.migration.workspace.TaskWorkspaceManager;
+import org.opengauss.utils.FileUtils;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -57,6 +59,7 @@ public class MigrationCommandReceiver implements CommandReceiver {
 
         if (workspaceManager.checkTaskIdExists(taskId)) {
             MigrationContext.initialize(taskWorkspace);
+            MigrationManager.getInstance().registerExitCallback(Main::asyncExitQuarkus);
             setQuarkusPort(taskWorkspace);
             setQuarkusVertxCacheDir(taskWorkspace);
             Main.startQuarkus();

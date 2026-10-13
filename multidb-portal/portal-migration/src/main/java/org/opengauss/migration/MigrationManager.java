@@ -6,7 +6,6 @@ package org.opengauss.migration;
 
 import org.opengauss.migration.domain.model.MigrationStopIndicator;
 import org.opengauss.migration.enums.MigrationStatusEnum;
-import org.opengauss.manager.QuarkusManager;
 import org.opengauss.migration.job.config.AbstractMigrationJobConfig;
 import org.opengauss.migration.job.AbstractMigrationJob;
 import org.opengauss.migration.monitor.MigrationAliveMonitor;
@@ -29,6 +28,7 @@ public class MigrationManager {
     private StatusMonitor statusMonitor;
     private MigrationAliveMonitor migrationAliveMonitor;
     private AbstractMigrationJob migrationJob;
+    private final MigrationExitNotifier exitNotifier = new MigrationExitNotifier();
 
     private MigrationManager() {
         MigrationContext migrationContext = MigrationContext.getInstance();
@@ -65,7 +65,7 @@ public class MigrationManager {
         if (!migrationJob.preMigrationVerify()) {
             migrationStopIndicator.setStop();
             statusMonitor.setCurrentStatus(MigrationStatusEnum.PRE_MIGRATION_VERIFY_FAILED);
-            QuarkusManager.stopQuarkus();
+            exitNotifier.fireExit();
             return;
         }
 
@@ -74,8 +74,24 @@ public class MigrationManager {
         migrationJob.startTask(migrationStopIndicator, processMonitor, statusMonitor);
 
         if (!migrationJobConfig.hasIncrementalMigration() && !migrationJobConfig.hasReverseMigration()) {
-            QuarkusManager.stopQuarkus();
+            exitNotifier.fireExit();
         }
+    }
+
+    /**
+     * Register exit callback
+     *
+     * @param callback exit callback
+     */
+    public void registerExitCallback(Runnable callback) {
+        exitNotifier.registerCallback(callback);
+    }
+
+    /**
+     * Fire exit callbacks to notify host that migration has exited
+     */
+    public void fireExit() {
+        exitNotifier.fireExit();
     }
 
     /**

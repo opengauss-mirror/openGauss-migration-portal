@@ -4,10 +4,10 @@
 
 package org.opengauss.quarkus.thread;
 
+import io.quarkus.runtime.Quarkus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 
-import org.opengauss.manager.QuarkusManager;
 import org.opengauss.migration.utils.ThreadUtils;
 
 /**
@@ -25,6 +25,6 @@ public class StopQuarkusThread extends Thread {
     @Override
     public void run() {
         ThreadUtils.sleep(2000);
-        QuarkusManager.stopQuarkus();
+        Quarkus.asyncExit();
     }
 }
