@@ -28,7 +28,7 @@ public class MilvusProgressMonitor extends ProgressMonitor {
     private final Queue<String> completedCollectionQueue = new ConcurrentLinkedQueue<>();
     private final Queue<String> failedCollectionQueue = new ConcurrentLinkedQueue<>();
 
-    MilvusProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
+    public MilvusProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
         super(statusMonitor, taskWorkspace);
     }
 

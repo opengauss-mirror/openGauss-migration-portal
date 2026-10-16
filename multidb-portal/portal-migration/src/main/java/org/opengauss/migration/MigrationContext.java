@@ -8,22 +8,14 @@ import lombok.Getter;
 import org.opengauss.migration.domain.model.MigrationStopIndicator;
 import org.opengauss.domain.model.TaskWorkspace;
 import org.opengauss.enums.DatabaseType;
-import org.opengauss.migration.exceptions.MigrationException;
-import org.opengauss.migration.job.config.AbstractMigrationJobConfig;
-import org.opengauss.migration.job.config.ElasticsearchMigrationJobConfig;
-import org.opengauss.migration.job.config.MilvusMigrationJobConfig;
-import org.opengauss.migration.job.config.MysqlMigrationJobConfig;
-import org.opengauss.migration.job.config.PgsqlMigrationJobConfig;
 import org.opengauss.migration.helper.TaskHelper;
 import org.opengauss.migration.job.AbstractMigrationJob;
-import org.opengauss.migration.job.ElasticsearchMigrationJob;
-import org.opengauss.migration.job.MilvusMigrationJob;
-import org.opengauss.migration.job.MysqlMigrationJob;
-import org.opengauss.migration.job.PgsqlMigrationJob;
+import org.opengauss.migration.job.config.AbstractMigrationJobConfig;
 import org.opengauss.migration.monitor.MigrationAliveMonitor;
 import org.opengauss.migration.process.ProcessMonitor;
 import org.opengauss.migration.progress.ProgressMonitor;
-import org.opengauss.migration.progress.ProgressMonitorFactory;
+import org.opengauss.migration.provider.DatabaseMigrationProvider;
+import org.opengauss.migration.provider.MigrationProviderRegistry;
 import org.opengauss.migration.status.StatusMonitor;
 
 /**
@@ -92,34 +84,15 @@ public class MigrationContext {
 
         StatusMonitor statusMonitor = new StatusMonitor(taskWorkspace);
         instance.statusMonitor = statusMonitor;
-        instance.progressMonitor = ProgressMonitorFactory.createProgressMonitor(
-                sourceDbType, statusMonitor, taskWorkspace);
+        DatabaseMigrationProvider migrationProvider = MigrationProviderRegistry.getProvider(sourceDbType);
+        instance.progressMonitor = migrationProvider.createProgressMonitor(statusMonitor, taskWorkspace);
         instance.migrationStopIndicator = new MigrationStopIndicator();
         instance.migrationAliveMonitor = new MigrationAliveMonitor(taskWorkspace);
         instance.processMonitor = new ProcessMonitor();
 
-        if (DatabaseType.MYSQL.equals(sourceDbType)) {
-            MysqlMigrationJobConfig migrationJobConfig = new MysqlMigrationJobConfig(taskWorkspace);
-            migrationJobConfig.loadConfig();
-            instance.migrationJobConfig = migrationJobConfig;
-            instance.migrationJob = new MysqlMigrationJob(migrationJobConfig);
-        } else if (DatabaseType.POSTGRESQL.equals(sourceDbType)) {
-            PgsqlMigrationJobConfig migrationJobConfig = new PgsqlMigrationJobConfig(taskWorkspace);
-            migrationJobConfig.loadConfig();
-            instance.migrationJobConfig = migrationJobConfig;
-            instance.migrationJob = new PgsqlMigrationJob(migrationJobConfig);
-        } else if (DatabaseType.MILVUS.equals(sourceDbType)) {
-            MilvusMigrationJobConfig migrationJobConfig = new MilvusMigrationJobConfig(taskWorkspace);
-            migrationJobConfig.loadConfig();
-            instance.migrationJobConfig = migrationJobConfig;
-            instance.migrationJob = new MilvusMigrationJob(migrationJobConfig);
-        } else if (DatabaseType.ELASTICSEARCH.equals(sourceDbType)) {
-            ElasticsearchMigrationJobConfig migrationJobConfig = new ElasticsearchMigrationJobConfig(taskWorkspace);
-            migrationJobConfig.loadConfig();
-            instance.migrationJobConfig = migrationJobConfig;
-            instance.migrationJob = new ElasticsearchMigrationJob(migrationJobConfig);
-        } else {
-            throw new MigrationException("Unsupported source database type: " + sourceDbType);
-        }
+        AbstractMigrationJobConfig migrationJobConfig = migrationProvider.createJobConfig(taskWorkspace);
+        migrationJobConfig.loadConfig();
+        instance.migrationJobConfig = migrationJobConfig;
+        instance.migrationJob = migrationProvider.createJob(migrationJobConfig);
     }
 }
