@@ -36,7 +36,7 @@ import java.util.Optional;
 public class MysqlProgressMonitor extends ProgressMonitor {
     private static final Logger LOGGER = LogManager.getLogger(MysqlProgressMonitor.class);
 
-    MysqlProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
+    public MysqlProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
         super(statusMonitor, taskWorkspace);
     }
 

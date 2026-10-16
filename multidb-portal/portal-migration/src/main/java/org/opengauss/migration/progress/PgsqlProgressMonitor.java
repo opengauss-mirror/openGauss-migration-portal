@@ -32,7 +32,7 @@ import java.util.Optional;
 public class PgsqlProgressMonitor extends ProgressMonitor {
     private static final Logger LOGGER = LogManager.getLogger(PgsqlProgressMonitor.class);
 
-    PgsqlProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
+    public PgsqlProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
         super(statusMonitor, taskWorkspace);
     }
 

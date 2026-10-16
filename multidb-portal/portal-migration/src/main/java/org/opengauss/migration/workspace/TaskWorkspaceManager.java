@@ -14,11 +14,8 @@ import org.opengauss.enums.DatabaseType;
 import org.opengauss.migration.exceptions.ConfigException;
 import org.opengauss.migration.exceptions.MigrationException;
 import org.opengauss.exceptions.TaskException;
-import org.opengauss.migration.job.config.ElasticsearchMigrationJobConfig;
-import org.opengauss.migration.job.config.MilvusMigrationJobConfig;
-import org.opengauss.migration.job.config.MysqlMigrationJobConfig;
-import org.opengauss.migration.job.config.PgsqlMigrationJobConfig;
 import org.opengauss.migration.monitor.MigrationAliveMonitor;
+import org.opengauss.migration.provider.MigrationProviderRegistry;
 import org.opengauss.utils.FileUtils;
 import org.opengauss.utils.StringUtils;
 
@@ -196,17 +193,7 @@ public class TaskWorkspaceManager {
     }
 
     private void prepareConfigFiles(TaskWorkspace taskWorkspace, DatabaseType sourceDbType) {
-        if (DatabaseType.MYSQL.equals(sourceDbType)) {
-            new MysqlMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
-        } else if (DatabaseType.POSTGRESQL.equals(sourceDbType)) {
-            new PgsqlMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
-        } else if (DatabaseType.MILVUS.equals(sourceDbType)) {
-            new MilvusMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
-        } else if (DatabaseType.ELASTICSEARCH.equals(sourceDbType)) {
-            new ElasticsearchMigrationJobConfig(taskWorkspace).generateToolsConfigFiles();
-        } else {
-            throw new IllegalArgumentException("Unsupported source database type: " + sourceDbType);
-        }
+        MigrationProviderRegistry.getProvider(sourceDbType).generateToolsConfigFiles(taskWorkspace);
         generateSourceDbTypeConfigFile(taskWorkspace, sourceDbType);
         copyLog4j2ConfigFile(taskWorkspace);
     }

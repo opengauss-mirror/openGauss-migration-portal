@@ -28,7 +28,7 @@ public class ElasticsearchProgressMonitor extends ProgressMonitor {
     private final Queue<String> completedIndexQueue = new ConcurrentLinkedQueue<>();
     private final Queue<String> failedIndexQueue = new ConcurrentLinkedQueue<>();
 
-    ElasticsearchProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
+    public ElasticsearchProgressMonitor(StatusMonitor statusMonitor, TaskWorkspace taskWorkspace) {
         super(statusMonitor, taskWorkspace);
     }
 
