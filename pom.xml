@@ -21,6 +21,7 @@
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
         <spring.boot.version>3.5.5</spring.boot.version>
         <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
+        <bcprov-jdk18on.version>1.86</bcprov-jdk18on.version>
         <fastjson.version>2.0.51</fastjson.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
@@ -86,6 +87,11 @@
             <groupId>org.opengauss</groupId>
             <artifactId>opengauss-jdbc</artifactId>
             <version>${opengauss.jdbc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bcprov-jdk18on.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
