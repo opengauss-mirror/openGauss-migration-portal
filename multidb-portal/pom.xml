@@ -24,6 +24,7 @@
         <commons-cli.version>1.10.0</commons-cli.version>
         <opencsv.version>5.11.2</opencsv.version>
         <opengauss.jdbc.version>3.0.0</opengauss.jdbc.version>
+        <bcprov-jdk18on.version>1.86</bcprov-jdk18on.version>
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
         <postgresql.version>42.7.7</postgresql.version>
         <milvus.version>2.6.10</milvus.version>
@@ -96,6 +97,11 @@
                 <groupId>org.opengauss</groupId>
                 <artifactId>opengauss-jdbc</artifactId>
                 <version>${opengauss.jdbc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bcprov-jdk18on.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.milvus</groupId>
