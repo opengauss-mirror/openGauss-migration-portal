@@ -23,8 +23,7 @@ public class CommandFactory {
             "kafka", CommandFactory::generateKafkaCommand,
             "mode", CommandFactory::generateModeCommand,
             "task", CommandFactory::generateTaskCommand,
-            "migration", CommandFactory::generateMigrationCommand,
-            "config_description", CommandFactory::generateConfigDescCommand
+            "migration", CommandFactory::generateMigrationCommand
     );
 
     /**
@@ -86,9 +85,5 @@ public class CommandFactory {
             return new MigrationCommand(args[0], args[1], true);
         }
         return new MigrationCommand(args[0], args[1]);
-    }
-
-    private static ConfigDescCommand generateConfigDescCommand(CommandLine cmd) {
-        return new ConfigDescCommand(cmd.getOptionValue("config_description"));
     }
 }

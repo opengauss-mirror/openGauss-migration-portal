@@ -29,7 +29,6 @@ public class CommandParser {
         buildModeOptions();
         buildTaskOptions();
         buildMigrationOptions();
-        buildConfigDescriptionOptions();
         buildForceOptions();
         buildDetailOptions();
         buildHelpOptions();
@@ -114,17 +113,6 @@ public class CommandParser {
                 .argName("operation> <workspace_id")
                 .build();
         options.addOption(migration);
-    }
-
-    private void buildConfigDescriptionOptions() {
-        Option config = Option.builder()
-                .option("cd")
-                .longOpt("config_description")
-                .desc("Get migration config description")
-                .numberOfArgs(1)
-                .argName("databaseType")
-                .build();
-        options.addOption(config);
     }
 
     private void buildForceOptions() {
